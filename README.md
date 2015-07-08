@@ -122,7 +122,7 @@ Run pull operation
 
 Each successful pull call creates a branch in the named internal repository and a tag at its root. Here's a example command to repeatably clone after pulling a tag named "v1.0.0" into repo "testing" with the server using a local repo provider:
 
-    git clone --depth 1 --branch v1.0.0_1436349331_root file:///tmp/repour-test-repos/testing
+    git clone --branch v1.0.0_1436349331_root file:///tmp/repour-test-repos/testing
 
 ## Server Setup
 
