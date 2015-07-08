@@ -4,6 +4,126 @@ Public code sources are unsuitable for reproducable builds because they often ha
 
 Additionally, the isolated internal branches allow for modifications (version alignment, patches, etc.) to be commited back without comprimising future pulls.
 
+## Interface
+
+### `/pull`
+
+Run pull operation
+
+#### Request
+
+- Method: `POST`
+- Content-Type: `application/json`
+- Body (SCM):
+```
+{
+    "name": str,
+    "type": str,
+    "tag": str,
+    "url": Url
+}
+```
+```
+{
+    "name": "example",
+    "type": "git",
+    "tag": "teiid-parent-8.11.0.Final",
+    "url": "git@github.com:teiid/teiid.git",
+}
+```
+- Body (Archive):
+```
+{
+    "name": str,
+    "type": str,
+    "url": Url
+}
+```
+```
+{
+    "name": "example",
+    "type": "archive",
+    "url": "https://github.com/teiid/teiid/archive/teiid-parent-8.11.0.Final.tar.gz"
+}
+```
+
+#### Response
+
+- Content-Type: `application/json`
+- Status (Success): 200
+- Body (Success):
+```
+{
+    "branch": str,
+    "tag": str,
+    "url": Url
+}
+```
+```
+{
+    "branch": "teiid-parent-8.11.0.Final_1436360795",
+    "tag": "teiid-parent-8.11.0.Final_1436360795_root",
+    "url": "file:///tmp/repour-test-repos/example"
+}
+```
+- Status (Invalid request body): 400
+- Body (Invalid request body):
+```
+[
+    {
+        "error_message": str,
+        "error_type": str,
+        "path": [str]
+    }
+]
+```
+```
+[
+    {
+        "error_message": "expected a URL",
+        "error_type": "dictionary value",
+        "path": ["url"]
+    },
+    {
+        "error_message": "expected str",
+        "error_type": "dictionary value",
+        "path": ["name"]
+    }
+]
+```
+- Status (Processing error): 400
+- Body (Processing error):
+```
+{
+    "desc": str,
+    "error_type": str
+}
+```
+```
+{
+    "desc": "Could not clone with git",
+    "error_type": "PullCommandError",
+    "cmd": [
+        "git",
+        "clone",
+        "--branch",
+        "teiid-parent-8.11.0.Final",
+        "--depth",
+        "1",
+        "--",
+        "git@github.com:teiid/teiid.gitasd",
+        "/tmp/tmppizdwfsigit"
+    ],
+    "exit_code": 128
+}
+```
+
+### Cloning from created repositories
+
+Each successful pull call creates a branch in the named internal repository and a tag at its root. Here's a example command to repeatably clone after pulling a tag named "v1.0.0" into repo "testing" with the server using a local repo provider:
+
+    git clone --depth 1 --branch v1.0.0_1436349331_root file:///tmp/repour-test-repos/testing
+
 ## Server Setup
 
 ### Prerequisites
@@ -36,12 +156,6 @@ Copy the example configuration in `config-example.yaml` to `config.yaml`, then e
     vex rpo python -m repour run
 
 For more information, add the `-h` switch to the command.
-
-## Cloning from created repositories
-
-Each successful pull call creates a branch in the named internal repository and a tag at its root. Here's a example command to repeatably clone after pulling a tag named "v1.0.0" into repo "testing" with the server using a local repo provider:
-
-    git clone --depth 1 --branch v1.0.0_1436349331_root file:///tmp/repour-test-repos/testing
 
 ## License
 
