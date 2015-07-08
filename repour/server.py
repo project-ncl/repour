@@ -43,7 +43,7 @@ def pull_source(request):
     try:
         internal = yield from pull.pull(pullspec, request.app["repo_provider"])
     except exception.DescribedError as e:
-        error = {k: v for k, v in e.__dict__.items() if not k.startsWith("_")}
+        error = {k: v for k, v in e.__dict__.items() if not k.startswith("_")}
         error["error_type"] = e.__class__.__name__
         return web.Response(
             status=400,
