@@ -1,0 +1,9 @@
+log:
+    path: !config_relative server.log
+    level: INFO
+bind:
+    address: null
+    port: 7331
+repo_provider:
+    type: local
+    url: "file:///tmp/repour-test-repos/"
