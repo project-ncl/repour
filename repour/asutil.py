@@ -32,18 +32,23 @@ def download(url, stream):
     return filename
 
 @asyncio.coroutine
-def rmtree(dir_path):
-    loop = asyncio.get_event_loop()
-    yield from loop.run_in_executor(None, lambda: shutil.rmtree(dir_path))
+def rmtree(dir_path, ignore_errors=False, loop=None):
+    loop = asyncio.get_event_loop() if loop is None else loop
+    yield from loop.run_in_executor(None, lambda: shutil.rmtree(dir_path, ignore_errors))
 
-class TemporaryDirectory(tempfile.TemporaryDirectory):
-    def cleanup(self):
-        if self._finalizer is not None:
-            self._finalizer.detach()
-        if self.name is not None and not self._closed:
-            loop = asyncio.get_event_loop()
-            loop.create_task(rmtree(self.name))
-            self._closed = True
+class TemporaryDirectory(object):
+    def __init__(self, suffix="", prefix="tmp", loop=None):
+        self.suffix = suffix
+        self.prefix = prefix
+        self.loop = asyncio.get_event_loop() if loop is None else loop
+        self.name = None
+
+    def __enter__(self):
+        self.name = tempfile.mkdtemp(self.suffix, self.prefix)
+        return self.name
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.loop.create_task(rmtree(self.name, ignore_errors=True, loop=self.loop))
 
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
