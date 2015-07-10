@@ -73,7 +73,7 @@ def init(loop, bind, repo_provider):
     app = web.Application(loop=loop)
 
     logger.debug("Adding application resources")
-    app["repo_provider"] = repo.provider_types[repo_provider["type"]](repo_provider["url"])
+    app["repo_provider"] = repo.provider_types[repo_provider["type"]](**repo_provider["params"])
 
     logger.debug("Setting up handlers")
     app.router.add_route("GET", "/", show_id)

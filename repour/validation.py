@@ -51,7 +51,7 @@ server_config_raw = {
     },
     "repo_provider": {
         "type": Any(*repo.provider_types.keys()),
-        "url": Url(),
+        "params": {Extra: object},
     },
 }
 server_config = Schema(

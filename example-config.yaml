@@ -6,4 +6,5 @@ bind:
     port: 7331
 repo_provider:
     type: local
-    url: "file:///tmp/repour-test-repos/"
+    params:
+        root_url: "file:///tmp/repour-test-repos/"

@@ -1,7 +1,10 @@
 import asyncio
+import json
 import logging
 import os
 import urllib.parse
+
+import aiohttp
 
 from . import asutil
 from . import exception
@@ -17,6 +20,46 @@ expect_ok = asutil.expect_ok_closure(exception.RepoCommandError)
 #
 # Repo operations
 #
+
+def repo_gerrit(api_url, username, password, new_repo_owners):
+    session = aiohttp.ClientSession()
+
+    @asyncio.coroutine
+    def get_url(repo_name):
+        encoded_repo_name = urllib.parse.quote(repo_name)
+        auth_url = api_url + "/a/projects/" + encoded_repo_name
+
+        # Trigger WWW-Authenticate
+        resp = yield from session.put(auth_url)
+        if resp.status == 401:
+            resp.headers["WWW-Authenticate"] # TODO
+        else:
+            raise exception.RepoError("Unable to authenticate, status {}".format(resp.status))
+
+        resp = yield from session.put(
+            auth_url,
+            headers={
+                "If-None-Match": "*",
+                "Content-Type": "application/json;charset=UTF-8",
+                "Accept": "application/json",
+            },
+            data=json.dumps(
+                obj={
+                    "name": repo_name,
+                    "description": "Flattened repository for {}".format(repo_name),
+                    "submit_type": "FAST_FORWARD_ONLY",
+                    "owners": new_repo_owners,
+                },
+                ensure_ascii=False,
+            ).encode("utf-8"),
+        )
+        # Project was created or already exists
+        if resp.status in [201,412]:
+            return api_url + "/projects/" + encoded_repo_name
+        else:
+            raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
+
+    return get_url
 
 def repo_gitlab(api_url):
     @asyncio.coroutine
@@ -55,6 +98,7 @@ def repo_local(root_url):
 #
 
 provider_types = {
+    "gerrit": repo_gerrit,
     "gitlab": repo_gitlab,
     "local": repo_local,
 }
