@@ -86,7 +86,7 @@ Type: {origin_type}
     )
     stdout_lines = yield from expect_ok(
         cmd=["git", "ls-remote", internal_repo_url, tag_refspec_pattern],
-        desc="Could not push branch with git",
+        desc="Could not read remote refs with git",
         stdout="lines",
     )
     for l in stdout_lines:
@@ -114,7 +114,7 @@ Type: {origin_type}
             desc="Could not push tag with git",
         )
 
-        logger.info("pushed branch {branch_name} to internal repo {internal_repo_url}".format(**locals()))
+        logger.info("Pushed branch {branch_name} to internal repo {internal_repo_url}".format(**locals()))
 
         return {
             "branch": branch_name,
@@ -127,7 +127,7 @@ Type: {origin_type}
         # ex: proj-1.0_1436360795_root -> proj-1.0_1436360795
         existing_branch = existing_tag[:-5]
 
-        logger.info("using existing branch {branch_name} in internal repo {internal_repo_url}".format(**locals()))
+        logger.info("Using existing branch {branch_name} in internal repo {internal_repo_url}".format(**locals()))
 
         return {
             "branch": existing_branch,
