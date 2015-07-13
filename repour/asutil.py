@@ -2,6 +2,7 @@ import asyncio
 import os
 import shutil
 import tempfile
+import urllib.parse
 
 import aiohttp
 

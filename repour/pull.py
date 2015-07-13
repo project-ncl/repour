@@ -108,7 +108,6 @@ def pull(pullspec, repo_provider):
 @asyncio.coroutine
 def pull_git(pullspec, repo_provider):
     with asutil.TemporaryDirectory(suffix="git") as d:
-        # TODO optional gpg verification of clone?
         # Shallow clone of the git ref (tag or branch)
         yield from expect_ok(
             cmd=["git", "clone", "--branch", pullspec["tag"], "--depth", "1", "--", pullspec["url"], d],
@@ -133,8 +132,6 @@ def pull_archive(pullspec, repo_provider):
             # Download archive into stream
             archive_filename = yield from asutil.download(pullspec["url"], f)
             logger.info("Got archive tree from {pullspec[url]} named {archive_filename}".format(**locals()))
-
-            # TODO optional signature verification of archive file?
 
             # Use libarchive/bsdtar to extract into temp dir
             yield from expect_ok(

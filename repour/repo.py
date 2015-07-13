@@ -40,7 +40,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
     def authorization_value(method, path):
         nonlocal ncount
         ncount += 1
-        cnonce = base64.b64encode(os.urandom().read(16)).decode("utf-8")
+        cnonce = base64.b64encode(os.urandom(16)).decode("utf-8")
 
         qop = "auth"
 
@@ -53,7 +53,6 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
             "realm": realm,
             "nonce": nonce,
             "uri": path,
-            "opaque": opaque,
             "qop": qop,
             "nc": ncount,
             "cnonce": cnonce,
