@@ -53,18 +53,46 @@ class TemporaryDirectory(object):
 
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
-    def expect_ok(cmd, desc=""):
+    def expect_ok(cmd, desc="", env=None, stdout=None):
+        if env is None:
+            sub_env = None
+        else:
+            # Only partially override the existing environment
+            sub_env = os.environ.copy()
+            sub_env.update(env)
+
+        if stdout is None:
+            sub_stdout = asyncio.subprocess.DEVNULL
+        else:
+            sub_stdout = asyncio.subprocess.PIPE
+
         p = yield from asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL
+            stdout=sub_stdout,
+            stderr=asyncio.subprocess.DEVNULL,
+            env=sub_env
         )
-        yield from p.wait()
+        if stdout:
+            stdout_data, stderr_data = yield from p.communicate()
+        else:
+            yield from p.wait()
         if not p.returncode == 0:
             raise exc_type(
                 desc=desc,
                 cmd=cmd,
                 exit_code=p.returncode,
             )
+
+        if stdout == "text":
+            return stdout_data.decode("utf-8")
+        elif stdout == "lines":
+            return [l for l in stdout_data.decode("utf-8").split("\n") if l != ""]
+        elif stdout == "single":
+            return stdout_data.decode("utf-8").split("\n", 1)[0]
+        elif stdout == "data":
+            return stdout_data
+        else:
+            return None
+
     return expect_ok
