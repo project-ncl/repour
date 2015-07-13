@@ -92,7 +92,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
             return api_url + "/projects/" + encoded_repo_name
 
         # (Re)authenticate
-        elif not tried_auth && resp.status == 401:
+        elif not tried_auth and resp.status == 401:
             auth = resp.headers["WWW-Authenticate"]
 
             # Strip "Digest "
