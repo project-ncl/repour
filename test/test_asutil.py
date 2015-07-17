@@ -9,6 +9,7 @@ import aiohttp
 import aiohttp.web
 
 import repour.asutil
+import repour.exception
 
 loop = asyncio.get_event_loop()
 
@@ -109,5 +110,26 @@ class TestTemporaryDirectory(unittest.TestCase):
         self.assertFalse(os.path.exists(d))
 
 class TestExpectOk(unittest.TestCase):
-    def test_asd(self):
-        pass
+    b = b"just testing\ncongenital optimist\n"
+    t = "just testing\ncongenital optimist\n"
+    l = ["just testing", "congenital optimist"]
+
+    def test_convert_bytes(self):
+        self.assertEqual(repour.asutil._convert_bytes(self.b, "data"), self.b)
+        self.assertEqual(repour.asutil._convert_bytes(self.b, "text"), self.t)
+        self.assertEqual(repour.asutil._convert_bytes(self.b, "lines"), self.l)
+        self.assertEqual(repour.asutil._convert_bytes(self.b, "single"), self.l[0])
+
+    def test_exception(self):
+        expect_ok = repour.asutil.expect_ok_closure(repour.exception.PullCommandError)
+
+        ret = None
+        with self.assertRaises(repour.exception.PullCommandError):
+            ret = loop.run_until_complete(expect_ok(["/bin/false"]))
+        self.assertIsNone(ret)
+
+    def test_stdout(self):
+        expect_ok = repour.asutil.expect_ok_closure()
+
+        self.assertEqual(loop.run_until_complete(expect_ok(["printf", self.t], stdout="data")), self.b)
+        self.assertEqual(loop.run_until_complete(expect_ok(["printf", self.t], stdout="single")), self.l[0])

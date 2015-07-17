@@ -64,6 +64,18 @@ class TemporaryDirectory(object):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.loop.create_task(rmtree(self.name, ignore_errors=True, loop=self.loop))
 
+def _convert_bytes(b, mode):
+    if mode == "text":
+        return b.decode("utf-8")
+    elif mode == "lines":
+        return [l for l in b.decode("utf-8").split("\n") if l != ""]
+    elif mode == "single":
+        return b.decode("utf-8").split("\n", 1)[0]
+    elif mode == "data":
+        return b
+    else:
+        return None
+
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
     def expect_ok(cmd, desc="", env=None, stdout=None):
@@ -97,15 +109,6 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 exit_code=p.returncode,
             )
 
-        if stdout == "text":
-            return stdout_data.decode("utf-8")
-        elif stdout == "lines":
-            return [l for l in stdout_data.decode("utf-8").split("\n") if l != ""]
-        elif stdout == "single":
-            return stdout_data.decode("utf-8").split("\n", 1)[0]
-        elif stdout == "data":
-            return stdout_data
-        else:
-            return None
+        return _convert_bytes(stdout_data, stdout)
 
     return expect_ok
