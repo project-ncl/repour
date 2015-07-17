@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 
 if __name__ == "__main__":
@@ -8,4 +9,4 @@ if __name__ == "__main__":
     )
 
     runner = unittest.TextTestRunner()
-    runner.run(tests)
+    sys.exit(runner.run(tests).failures != 0)
