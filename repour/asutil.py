@@ -8,27 +8,40 @@ import aiohttp
 
 from . import exception
 
+def _find_filename(url, resp):
+    # Filename should be url basename, or Content-Disposition header if it exists
+    if aiohttp.hdrs.CONTENT_DISPOSITION in resp.headers:
+        cd_params = aiohttp.multipart.parse_content_disposition(resp.headers[aiohttp.hdrs.CONTENT_DISPOSITION])[1]
+        cd_filename = aiohttp.multipart.content_disposition_filename(cd_params)
+    else:
+        cd_filename = None
+
+    if cd_filename is None:
+        return os.path.basename(urllib.parse.urlparse(url).path)
+    else:
+        return cd_filename
+
 @asyncio.coroutine
 def download(url, stream):
     loop = asyncio.get_event_loop()
 
-    session = aiohttp.ClientSession(loop=loop)
-    resp = yield from session.request("get", url)
-    while True:
-        chunk = yield from resp.content.read(4096)
-        if not chunk:
-            break
-        yield from loop.run_in_executor(None, stream.write, chunk)
-
-    # Filename should be url basename, or Content-Disposition header if it exists
-    cd_params = aiohttp.multipart.parse_content_disposition(resp.headers[aiohttp.hdrs.CONTENT_DISPOSITION])[1]
-    cd_filename = aiohttp.multipart.content_disposition_filename(cd_params)
-    if cd_filename is None:
-        filename = os.path.basename(urllib.parse.urlparse(url).path)
+    resp = yield from aiohttp.request("get", url)
+    try:
+        while True:
+            chunk = yield from resp.content.read(4096)
+            if not chunk:
+                break
+            yield from loop.run_in_executor(None, stream.write, chunk)
+    except:
+        resp.close(True)
+        raise
     else:
-        filename = cd_filename
+        resp.close()
 
-    yield from loop.run_in_executor(None, stream.sync)
+    filename = _find_filename(url, resp)
+
+    if hasattr(stream, "sync"):
+        yield from loop.run_in_executor(None, stream.sync)
 
     return filename
 
