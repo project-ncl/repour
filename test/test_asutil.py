@@ -82,8 +82,8 @@ class TestDownload(unittest.TestCase):
 
     def test_download(self):
         buf = io.BytesIO()
-        buf.sync = lambda: None
 
-        loop.run_until_complete(repour.asutil.download(self.url + "/foo_bar", buf))
+        filename = loop.run_until_complete(repour.asutil.download(self.url + "/foo_bar", buf))
 
         self.assertEqual(buf.getvalue(), self.foo_bar.getvalue())
+        self.assertEqual(filename, "foo_bar")
