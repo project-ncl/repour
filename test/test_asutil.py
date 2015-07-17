@@ -1,6 +1,7 @@
 import asyncio
 import io
 import os
+import tempfile
 import types
 import unittest
 
@@ -87,3 +88,26 @@ class TestDownload(unittest.TestCase):
 
         self.assertEqual(buf.getvalue(), self.foo_bar.getvalue())
         self.assertEqual(filename, "foo_bar")
+
+class TestTemporaryDirectory(unittest.TestCase):
+    def write_test_file(self, root):
+        with open(os.path.join(root, "somefile.txt"), "w") as f:
+            f.write("blah blah blah")
+
+    def test_rmtree(self):
+        with tempfile.TemporaryDirectory() as root:
+            d = os.path.join(root, "test123")
+            os.mkdir(d)
+            self.write_test_file(d)
+
+            loop.run_until_complete(repour.asutil.rmtree(d, loop=loop))
+            self.assertFalse(os.path.exists(d))
+
+    def test_tempdir(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write_test_file(d)
+        self.assertFalse(os.path.exists(d))
+
+class TestExpectOk(unittest.TestCase):
+    def test_asd(self):
+        pass
