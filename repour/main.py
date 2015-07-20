@@ -31,6 +31,7 @@ def run_subcommand(args, config):
     server.start_server(
         bind=config["bind"],
         repo_provider=config["repo_provider"],
+        adjust_provider=config["adjust_provider"],
     )
 
 #

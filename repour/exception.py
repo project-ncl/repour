@@ -20,3 +20,9 @@ class RepoError(DescribedError):
 
 class RepoCommandError(RepoError, CommandError):
     pass
+
+class AdjustError(DescribedError):
+    pass
+
+class AdjustCommandError(AdjustError, CommandError):
+    pass

@@ -14,7 +14,27 @@ nonempty_noblank_str = All(str, Match(r'\S+'))
 port_num = All(int, Range(min=1, max=65535))
 
 #
-# Sync
+# Adjust
+#
+
+adjust_nestable = {
+    "someparm": nonempty_str,
+}
+
+adjust_raw = {
+    "name": nonempty_str,
+    "ref": nonempty_str,
+}
+adjust_raw.update(adjust_nestable)
+
+adjust = Schema(
+    adjust_raw,
+    required=True,
+    extra=False,
+)
+
+#
+# Pull
 #
 
 pull_raw = Any(
@@ -23,11 +43,13 @@ pull_raw = Any(
         "type": Any(*pull.scm_types),
         "tag": nonempty_str,
         "url": Url(),
+        Optional("adjust"): adjust_nestable,
     },
     {
         "name": nonempty_str,
         "type": pull.archive_type,
         "url": Url(),
+        Optional("adjust"): adjust_nestable,
     },
 )
 pull = Schema(
@@ -48,6 +70,10 @@ server_config_raw = {
     "bind": {
         "address": Any(nonempty_str, None),
         "port": port_num,
+    },
+    "adjust_provider": {
+        "type": Any(*adjust.provider_types.keys()),
+        "params": {Extra: object},
     },
     "repo_provider": {
         "type": Any(*repo.provider_types.keys()),

@@ -8,3 +8,6 @@ repo_provider:
     type: local
     params:
         root_url: "file:///tmp/repour-test-repos/"
+adjust_provider:
+    type: noop
+    params: {}
