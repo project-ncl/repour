@@ -15,7 +15,7 @@ from . import validation
 
 logger = logging.getLogger(__name__)
 
-def _validated_json_endpoint(validator, coro, app_key):
+def _validated_json_endpoint(validator, coro, *app_keys):
     @asyncio.coroutine
     def handler(request):
         spec = yield from request.json()
@@ -32,7 +32,7 @@ def _validated_json_endpoint(validator, coro, app_key):
             )
 
         try:
-            ret = yield from coro(spec, request.app[app_key])
+            ret = yield from coro(spec, **{k:v for k,v in request.app.items() if k in app_keys})
         except exception.DescribedError as e:
             error = {k: v for k, v in e.__dict__.items() if not k.startswith("_")}
             error["error_type"] = e.__class__.__name__
@@ -67,7 +67,7 @@ def show_id(request):
         text="Repour",
     )
 
-pull_source = _validated_json_endpoint(validation.pull, pull.pull, "repo_provider")
+pull_source = _validated_json_endpoint(validation.pull, pull.pull, "repo_provider", "adjust_provider")
 
 adjust_source = _validated_json_endpoint(validation.adjust, adjust.adjust, "adjust_provider")
 

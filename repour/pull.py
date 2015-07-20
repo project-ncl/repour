@@ -8,6 +8,7 @@ import tempfile
 import urllib.parse
 
 from . import asutil
+from . import adjust
 from . import exception
 
 logger = logging.getLogger(__name__)
@@ -140,17 +141,17 @@ Type: {origin_type}
 #
 
 @asyncio.coroutine
-def pull(pullspec, repo_provider):
+def pull(pullspec, repo_provider, adjust_provider):
     if pullspec["type"] in scm_types:
-        internal = yield from scm_types[pullspec["type"]](pullspec, repo_provider)
+        internal = yield from scm_types[pullspec["type"]](pullspec, repo_provider, adjust_provider)
     elif pullspec["type"] == archive_type:
-        internal = yield from pull_archive(repo_provider, pullspec)
+        internal = yield from pull_archive(repo_provider, pullspec, adjust_provider)
     else:
         raise exception.PullError("Type '{pullspec[type]}' not supported".format(**locals()))
     return internal
 
 @asyncio.coroutine
-def pull_git(pullspec, repo_provider):
+def pull_git(pullspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="git") as d:
         # Shallow clone of the git ref (tag or branch)
         yield from expect_ok(
@@ -167,10 +168,14 @@ def pull_git(pullspec, repo_provider):
         # Process sources into internal branch
         internal = yield from to_internal(internal_repo_url, d, pullspec["tag"], pullspec["url"], "git")
 
+        if pullspec.get("adjust", False):
+            adjust_provider(d)
+            adjust.commit_adjustments(internal_repo_url, d)
+
     return internal
 
 @asyncio.coroutine
-def pull_archive(pullspec, repo_provider):
+def pull_archive(pullspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="extract") as d:
         with tempfile.NamedTemporaryFile(suffix="archive") as f:
             # Download archive into stream
@@ -182,12 +187,17 @@ def pull_archive(pullspec, repo_provider):
                 cmd=["bsdtar", "-xf", f.name, "-C", d, "--chroot"],
                 desc="Could not extract archive with bsdtar",
             )
+            # TODO may need to move the files out of an inner dir, but only if single root dir (ex: asd.tar.gz would normally be asd/qwe.txt)
 
         # TODO create internal repo concurrently?
         internal_repo_url = yield from repo_provider(pullspec["name"])
 
         # Process sources into internal branch
         internal = yield from to_internal(internal_repo_url, d, archive_filename, pullspec["url"], "archive")
+
+        if pullspec.get("adjust", False):
+            adjust_provider(d)
+            adjust.commit_adjustments(internal_repo_url, d)
 
     return internal
 

@@ -17,15 +17,10 @@ port_num = All(int, Range(min=1, max=65535))
 # Adjust
 #
 
-adjust_nestable = {
-    "someparm": nonempty_str,
-}
-
 adjust_raw = {
     "name": nonempty_str,
     "ref": nonempty_str,
 }
-adjust_raw.update(adjust_nestable)
 
 adjust = Schema(
     adjust_raw,
@@ -43,13 +38,13 @@ pull_raw = Any(
         "type": Any(*pull.scm_types),
         "tag": nonempty_str,
         "url": Url(),
-        Optional("adjust"): adjust_nestable,
+        Optional("adjust"): bool,
     },
     {
         "name": nonempty_str,
         "type": pull.archive_type,
         "url": Url(),
-        Optional("adjust"): adjust_nestable,
+        Optional("adjust"): bool,
     },
 )
 pull = Schema(
