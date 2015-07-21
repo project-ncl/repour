@@ -61,12 +61,16 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
         return "Digest " + ",".join('{}={}'.format(k,es(v)) for k,v in parts.items())
 
     @asyncio.coroutine
-    def get_url(repo_name, tried_auth=False):
+    def get_url(repo_name, create=True, tried_auth=False):
         nonlocal realm, ncount, nonce
 
         encoded_repo_name = urllib.parse.quote(repo_name)
         auth_url = api_url + "/a/projects/" + encoded_repo_name
         auth_path = urllib.parse.urlparse(auth_url).path
+
+        clone_url = api_url + "/projects/" + encoded_repo_name
+        if not create:
+            return clone_url
 
         resp = yield from session.put(
             auth_url,
@@ -88,7 +92,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
         )
         # Project was created or already exists
         if resp.status in [201, 412]:
-            return api_url + "/projects/" + encoded_repo_name
+            return clone_url
 
         # (Re)authenticate
         elif not tried_auth and resp.status == 401:
@@ -124,7 +128,7 @@ def repo_gitlab(api_url):
 def repo_local(root_url):
     root_path = urllib.parse.urlparse(root_url).path
     @asyncio.coroutine
-    def get_url(repo_name):
+    def get_url(repo_name, create=True):
         repo_path = os.path.join(root_path, repo_name)
         repo_url = urllib.parse.ParseResult(
             scheme="file",
@@ -134,6 +138,9 @@ def repo_local(root_url):
             query=None,
             fragment=None,
         ).geturl()
+
+        if not create:
+            return repo_url
 
         if os.path.exists(repo_path):
             logger.debug("Returning existing local repo at {repo_path}".format(**locals()))

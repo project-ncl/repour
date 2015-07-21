@@ -36,7 +36,7 @@ pull_raw = Any(
     {
         "name": nonempty_str,
         "type": Any(*pull.scm_types),
-        "tag": nonempty_str,
+        "ref": nonempty_str,
         "url": Url(),
         Optional("adjust"): bool,
     },

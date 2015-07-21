@@ -128,6 +128,9 @@ Type: {origin_type}
         # ex: proj-1.0_1436360795_root -> proj-1.0_1436360795
         existing_branch = existing_tag[:-5]
 
+        # TODO need to think about how this state affects ability of adjust to branch/commit/push, as it reuses the repo?
+        # TODO ^^^ think it should be ok, as commitid is the same, and the branch/tag refs aren't pushed???
+
         logger.info("Using existing branch {branch_name} in internal repo {internal_repo_url}".format(**locals()))
 
         return {
@@ -135,6 +138,22 @@ Type: {origin_type}
             "tag": existing_tag,
             "url": internal_repo_url,
         }
+
+@asyncio.coroutine
+def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, origin_type):
+    # TODO create internal repo concurrently?
+    internal_repo_url = yield from repo_provider(pullspec["name"])
+
+    # Process sources into internal branch
+    pull_internal = yield from to_internal(internal_repo_url, repo_dir, pullspec["ref"], pullspec["url"], origin_type)
+
+    if pullspec.get("adjust", False):
+        yield from adjust_provider(repo_dir)
+        adjust_internal = yield from adjust.commit_adjustments(internal_repo_url, repo_dir)
+    else:
+        adjust_internal = None
+
+    return adjust_internal or pull_internal
 
 #
 # Pull operations
@@ -155,22 +174,14 @@ def pull_git(pullspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="git") as d:
         # Shallow clone of the git ref (tag or branch)
         yield from expect_ok(
-            cmd=["git", "clone", "--branch", pullspec["tag"], "--depth", "1", "--", pullspec["url"], d],
+            cmd=["git", "clone", "--branch", pullspec["ref"], "--depth", "1", "--", pullspec["url"], d],
             desc="Could not clone with git",
         )
         # Clean up git metadata
         yield from asutil.rmtree(os.path.join(d, ".git"))
-        logger.info("Got git tree from {pullspec[url]} at tag {pullspec[tag]}".format(**locals()))
+        logger.info("Got git tree from {pullspec[url]} at ref {pullspec[ref]}".format(**locals()))
 
-        # TODO create internal repo concurrently?
-        internal_repo_url = yield from repo_provider(pullspec["name"])
-
-        # Process sources into internal branch
-        internal = yield from to_internal(internal_repo_url, d, pullspec["tag"], pullspec["url"], "git")
-
-        if pullspec.get("adjust", False):
-            adjust_provider(d)
-            adjust.commit_adjustments(internal_repo_url, d)
+        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "git")
 
     return internal
 
@@ -189,15 +200,7 @@ def pull_archive(pullspec, repo_provider, adjust_provider):
             )
             # TODO may need to move the files out of an inner dir, but only if single root dir (ex: asd.tar.gz would normally be asd/qwe.txt)
 
-        # TODO create internal repo concurrently?
-        internal_repo_url = yield from repo_provider(pullspec["name"])
-
-        # Process sources into internal branch
-        internal = yield from to_internal(internal_repo_url, d, archive_filename, pullspec["url"], "archive")
-
-        if pullspec.get("adjust", False):
-            adjust_provider(d)
-            adjust.commit_adjustments(internal_repo_url, d)
+        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "archive")
 
     return internal
 
