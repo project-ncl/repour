@@ -3,10 +3,10 @@ import collections
 import datetime
 import logging
 import os
-import socket
 import tempfile
 import urllib.parse
 
+from . import asgit
 from . import asutil
 from . import adjust
 from . import exception
@@ -27,13 +27,19 @@ def unix_time(now=None):
 
 @asyncio.coroutine
 def to_internal(internal_repo_url, dirname, origin_ref, origin_url, origin_type):
+    # There are a few priorities for reference names:
+    #   - Amount of information in the name itself
+    #   - Length
+    #   - Parsability
+    # The following scheme does not include the origin_ref, although it is good
+    # information, because it comprimises length and parsability too much.
+
     timestamp = unix_time()
+    branch_name = "pull-{timestamp}".format(**locals())
+    tag_name = "{branch_name}-root".format(**locals())
+    tag_refspec_pattern = "refs/tags/pull-*-root".format(**locals())
 
-    branch_name = "{origin_ref}_{timestamp}".format(**locals())
-    tag_name = "{origin_ref}_{timestamp}_root".format(**locals())
-    tag_refspec_pattern = "refs/tags/{origin_ref}_*_root".format(**locals())
-
-    commit_message = """Origin: {origin_url}
+    tag_message = """Origin: {origin_url}
 Reference: {origin_ref}
 Type: {origin_type}
 """.format(**locals())
@@ -48,72 +54,21 @@ Type: {origin_type}
         cmd=["git", "-C", dirname, "remote", "add", "origin", internal_repo_url],
         desc="Could not add remote with git",
     )
-    yield from expect_ok(
-        cmd=["git", "-C", dirname, "config", "--local", "user.name", "Repour"],
-        desc="Could not set commiter name with git",
-    )
-    yield from expect_ok(
-        cmd=["git", "-C", dirname, "config", "--local", "user.email", "<repour@{}>".format(socket.getfqdn())],
-        desc="Could not set commiter email with git",
-    )
+    yield from asgit.setup_commiter(expect_ok, dirname)
 
     # Prepare orphaned branch with root commit
-    yield from expect_ok(
-        cmd=["git", "-C", dirname, "checkout", "--orphan", branch_name],
-        desc="Could not create branch with git",
-    )
-    yield from expect_ok(
-        cmd=["git", "-C", dirname, "add", "-A"],
-        desc="Could not add files with git",
-    )
-    # To maintain an identical commitid for identical trees, use a fixed author/commit date.
-    commit_date="1970-01-01 00:00:00 +0000"
-    yield from expect_ok(
-        cmd=["git", "-C", dirname, "commit", "-m", commit_message],
-        desc="Could not commit files with git",
-        env={
-            "GIT_AUTHOR_DATE": commit_date,
-            "GIT_COMMITTER_DATE": commit_date,
-        },
-    )
+    yield from asgit.prepare_new_branch(expect_ok, dirname, branch_name, orphan=True)
+    # For maximum tree deduplication, the commit message should be fixed
+    yield from asgit.fixed_date_commit(expect_ok, dirname, "Pull")
 
     # Check if any root tag in the internal repo matches the commitid we currently have.
     # Note that this operation isn't atomic, but it won't matter too much if interleaving happens.
     # Worst case, you'll have multiple branch/root_tag pairs pointing at the same commit.
-    head_commitid = yield from expect_ok(
-        cmd=["git", "-C", dirname, "rev-parse", "HEAD"],
-        desc="Could not get HEAD commitid with git",
-        stdout="single",
-    )
-    stdout_lines = yield from expect_ok(
-        cmd=["git", "ls-remote", internal_repo_url, tag_refspec_pattern],
-        desc="Could not read remote refs with git",
-        stdout="lines",
-    )
-    for l in stdout_lines:
-        commit_id, refspec = l.split("\t")
-        if commit_id == head_commitid:
-            # ex: refs/tags/proj-1.0_1436360795_root -> proj-1.0_1436360795_root
-            existing_tag = refspec.split("/", 2)[-1]
-            break
-    else:
-        existing_tag = None
+    existing_tag = yield from asgit.deduplicate_head_tag(expect_ok, dirname, tag_refspec_pattern)
 
     if existing_tag is None:
-        yield from expect_ok(
-            cmd=["git", "-C", dirname, "push", "origin", branch_name],
-            desc="Could not push branch with git",
-        )
-
-        # Tag the branch root and push
-        yield from expect_ok(
-            cmd=["git", "-C", dirname, "tag", tag_name],
-            desc="Could not add tag with git",
-        )
-        yield from expect_ok(
-            cmd=["git", "-C", dirname, "push", "origin", "--tags"],
-            desc="Could not push tag with git",
-        )
+        yield from asgit.annotated_tag(expect_ok, dirname, tag_name, tag_message)
+        yield from asgit.push_with_tags(expect_ok, dirname, branch_name)
 
         logger.info("Pushed branch {branch_name} to internal repo {internal_repo_url}".format(**locals()))
 
@@ -128,8 +83,9 @@ Type: {origin_type}
         # ex: proj-1.0_1436360795_root -> proj-1.0_1436360795
         existing_branch = existing_tag[:-5]
 
-        # TODO need to think about how this state affects ability of adjust to branch/commit/push, as it reuses the repo?
-        # TODO ^^^ think it should be ok, as commitid is the same, and the branch/tag refs aren't pushed???
+        # Have to be careful about this state if anything reuses the repo.
+        # In the adjust scenario, the new branch it creates (from an identical
+        # commitid) will isolate it from the discarded local branches.
 
         logger.info("Using existing branch {branch_name} in internal repo {internal_repo_url}".format(**locals()))
 
@@ -141,7 +97,6 @@ Type: {origin_type}
 
 @asyncio.coroutine
 def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, origin_type):
-    # TODO create internal repo concurrently?
     internal_repo_url = yield from repo_provider(pullspec["name"])
 
     # Process sources into internal branch
@@ -149,6 +104,7 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
 
     if pullspec.get("adjust", False):
         yield from adjust_provider(repo_dir)
+        # TODO must give pull_internal tag name to commit_adjustments to handle discard scenario
         adjust_internal = yield from adjust.commit_adjustments(internal_repo_url, repo_dir)
     else:
         adjust_internal = None
