@@ -27,23 +27,6 @@ def unix_time(now=None):
 
 @asyncio.coroutine
 def to_internal(internal_repo_url, dirname, origin_ref, origin_url, origin_type):
-    # There are a few priorities for reference names:
-    #   - Amount of information in the name itself
-    #   - Length
-    #   - Parsability
-    # The following scheme does not include the origin_ref, although it is good
-    # information, because it comprimises length and parsability too much.
-
-    timestamp = unix_time()
-    branch_name = "pull-{timestamp}".format(**locals())
-    tag_name = "{branch_name}-root".format(**locals())
-    tag_refspec_pattern = "refs/tags/pull-*-root".format(**locals())
-
-    tag_message = """Origin: {origin_url}
-Reference: {origin_ref}
-Type: {origin_type}
-""".format(**locals())
-
     # Prepare new repo
     # Note that for orphan branches, we don't need to clone the existing internal repo first
     yield from expect_ok(
@@ -54,46 +37,20 @@ Type: {origin_type}
         cmd=["git", "-C", dirname, "remote", "add", "origin", internal_repo_url],
         desc="Could not add remote with git",
     )
+
     yield from asgit.setup_commiter(expect_ok, dirname)
-
-    # Prepare orphaned branch with root commit
-    yield from asgit.prepare_new_branch(expect_ok, dirname, branch_name, orphan=True)
-    # For maximum tree deduplication, the commit message should be fixed
-    yield from asgit.fixed_date_commit(expect_ok, dirname, "Pull")
-
-    # Check if any root tag in the internal repo matches the commitid we currently have.
-    # Note that this operation isn't atomic, but it won't matter too much if interleaving happens.
-    # Worst case, you'll have multiple branch/root_tag pairs pointing at the same commit.
-    existing_tag = yield from asgit.deduplicate_head_tag(expect_ok, dirname, tag_refspec_pattern)
-
-    if existing_tag is None:
-        yield from asgit.annotated_tag(expect_ok, dirname, tag_name, tag_message)
-        yield from asgit.push_with_tags(expect_ok, dirname, branch_name)
-
-        logger.info("Pushed branch {branch_name} to internal repo {internal_repo_url}".format(**locals()))
-
-        return {
-            "branch": branch_name,
-            "tag": tag_name,
-            "url": internal_repo_url,
-        }
-
-    # Discard cloned branch and use existing branch and tag
-    else:
-        # ex: proj-1.0_1436360795_root -> proj-1.0_1436360795
-        existing_branch = existing_tag[:-5]
-
-        # Have to be careful about this state if anything reuses the repo.
-        # In the adjust scenario, the new branch it creates (from an identical
-        # commitid) will isolate it from the discarded local branches.
-
-        logger.info("Using existing branch {branch_name} in internal repo {internal_repo_url}".format(**locals()))
-
-        return {
-            "branch": existing_branch,
-            "tag": existing_tag,
-            "url": internal_repo_url,
-        }
+    d = yield from asgit.push_new_dedup_branch(
+        expect_ok=expect_ok,
+        repo_dir=dirname,
+        repo_url=internal_repo_url,
+        operation_name="Pull",
+        operation_description="""Origin: {origin_url}
+Reference: {origin_ref}
+Type: {origin_type}
+""".format(**locals()),
+        orphan=True,
+    )
+    return d
 
 @asyncio.coroutine
 def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, origin_type):
@@ -103,9 +60,13 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
     pull_internal = yield from to_internal(internal_repo_url, repo_dir, pullspec["ref"], pullspec["url"], origin_type)
 
     if pullspec.get("adjust", False):
-        yield from adjust_provider(repo_dir)
-        # TODO must give pull_internal tag name to commit_adjustments to handle discard scenario
-        adjust_internal = yield from adjust.commit_adjustments(internal_repo_url, repo_dir)
+        adjust_type = yield from adjust_provider(repo_dir)
+        adjust_internal = yield from adjust.commit_adjustments(
+            repo_dir=d,
+            repo_url=internal_repo_url,
+            original_ref=pull_internal["tag"],
+            adjust_type=adjust_type,
+        )
     else:
         adjust_internal = None
 

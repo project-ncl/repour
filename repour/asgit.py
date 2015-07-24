@@ -1,4 +1,7 @@
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 #
 # Common operations
@@ -74,3 +77,69 @@ def push_with_tags(expect_ok, repo_dir, branch_name):
         cmd=["git", "-C", dirname, "push", "--atomic", "--follow-tags", "origin", branch_name],
         desc="Could not push tag+branch with git",
     )
+
+#
+# Higher-level operations
+#
+
+@asyncio.coroutine
+def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False, no_change_ok=False):
+    # There are a few priorities for reference names:
+    #   - Amount of information in the name itself
+    #   - Length
+    #   - Parsability
+    # The following scheme does not include the origin_ref, although it is good
+    # information, because it comprimises length and parsability too much.
+
+    timestamp = unix_time()
+    operation_name_lower = operation_name.lower()
+    branch_name = "{operation_name_lower}-{timestamp}".format(**locals())
+    tag_name = "{branch_name}-root".format(**locals())
+    tag_refspec_pattern = "refs/tags/{operation_name_lower}-*-root".format(**locals())
+
+    # As many things as possible are controlled for the commit, so the commitid
+    # can be used for deduplication.
+    yield from prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=orphan)
+    try:
+        yield from fixed_date_commit(expect_ok, repo_dir, operation_name)
+    except exception.AdjustCommandError as e:
+        if no_change_ok and e.exit_code == 1:
+            # No changes were made
+            return None
+        else:
+            raise
+
+    # Check if any root tag in the internal repo matches the commitid we currently have.
+    # Note that this operation isn't atomic, but it won't matter too much if interleaving happens.
+    # Worst case, you'll have multiple branch/root_tag pairs pointing at the same commit.
+    existing_tag = yield from deduplicate_head_tag(expect_ok, repo_dir, tag_refspec_pattern)
+
+    if existing_tag is None:
+        yield from annotated_tag(expect_ok, repo_dir, tag_name, tag_message)
+        yield from push_with_tags(expect_ok, repo_dir, branch_name)
+
+        logger.info("Pushed branch {branch_name} to repo {repo_url}".format(**locals()))
+
+        return {
+            "branch": branch_name,
+            "tag": tag_name,
+            "url": repo_url,
+        }
+
+    # Discard new branch and use existing branch and tag
+    else:
+        # ex: proj-1.0_1436360795_root -> proj-1.0_1436360795
+        existing_branch = existing_tag[:-5]
+
+        # Have to be careful about this state if anything reuses the repo.
+        # In the adjust scenario, the new branch it creates (from an identical
+        # commitid) will isolate it from the discarded local branches made by
+        # the pull.
+
+        logger.info("Using existing branch {branch_name} in repo {repo_url}".format(**locals()))
+
+        return {
+            "branch": existing_branch,
+            "tag": existing_tag,
+            "url": repo_url,
+        }
