@@ -2,7 +2,9 @@
 
 Public code sources are unsuitable for reproducable builds because they often have unstable history. They may also be in many formats. Repor produces stable internal git repositories with branches containing flattened source trees instead of the full history. This meets the requirements for reproducable builds without imposing any behaviours on upstream.
 
-Additionally, the isolated internal branches allow for modifications (version alignment, patches, etc.) to be commited back without comprimising future pulls.
+Additionally, the isolated internal branches allow for modifications (version alignment, patches, etc.) to be commited back without comprimising future pulls. Repour offers an "adjust" operation for this.
+
+Why the name "Repour"? First, it contains the common short word for "repository" ("repo"); second, the action of "repouring" could be used to describe what the program does to the repositories.
 
 ## Interface
 
