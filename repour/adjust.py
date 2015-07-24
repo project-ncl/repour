@@ -41,7 +41,7 @@ def adjust(adjustspec, repo_provider, adjust_provider):
             cmd=["git", "clone", "--branch", adjustspec["ref"], "--", repo_url, d],
             desc="Could not clone with git",
         )
-        yield from asgit.setup_commiter(expect_ok, dirname)
+        yield from asgit.setup_commiter(expect_ok, d)
 
         adjust_type = yield from adjust_provider(d)
         result = yield from commit_adjustments(

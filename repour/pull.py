@@ -19,12 +19,6 @@ logger = logging.getLogger(__name__)
 
 expect_ok = asutil.expect_ok_closure(exception.PullCommandError)
 
-def unix_time(now=None):
-    now = datetime.datetime.utcnow() if now is None else now
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    delta = now - epoch
-    return round(delta.total_seconds())
-
 @asyncio.coroutine
 def to_internal(internal_repo_url, dirname, origin_ref, origin_url, origin_type):
     # Prepare new repo
@@ -62,7 +56,7 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
     if pullspec.get("adjust", False):
         adjust_type = yield from adjust_provider(repo_dir)
         adjust_internal = yield from adjust.commit_adjustments(
-            repo_dir=d,
+            repo_dir=repo_dir,
             repo_url=internal_repo_url,
             original_ref=pull_internal["tag"],
             adjust_type=adjust_type,

@@ -1,5 +1,8 @@
 import asyncio
+import datetime
 import logging
+
+from . import exception
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +45,14 @@ def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
     )
 
 @asyncio.coroutine
-def deduplicate_head_tag(expect_ok, repo_dir, refspec_pattern="refs/tags/*"):
+def deduplicate_head_tag(expect_ok, repo_dir, repo_url, refspec_pattern="refs/tags/*"):
     head_commitid = yield from expect_ok(
         cmd=["git", "-C", repo_dir, "rev-parse", "HEAD"],
         desc="Could not get HEAD commitid with git",
         stdout="single",
     )
     stdout_lines = yield from expect_ok(
-        cmd=["git", "ls-remote", internal_repo_url, tag_refspec_pattern],
+        cmd=["git", "ls-remote", repo_url, refspec_pattern],
         desc="Could not read remote refs with git",
         stdout="lines",
     )
@@ -67,20 +70,26 @@ def deduplicate_head_tag(expect_ok, repo_dir, refspec_pattern="refs/tags/*"):
 @asyncio.coroutine
 def annotated_tag(expect_ok, repo_dir, tag_name, message):
     yield from expect_ok(
-        cmd=["git", "-C", dirname, "tag", "-a", "-m", message, tag_name],
+        cmd=["git", "-C", repo_dir, "tag", "-a", "-m", message, tag_name],
         desc="Could not add tag with git",
     )
 
 @asyncio.coroutine
 def push_with_tags(expect_ok, repo_dir, branch_name):
     yield from expect_ok(
-        cmd=["git", "-C", dirname, "push", "--atomic", "--follow-tags", "origin", branch_name],
+        cmd=["git", "-C", repo_dir, "push", "--atomic", "--follow-tags", "origin", branch_name],
         desc="Could not push tag+branch with git",
     )
 
 #
 # Higher-level operations
 #
+
+def _unix_time(now=None):
+    now = datetime.datetime.utcnow() if now is None else now
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    delta = now - epoch
+    return round(delta.total_seconds())
 
 @asyncio.coroutine
 def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False, no_change_ok=False):
@@ -91,7 +100,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # The following scheme does not include the origin_ref, although it is good
     # information, because it comprimises length and parsability too much.
 
-    timestamp = unix_time()
+    timestamp = _unix_time()
     operation_name_lower = operation_name.lower()
     branch_name = "{operation_name_lower}-{timestamp}".format(**locals())
     tag_name = "{branch_name}-root".format(**locals())
@@ -102,7 +111,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     yield from prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=orphan)
     try:
         yield from fixed_date_commit(expect_ok, repo_dir, operation_name)
-    except exception.AdjustCommandError as e:
+    except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
             # No changes were made
             return None
@@ -115,7 +124,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     existing_tag = yield from deduplicate_head_tag(expect_ok, repo_dir, tag_refspec_pattern)
 
     if existing_tag is None:
-        yield from annotated_tag(expect_ok, repo_dir, tag_name, tag_message)
+        yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description)
         yield from push_with_tags(expect_ok, repo_dir, branch_name)
 
         logger.info("Pushed branch {branch_name} to repo {repo_url}".format(**locals()))

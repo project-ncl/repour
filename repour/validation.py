@@ -2,6 +2,7 @@ import logging
 
 from voluptuous import *
 
+from . import adjust as adjustmodule
 from . import pull
 from . import repo
 
@@ -67,7 +68,7 @@ server_config_raw = {
         "port": port_num,
     },
     "adjust_provider": {
-        "type": Any(*adjust.provider_types.keys()),
+        "type": Any(*adjustmodule.provider_types.keys()),
         "params": {Extra: object},
     },
     "repo_provider": {
