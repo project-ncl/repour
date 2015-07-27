@@ -16,7 +16,7 @@ dest="docker/content.tar"
 
 cd "$src"
 
-bsdtar -cf "$dest" "config.yaml"
+bsdtar -cf "$dest" "config.yaml" "venv-freeze.txt"
 find "repour" -type f -name '*.py' -print0 | xargs -0 bsdtar -rf "$dest"
 
 { set +x; } 2>/dev/null
