@@ -3,7 +3,7 @@ import logging
 from voluptuous import *
 
 from . import adjust as adjustmodule
-from . import pull
+from . import pull as pullmodule
 from . import repo
 
 #
@@ -11,7 +11,7 @@ from . import repo
 #
 
 nonempty_str = All(str, Length(min=1))
-nonempty_noblank_str = All(str, Match(r'\S+'))
+nonempty_noblank_str = All(str, Match(r'^\S+$'))
 port_num = All(int, Range(min=1, max=65535))
 
 #
@@ -36,14 +36,14 @@ adjust = Schema(
 pull_raw = Any(
     {
         "name": nonempty_str,
-        "type": Any(*pull.scm_types),
+        "type": Any(*pullmodule.scm_types),
         "ref": nonempty_str,
         "url": Url(),
         Optional("adjust"): bool,
     },
     {
         "name": nonempty_str,
-        "type": pull.archive_type,
+        "type": pullmodule.archive_type,
         "url": Url(),
         Optional("adjust"): bool,
     },
