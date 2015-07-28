@@ -7,6 +7,8 @@ RUN dnf install -y bsdtar python3 python3-pip python3-devel python3-Cython libya
     useradd -rm repour && \
     dnf clean all
 
+# TODO ssh config
+
 USER repour
 WORKDIR /home/repour
 ENTRYPOINT ["/bin/vex", "rpo", "python", "-m", "repour"]

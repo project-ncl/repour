@@ -17,6 +17,21 @@ logger = logging.getLogger(__name__)
 # Utility
 #
 
+@asyncio.coroutine
+def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
+    resp = None
+    while resp is None or retry_count > 0:
+        resp = yield from action()
+        if resp.status == reauth_status:
+            retry_count -= 1
+            yield from auth()
+        else:
+            break
+    else:
+        raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
+
+    return resp
+
 expect_ok = asutil.expect_ok_closure(exception.RepoCommandError)
 
 #
@@ -119,10 +134,77 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
 
     return get_url
 
-def repo_gitlab(api_url):
+def repo_gitlab(root_url, group_name, username, password):
+    api_url = root_url + "/api/v3"
+    auth_url = root_url + "/oauth/token"
+
+    session = aiohttp.ClientSession()
+
+
+    access_token = ""
     @asyncio.coroutine
-    def get_url(repo_name):
-        raise Exception("Not implemented")
+    def new_token():
+        nonlocal access_token
+
+        resp = yield from session.post(
+            auth_url,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+            },
+            data=urllib.parse.urlencode({
+                "grant_type": "password",
+                "username": username,
+                "password": password,
+            }).encode("utf-8"),
+        )
+        if resp.status != 200:
+            raise TODO
+
+        data = yield from resp.json()
+        access_token = data["access_token"]
+
+    @asyncio.coroutine
+    def get_url(repo_name, create=True):
+
+        # TODO probably need to return R/W ssh url and RO http url from all get_url functions?
+
+        encoded_repo_name = urllib.parse.quote(repo_name)
+        clone_url = root_url + "/group_name/" + encoded_repo_name
+        if not create:
+            return clone_url
+
+        @asyncio.coroutine
+        def create():
+            resp = yield from session.post(
+                api_url + "/project",
+                headers={
+                    "Content-Type": "application/json;charset=utf-8",
+                    "Accept": "application/json",
+                    "Authorization": "Bearer " + access_token,
+                },
+                data=json.dumps(
+                    obj={
+                        "name": repo_name,
+                        "namespace_id": group_name,
+                        "public": True,
+                    },
+                    ensure_ascii=False,
+                ).encode("utf-8"),
+            )
+
+        resp = yield from _retry_with_auth(
+            action=create,
+            auth=new_token,
+        )
+
+        if resp.status == 000: # TODO
+            # Repo already exists
+            return clone_url
+        elif resp.status != 200:
+            # Error
+            pass # TODO raise error
+
     return get_url
 
 def repo_local(root_url):
