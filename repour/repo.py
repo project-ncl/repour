@@ -28,7 +28,7 @@ def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
         else:
             break
     else:
-        raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
+        raise exception.RepoError("Could not authenticate, status {}".format(resp.status))
 
     return resp
 
@@ -134,7 +134,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
 
     return get_url
 
-def repo_gitlab(root_url, group_name, username, password):
+def repo_gitlab(root_url, group_id, username, password):
     api_url = root_url + "/api/v3"
     auth_url = root_url + "/oauth/token"
 
@@ -158,8 +158,8 @@ def repo_gitlab(root_url, group_name, username, password):
                 "password": password,
             }).encode("utf-8"),
         )
-        if resp.status != 200:
-            raise TODO
+        if resp.status // 100 != 2:
+            raise exception.RepoError("Unable to authenticate, status {}".format(resp.status))
 
         data = yield from resp.json()
         access_token = data["access_token"]
@@ -177,33 +177,36 @@ def repo_gitlab(root_url, group_name, username, password):
         @asyncio.coroutine
         def create():
             resp = yield from session.post(
-                api_url + "/project",
+                api_url + "/projects",
                 headers={
-                    "Content-Type": "application/json;charset=utf-8",
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "Accept": "application/json",
                     "Authorization": "Bearer " + access_token,
                 },
-                data=json.dumps(
-                    obj={
-                        "name": repo_name,
-                        "namespace_id": group_name,
-                        "public": True,
-                    },
-                    ensure_ascii=False,
-                ).encode("utf-8"),
+                data=urllib.parse.urlencode({
+                    "name": repo_name,
+                    "namespace_id": group_id,
+                    "visibility_level": 20,
+                }).encode("utf-8"),
             )
+            return resp
 
         resp = yield from _retry_with_auth(
             action=create,
             auth=new_token,
         )
 
-        if resp.status == 000: # TODO
-            # Repo already exists
-            return clone_url
-        elif resp.status != 200:
-            # Error
-            pass # TODO raise error
+        if resp.status == 400:
+            try:
+                data = yield from resp.json()
+            except Exception:
+                data = {}
+            if "has already been taken" in data.get("message", {}).get("name", []):
+                # Repo already exists
+                return clone_url
+            raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
+        elif resp.status // 100 != 2:
+            raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
 
     return get_url
 
