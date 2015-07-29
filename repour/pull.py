@@ -28,7 +28,7 @@ def to_internal(internal_repo_url, dirname, origin_ref, origin_url, origin_type)
         desc="Could not re-init with git",
     )
     yield from expect_ok(
-        cmd=["git", "-C", dirname, "remote", "add", "origin", internal_repo_url],
+        cmd=["git", "-C", dirname, "remote", "add", "origin", internal_repo_url.readwrite],
         desc="Could not add remote with git",
     )
 

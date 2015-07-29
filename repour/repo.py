@@ -1,4 +1,5 @@
 import asyncio
+import collections
 import base64
 import hashlib
 import json
@@ -33,6 +34,8 @@ def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
     return resp
 
 expect_ok = asutil.expect_ok_closure(exception.RepoCommandError)
+
+RepoUrls = collections.namedtuple("RepoUrls", ["readwrite", "readonly"])
 
 #
 # Repo operations
@@ -85,7 +88,10 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
 
         clone_url = api_url + "/projects/" + encoded_repo_name
         if not create:
-            return clone_url
+            return RepoUrls(
+                readwrite=clone_url,
+                readonly=TODO,
+            )
 
         resp = yield from session.put(
             auth_url,
@@ -107,7 +113,10 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
         )
         # Project was created or already exists
         if resp.status in [201, 412]:
-            return clone_url
+            return RepoUrls(
+                readwrite=clone_url,
+                readonly=TODO,
+            )
 
         # (Re)authenticate
         elif not tried_auth and resp.status == 401:
@@ -134,12 +143,11 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
 
     return get_url
 
-def repo_gitlab(root_url, group_id, username, password):
+def repo_gitlab(root_url, ssh_root_url, group, username, password):
     api_url = root_url + "/api/v3"
     auth_url = root_url + "/oauth/token"
 
     session = aiohttp.ClientSession()
-
 
     access_token = ""
     @asyncio.coroutine
@@ -166,13 +174,13 @@ def repo_gitlab(root_url, group_id, username, password):
 
     @asyncio.coroutine
     def get_url(repo_name, create=True):
-
-        # TODO probably need to return R/W ssh url and RO http url from all get_url functions?
-
-        encoded_repo_name = urllib.parse.quote(repo_name)
-        clone_url = root_url + "/group_name/" + encoded_repo_name
+        repo_url_suffix = "/{}/{}.git".format(group["name"], urllib.parse.quote(repo_name))
+        repo_url = RepoUrls(
+            readwrite=root_url + repo_url_suffix,
+            readonly=ssh_root_url + repo_url_suffix,
+        )
         if not create:
-            return clone_url
+            return repo_url
 
         @asyncio.coroutine
         def create():
@@ -185,7 +193,7 @@ def repo_gitlab(root_url, group_id, username, password):
                 },
                 data=urllib.parse.urlencode({
                     "name": repo_name,
-                    "namespace_id": group_id,
+                    "namespace_id": group["id"],
                     "visibility_level": 20,
                 }).encode("utf-8"),
             )
@@ -203,7 +211,7 @@ def repo_gitlab(root_url, group_id, username, password):
                 data = {}
             if "has already been taken" in data.get("message", {}).get("name", []):
                 # Repo already exists
-                return clone_url
+                return repo_url
             raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
         elif resp.status // 100 != 2:
             raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
@@ -215,7 +223,7 @@ def repo_local(root_url):
     @asyncio.coroutine
     def get_url(repo_name, create=True):
         repo_path = os.path.join(root_path, repo_name)
-        repo_url = urllib.parse.ParseResult(
+        _repo_url = urllib.parse.ParseResult(
             scheme="file",
             netloc=None,
             path=repo_path,
@@ -223,6 +231,10 @@ def repo_local(root_url):
             query=None,
             fragment=None,
         ).geturl()
+        repo_url = RepoUrls(
+            readwrite=_repo_url,
+            readonly=_repo_url,
+        )
 
         if not create:
             return repo_url

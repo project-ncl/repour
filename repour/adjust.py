@@ -38,7 +38,7 @@ def adjust(adjustspec, repo_provider, adjust_provider):
 
         # Non-shallow, but branch-only clone of internal repo
         yield from expect_ok(
-            cmd=["git", "clone", "--branch", adjustspec["ref"], "--", repo_url, d],
+            cmd=["git", "clone", "--branch", adjustspec["ref"], "--", repo_url.readwrite, d],
             desc="Could not clone with git",
         )
         yield from asgit.setup_commiter(expect_ok, d)

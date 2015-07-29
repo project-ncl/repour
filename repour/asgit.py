@@ -121,7 +121,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # Check if any root tag in the internal repo matches the commitid we currently have.
     # Note that this operation isn't atomic, but it won't matter too much if interleaving happens.
     # Worst case, you'll have multiple branch/root_tag pairs pointing at the same commit.
-    existing_tag = yield from deduplicate_head_tag(expect_ok, repo_dir, tag_refspec_pattern)
+    existing_tag = yield from deduplicate_head_tag(expect_ok, repo_dir, repo_url.readwrite, tag_refspec_pattern)
 
     if existing_tag is None:
         yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description)
@@ -132,7 +132,10 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
         return {
             "branch": branch_name,
             "tag": tag_name,
-            "url": repo_url,
+            "url": {
+                "readwrite": repo_url.readwrite,
+                "readonly": repo_url.readonly,
+            },
         }
 
     # Discard new branch and use existing branch and tag
@@ -150,5 +153,8 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
         return {
             "branch": existing_branch,
             "tag": existing_tag,
-            "url": repo_url,
+            "url": {
+                "readwrite": repo_url.readwrite,
+                "readonly": repo_url.readonly,
+            },
         }
