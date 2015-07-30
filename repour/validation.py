@@ -32,8 +32,7 @@ adjust = Schema(
 #
 # Pull
 #
-
-pull_raw = Any(
+pull_scm = Schema(
     {
         "name": nonempty_str,
         "type": Any(*pullmodule.scm_types),
@@ -41,13 +40,23 @@ pull_raw = Any(
         "url": Url(),
         Optional("adjust"): bool,
     },
+    required=True,
+    extra=False,
+)
+
+pull_archive = Schema(
     {
         "name": nonempty_str,
         "type": pullmodule.archive_type,
         "url": Url(),
         Optional("adjust"): bool,
     },
+    required=True,
+    extra=False,
 )
+
+pull_raw = Any(pull_scm, pull_archive)
+
 pull = Schema(
     pull_raw,
     required=True,
