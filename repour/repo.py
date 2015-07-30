@@ -183,7 +183,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
             return repo_url
 
         @asyncio.coroutine
-        def create():
+        def create_repo():
             resp = yield from session.post(
                 api_url + "/projects",
                 headers={
@@ -200,7 +200,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
             return resp
 
         resp = yield from _retry_with_auth(
-            action=create,
+            action=create_repo,
             auth=new_token,
         )
 
