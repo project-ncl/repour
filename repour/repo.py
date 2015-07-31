@@ -42,7 +42,7 @@ RepoUrls = collections.namedtuple("RepoUrls", ["readwrite", "readonly"])
 #
 
 def repo_gerrit(api_url, username, password, new_repo_owners):
-    session = aiohttp.ClientSession()
+    session = aiohttp.ClientSession() #pylint: disable=no-member
 
     def es(o):
         return json.dumps(obj=o, ensure_ascii=False)
@@ -147,7 +147,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
     api_url = root_url + "/api/v3"
     auth_url = root_url + "/oauth/token"
 
-    session = aiohttp.ClientSession()
+    session = aiohttp.ClientSession() #pylint: disable=no-member
 
     access_token = ""
     @asyncio.coroutine

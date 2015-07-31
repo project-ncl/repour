@@ -37,7 +37,7 @@ pull_scm = Schema(
         "name": nonempty_str,
         "type": Any(*pullmodule.scm_types),
         "ref": nonempty_str,
-        "url": Url(),
+        "url": Url(), #pylint: disable=no-value-for-parameter
         Optional("adjust"): bool,
     },
     required=True,
@@ -48,7 +48,7 @@ pull_archive = Schema(
     {
         "name": nonempty_str,
         "type": pullmodule.archive_type,
-        "url": Url(),
+        "url": Url(), #pylint: disable=no-value-for-parameter
         Optional("adjust"): bool,
     },
     required=True,
