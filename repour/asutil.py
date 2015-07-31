@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import shutil
 import tempfile
@@ -7,6 +8,8 @@ import urllib.parse
 import aiohttp
 
 from . import exception
+
+logger = logging.getLogger(__name__)
 
 def _find_filename(url, resp):
     # Filename should be url basename, or Content-Disposition header if it exists
@@ -78,7 +81,7 @@ def _convert_bytes(b, mode):
 
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
-    def expect_ok(cmd, desc="", env=None, stdout=None):
+    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log"):
         if env is None:
             sub_env = None
         else:
@@ -86,22 +89,26 @@ def expect_ok_closure(exc_type=exception.CommandError):
             sub_env = os.environ.copy()
             sub_env.update(env)
 
-        if stdout is None:
-            sub_stdout = asyncio.subprocess.DEVNULL
-        else:
-            sub_stdout = asyncio.subprocess.PIPE
+        sub_stdout = asyncio.subprocess.PIPE if stdout else asyncio.subprocess.DEVNULL
+        sub_stderr = asyncio.subprocess.PIPE if stderr else asyncio.subprocess.DEVNULL
 
         p = yield from asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.DEVNULL,
             stdout=sub_stdout,
-            stderr=asyncio.subprocess.DEVNULL,
+            stderr=sub_stderr,
             env=sub_env
         )
-        if stdout:
+        if stdout or stderr:
             stdout_data, stderr_data = yield from p.communicate()
         else:
+            stdout_data = None
+            stderr_data = None
             yield from p.wait()
+
+        if stderr_data and stderr == "log":
+            logger.error(stderr_data.decode("utf-8"))
+
         if not p.returncode == 0:
             raise exc_type(
                 desc=desc,
