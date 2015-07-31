@@ -11,12 +11,17 @@ loop = asyncio.get_event_loop()
 expect_ok = repour.asutil.expect_ok_closure()
 
 class TemporaryGitDirectory(tempfile.TemporaryDirectory):
-    def __enter__(self):
-        quiet_check_call(["git", "init", self.name])
-        return self.name
+    def __init__(self, bare=False):
+        super().__init__()
+        self.bare = bare
 
-def quiet_check_output(cmd):
-    return subprocess.check_output(cmd, stdout=subprocess.DEVNULL)
+    def __enter__(self):
+        cmd = ["git", "init"]
+        if self.bare:
+            cmd.append("--bare")
+        cmd.append(self.name)
+        quiet_check_call(cmd)
+        return self.name
 
 def quiet_check_call(cmd):
     return subprocess.check_call(cmd, stdout=subprocess.DEVNULL)
@@ -25,10 +30,10 @@ class TestCommon(unittest.TestCase):
     def test_setup_commiter(self):
         with TemporaryGitDirectory() as repo:
             loop.run_until_complete(repour.asgit.setup_commiter(expect_ok, repo))
-            out = quiet_check_output(["git", "-C", repo, "config", "--local", "-l"], )
+            out = subprocess.check_output(["git", "-C", repo, "config", "--local", "-l"])
 
-        self.assertIn("user.name=", out)
-        self.assertIn("user.email=", out)
+        self.assertIn(b"user.name=", out)
+        self.assertIn(b"user.email=", out)
 
     def test_fixed_date_commit(self):
         with TemporaryGitDirectory() as repo:
@@ -36,10 +41,10 @@ class TestCommon(unittest.TestCase):
                 f.write("Hello")
             quiet_check_call(["git", "-C", repo, "add", "-A"])
             loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, repo, "Test"))
-            out = quiet_check_output(["git", "-C", repo, "log", "-1", "--pretty=fuller"])
+            out = subprocess.check_output(["git", "-C", repo, "log", "-1", "--pretty=fuller"])
 
-        self.assertIn("AuthorDate: Thu Jan 1 00:00:00 1970 +0000", out)
-        self.assertIn("CommitDate: Thu Jan 1 00:00:00 1970 +0000", out)
+        self.assertIn(b"AuthorDate: Thu Jan 1 00:00:00 1970 +0000", out)
+        self.assertIn(b"CommitDate: Thu Jan 1 00:00:00 1970 +0000", out)
 
     def test_prepare_new_branch(self):
         with TemporaryGitDirectory() as repo:
@@ -97,24 +102,25 @@ class TestCommon(unittest.TestCase):
             quiet_check_call(["git", "-C", repo, "add", "-A"])
             quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
             loop.run_until_complete(repour.asgit.annotated_tag(expect_ok, repo, "pull-1234567890-root", "Annotation"))
-            out = quiet_check_output(["git", "-C", repo, "tag", "-l", "-n"])
+            out = subprocess.check_output(["git", "-C", repo, "tag", "-l", "-n"])
 
-        self.assertIn("pull-1234567890-root Annotation", out)
+        self.assertIn(b"pull-1234567890-root Annotation", out)
 
     def test_push_with_tags(self):
-        with TemporaryGitDirectory() as remote:
+        with TemporaryGitDirectory(bare=True) as remote:
             with TemporaryGitDirectory() as repo:
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Goodbye")
                 quiet_check_call(["git", "-C", repo, "add", "-A"])
                 quiet_check_call(["git", "-C", repo, "commit", "-m", "Test Commit"])
                 quiet_check_call(["git", "-C", repo, "tag", "test-tag"])
+                quiet_check_call(["git", "-C", repo, "remote", "add", "origin", remote])
 
                 loop.run_until_complete(repour.asgit.push_with_tags(expect_ok, repo, "master"))
 
-                remote_tags = quiet_check_output(["git", "-C", repo, "tag", "-l", "-n"])
+                remote_tags = subprocess.check_output(["git", "-C", repo, "tag", "-l", "-n"])
 
-        self.assertIn("test-tag Test Commit", out)
+        self.assertIn(b"test-tag Test Commit", out)
 
 
 class TestNewDedupBranch(unittest.TestCase):
