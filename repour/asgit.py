@@ -38,7 +38,6 @@ def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
     yield from expect_ok(
         cmd=["git", "-C", repo_dir, "checkout", "--orphan" if orphan else "-b", branch_name],
         desc="Could not create branch with git",
-        stderr=None,
     )
     yield from expect_ok(
         cmd=["git", "-C", repo_dir, "add", "-A"],

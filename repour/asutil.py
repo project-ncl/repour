@@ -81,7 +81,7 @@ def _convert_bytes(b, mode):
 
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
-    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log"):
+    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error"):
         if env is None:
             sub_env = None
         else:
@@ -106,8 +106,9 @@ def expect_ok_closure(exc_type=exception.CommandError):
             stderr_data = None
             yield from p.wait()
 
-        if stderr_data and stderr == "log":
-            logger.error(stderr_data.decode("utf-8"))
+        if stderr_data:
+            if stderr == "log" or (stderr == "log_on_error" and p.returncode != 0):
+                logger.error(stderr_data.decode("utf-8"))
 
         if not p.returncode == 0:
             raise exc_type(
