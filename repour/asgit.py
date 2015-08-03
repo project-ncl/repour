@@ -95,7 +95,7 @@ def _unix_time(now=None):
     return round(delta.total_seconds())
 
 @asyncio.coroutine
-def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False, no_change_ok=False):
+def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False, no_change_ok=False, now=None):
     # There are a few priorities for reference names:
     #   - Amount of information in the name itself
     #   - Length
@@ -103,7 +103,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # The following scheme does not include the origin_ref, although it is good
     # information, because it comprimises length and parsability too much.
 
-    timestamp = _unix_time()
+    timestamp = _unix_time(now=now)
     operation_name_lower = operation_name.lower()
     branch_name = "{operation_name_lower}-{timestamp}".format(**locals())
     tag_name = "{branch_name}-root".format(**locals())
