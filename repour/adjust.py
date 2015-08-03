@@ -51,7 +51,7 @@ def adjust(adjustspec, repo_provider, adjust_provider):
             adjust_type=adjust_type,
         )
 
-    return result
+    return result or {}
 
 #
 # Adjust providers
