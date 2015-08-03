@@ -64,11 +64,13 @@ class TestCommon(unittest.TestCase):
                 f.write("Hello")
             loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, remote, "pull-1234567890", orphan=True))
             loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, remote, "Pull"))
+            loop.run_until_complete(repour.asgit.annotated_tag(expect_ok, remote, "pull-1234567890-root", "Some pull message"))
 
             with open(os.path.join(remote, "asd.txt"), "w") as f:
                 f.write("Hello Hello")
             loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, remote, "adjust-1234567890"))
             loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, remote, "Adjust"))
+            loop.run_until_complete(repour.asgit.annotated_tag(expect_ok, remote, "adjust-1234567890-root", "Some adjust message"))
 
             with TemporaryGitDirectory() as repo:
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
@@ -77,7 +79,7 @@ class TestCommon(unittest.TestCase):
                 loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, repo, "Pull"))
 
                 existing_tag = loop.run_until_complete(repour.asgit.deduplicate_head_tag(expect_ok, repo, remote))
-                self.assertEqual(existing_tag, "pull-1234567890")
+                self.assertEqual(existing_tag, "pull-1234567890-root")
 
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello Hello")
@@ -85,11 +87,11 @@ class TestCommon(unittest.TestCase):
                 loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, repo, "Adjust"))
 
                 existing_tag = loop.run_until_complete(repour.asgit.deduplicate_head_tag(expect_ok, repo, remote))
-                self.assertEqual(existing_tag, "adjust-1234567890")
+                self.assertEqual(existing_tag, "adjust-1234567890-root")
 
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Goodbye")
-                loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, repo, "adjust-256462457"))
+                loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, repo, "adjust-257787787"))
                 loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, repo, "Adjust"))
 
                 existing_tag = loop.run_until_complete(repour.asgit.deduplicate_head_tag(expect_ok, repo, remote))
@@ -120,7 +122,7 @@ class TestCommon(unittest.TestCase):
 
                 remote_tags = subprocess.check_output(["git", "-C", repo, "tag", "-l", "-n"])
 
-        self.assertIn(b"test-tag Test Commit", out)
+        self.assertIn(b"test-tag        Test Commit", remote_tags)
 
 
 class TestNewDedupBranch(unittest.TestCase):

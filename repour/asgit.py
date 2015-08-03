@@ -61,6 +61,9 @@ def deduplicate_head_tag(expect_ok, repo_dir, repo_url, refspec_pattern="refs/ta
         if commit_id == head_commitid:
             # ex: refs/tags/proj-1.0_1436360795_root -> proj-1.0_1436360795_root
             existing_tag = refspec.split("/", 2)[-1]
+            # ex: pull-1234567890-root^{} -> pull-1234567890-root
+            if existing_tag.endswith("^{}"):
+                existing_tag = existing_tag[:-3]
             break
     else:
         existing_tag = None
