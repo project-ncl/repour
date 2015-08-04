@@ -107,7 +107,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     operation_name_lower = operation_name.lower()
     branch_name = "{operation_name_lower}-{timestamp}".format(**locals())
     tag_name = "{branch_name}-root".format(**locals())
-    tag_refspec_pattern = "refs/tags/{operation_name_lower}-*-root".format(**locals())
+    tag_refspec_pattern = "refs/tags/{operation_name_lower}-*".format(**locals())
 
     # As many things as possible are controlled for the commit, so the commitid
     # can be used for deduplication.

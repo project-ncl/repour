@@ -140,7 +140,7 @@ class TestPushNewDedupBranch(unittest.TestCase):
         self.assertEqual(ts_fixed, 1420070400)
 
     def test_normal(self):
-        with TemporaryGitDirectory() as remote:
+        with TemporaryGitDirectory(bare=True) as remote:
             fake_urls = repour.repo.RepoUrls(readonly="fake-ro-url", readwrite=remote)
             with TemporaryGitDirectory(origin=remote) as repo:
                 # Simulated pull
@@ -193,7 +193,9 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 ))
                 self.assertIsNotNone(c)
                 self.assertIn("branch", c)
+                self.assertIn("adjust", c["branch"])
                 self.assertIn("tag", c)
+                self.assertIn("root", c["tag"])
                 self.assertIn("url", c)
                 self.assertEqual(remote, c["url"]["readwrite"])
                 self.assertEqual("fake-ro-url", c["url"]["readonly"])
