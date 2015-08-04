@@ -31,7 +31,7 @@ class TemporaryGitDirectory(tempfile.TemporaryDirectory):
         return self.name
 
 def quiet_check_call(cmd):
-    return subprocess.check_call(cmd, stdout=subprocess.DEVNULL)
+    return subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 class TestCommon(unittest.TestCase):
     def test_setup_commiter(self):
