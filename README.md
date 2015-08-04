@@ -1,8 +1,10 @@
-# Repour - Source Repository Management Service
+# Repour - Archival Code Service
 
-Public code sources are unsuitable for reproducable builds because they often have unstable history. They may also be in many formats. Repor produces stable internal git repositories with branches containing flattened source trees instead of the full history. This meets the requirements for reproducable builds without imposing any behaviours on upstream.
+Repour archives source code and any adjustments made to it.
 
-Additionally, the isolated internal branches allow for modifications (version alignment, patches, etc.) to be commited back without comprimising future pulls. Repour offers an "adjust" operation for this.
+Repour can support any origin format that produces a file tree (git, svn, tar archive, etc.). Each "pulled" tree is converted into an orphan branch in an internal git repository. The internal repository is assumed to be history protected (no force-push allowed), but no such requirements are imposed on the origin.
+
+Each archived tree may optionally be "adjusted", making changes that are commited to the internal branch. The adjust operation can be done as part of a pull operation to increase efficiency.
 
 Why the name "Repour"? First, it contains the common short word for "repository" ("repo"); second, the action of "repouring" could be used to describe what the program does to the repositories.
 
@@ -122,15 +124,18 @@ Run pull operation
 
 ### Cloning from created repositories
 
-Each successful pull call creates a branch in the named internal repository and a tag at its root. Here's a example command to repeatably clone after pulling a tag named "v1.0.0" into repo "testing" with the server using a local repo provider:
+Each successful operation creates a branch in the named repository with a tag at its root. Here's an example git command to clone the `testing` repository after a pull operation returns:
 
-    git clone --branch v1.0.0_1436349331_root file:///tmp/repour-test-repos/testing
+    git clone --branch pull-1436349331-root file:///tmp/repour-test-repos/testing
+
+The server in this case is configured to use the `local` repo provider.
 
 ## Server Setup
 
 ### Prerequisites
 
 - Python 3.4.1+
+- Git 2.4.3+
 - pip
 
 ### Setup the virtual environment with vex
