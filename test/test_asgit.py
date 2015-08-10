@@ -2,40 +2,18 @@ import asyncio
 import datetime
 import os
 import subprocess
-import tempfile
 import unittest
 
 import repour.asutil
 import repour.asgit
-import repour.repo
+from test import util
 
 loop = asyncio.get_event_loop()
 expect_ok = repour.asutil.expect_ok_closure()
 
-class TemporaryGitDirectory(tempfile.TemporaryDirectory):
-    def __init__(self, bare=False, origin=None):
-        super().__init__()
-        self.bare = bare
-        self.origin = origin
-
-    def __enter__(self):
-        cmd = ["git", "init"]
-        if self.bare:
-            cmd.append("--bare")
-        cmd.append(self.name)
-        quiet_check_call(cmd)
-
-        if self.origin is not None:
-            quiet_check_call(["git", "-C", self.name, "remote", "add", "origin", self.origin])
-
-        return self.name
-
-def quiet_check_call(cmd):
-    return subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
 class TestCommon(unittest.TestCase):
     def test_setup_commiter(self):
-        with TemporaryGitDirectory() as repo:
+        with util.TemporaryGitDirectory() as repo:
             loop.run_until_complete(repour.asgit.setup_commiter(expect_ok, repo))
             out = subprocess.check_output(["git", "-C", repo, "config", "--local", "-l"])
 
@@ -43,10 +21,10 @@ class TestCommon(unittest.TestCase):
         self.assertIn(b"user.email=", out)
 
     def test_fixed_date_commit(self):
-        with TemporaryGitDirectory() as repo:
+        with util.TemporaryGitDirectory() as repo:
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
-            quiet_check_call(["git", "-C", repo, "add", "-A"])
+            util.quiet_check_call(["git", "-C", repo, "add", "-A"])
             loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, repo, "Test"))
             out = subprocess.check_output(["git", "-C", repo, "log", "-1", "--pretty=fuller"])
 
@@ -54,19 +32,19 @@ class TestCommon(unittest.TestCase):
         self.assertIn(b"CommitDate: Thu Jan 1 00:00:00 1970 +0000", out)
 
     def test_prepare_new_branch(self):
-        with TemporaryGitDirectory() as repo:
+        with util.TemporaryGitDirectory() as repo:
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
             loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, repo, "pull-1234567890", orphan=True))
-            quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
+            util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
 
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello Hello")
             loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, repo, "adjust-1234567890"))
-            quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
+            util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
 
     def test_deduplicate_head_tag(self):
-        with TemporaryGitDirectory() as remote:
+        with util.TemporaryGitDirectory() as remote:
             with open(os.path.join(remote, "asd.txt"), "w") as f:
                 f.write("Hello")
             loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, remote, "pull-1234567890", orphan=True))
@@ -79,7 +57,7 @@ class TestCommon(unittest.TestCase):
             loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, remote, "Adjust"))
             loop.run_until_complete(repour.asgit.annotated_tag(expect_ok, remote, "adjust-1234567890-root", "Some adjust message"))
 
-            with TemporaryGitDirectory() as repo:
+            with util.TemporaryGitDirectory() as repo:
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello")
                 loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, repo, "pull-568757645", orphan=True))
@@ -105,24 +83,24 @@ class TestCommon(unittest.TestCase):
                 self.assertIsNone(existing_tag)
 
     def test_annotated_tag(self):
-        with TemporaryGitDirectory() as repo:
+        with util.TemporaryGitDirectory() as repo:
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
-            quiet_check_call(["git", "-C", repo, "add", "-A"])
-            quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
+            util.quiet_check_call(["git", "-C", repo, "add", "-A"])
+            util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
             loop.run_until_complete(repour.asgit.annotated_tag(expect_ok, repo, "pull-1234567890-root", "Annotation"))
             out = subprocess.check_output(["git", "-C", repo, "tag", "-l", "-n"])
 
         self.assertIn(b"pull-1234567890-root Annotation", out)
 
     def test_push_with_tags(self):
-        with TemporaryGitDirectory(bare=True) as remote:
-            with TemporaryGitDirectory(origin=remote) as repo:
+        with util.TemporaryGitDirectory(bare=True) as remote:
+            with util.TemporaryGitDirectory(origin=remote) as repo:
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Goodbye")
-                quiet_check_call(["git", "-C", repo, "add", "-A"])
-                quiet_check_call(["git", "-C", repo, "commit", "-m", "Test Commit"])
-                quiet_check_call(["git", "-C", repo, "tag", "test-tag"])
+                util.quiet_check_call(["git", "-C", repo, "add", "-A"])
+                util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test Commit"])
+                util.quiet_check_call(["git", "-C", repo, "tag", "test-tag"])
 
                 loop.run_until_complete(repour.asgit.push_with_tags(expect_ok, repo, "master"))
 
@@ -140,16 +118,15 @@ class TestPushNewDedupBranch(unittest.TestCase):
         self.assertEqual(ts_fixed, 1420070400)
 
     def test_normal(self):
-        with TemporaryGitDirectory(bare=True) as remote:
-            fake_urls = repour.repo.RepoUrls(readonly="fake-ro-url", readwrite=remote)
-            with TemporaryGitDirectory(origin=remote) as repo:
+        with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
+            with util.TemporaryGitDirectory(origin=remote.readwrite) as repo:
                 # Simulated pull
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello")
                 p = loop.run_until_complete(repour.asgit.push_new_dedup_branch(
                     expect_ok=expect_ok,
                     repo_dir=repo,
-                    repo_url=fake_urls,
+                    repo_url=remote,
                     operation_name="Pull",
                     operation_description="Blah",
                     orphan=True,
@@ -161,7 +138,7 @@ class TestPushNewDedupBranch(unittest.TestCase):
                         "branch": "pull-1420070400",
                         "tag": "pull-1420070400-root",
                         "url": {
-                            "readwrite": remote,
+                            "readwrite": remote.readwrite,
                             "readonly": "fake-ro-url",
                         },
                     },
@@ -171,14 +148,14 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 nc = loop.run_until_complete(repour.asgit.push_new_dedup_branch(
                     expect_ok=expect_ok,
                     repo_dir=repo,
-                    repo_url=fake_urls,
+                    repo_url=remote,
                     operation_name="Adjust",
                     operation_description="Bleh",
                     no_change_ok=True,
                     now=datetime.datetime(2014, 1, 1),
                 ))
                 self.assertIsNone(nc)
-                quiet_check_call(["git", "-C", repo, "checkout", "pull-1420070400"])
+                util.quiet_check_call(["git", "-C", repo, "checkout", "pull-1420070400"])
 
                 # Changes
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
@@ -186,7 +163,7 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 c = loop.run_until_complete(repour.asgit.push_new_dedup_branch(
                     expect_ok=expect_ok,
                     repo_dir=repo,
-                    repo_url=fake_urls,
+                    repo_url=remote,
                     operation_name="Adjust",
                     operation_description="Bleh",
                     no_change_ok=True,
@@ -197,17 +174,17 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 self.assertIn("tag", c)
                 self.assertIn("root", c["tag"])
                 self.assertIn("url", c)
-                self.assertEqual(remote, c["url"]["readwrite"])
+                self.assertEqual(remote.readwrite, c["url"]["readwrite"])
                 self.assertEqual("fake-ro-url", c["url"]["readonly"])
 
                 # Changes, already existing
-                quiet_check_call(["git", "-C", repo, "checkout", "pull-1420070400"])
+                util.quiet_check_call(["git", "-C", repo, "checkout", "pull-1420070400"])
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello Hello")
                 ce = loop.run_until_complete(repour.asgit.push_new_dedup_branch(
                     expect_ok=expect_ok,
                     repo_dir=repo,
-                    repo_url=fake_urls,
+                    repo_url=remote,
                     operation_name="Adjust",
                     operation_description="Bleh",
                     now=datetime.datetime(2013, 1, 1),
