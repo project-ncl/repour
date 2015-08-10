@@ -1,7 +1,9 @@
 import asyncio
 import datetime
+import io
 import os
 import subprocess
+import tarfile
 import tempfile
 import unittest
 
@@ -52,6 +54,7 @@ class TestProcessSourceTree(unittest.TestCase):
                     adjust_provider=None,
                     repo_dir=repo,
                     origin_type="git",
+                    origin_ref="v1.0",
                 ))
 
                 self.assertRegex(d["branch"], r'^pull-[0-9]+$')
@@ -85,6 +88,7 @@ class TestProcessSourceTree(unittest.TestCase):
                     adjust_provider=adjust,
                     repo_dir=repo,
                     origin_type="git",
+                    origin_ref="v1.0",
                 ))
 
                 self.assertRegex(d["branch"], r'^adjust-[0-9]+$')
@@ -127,6 +131,7 @@ class TestProcessSourceTree(unittest.TestCase):
                     adjust_provider=adjust,
                     repo_dir=repo,
                     origin_type="git",
+                    origin_ref="v1.0",
                 ))
 
                 self.assertRegex(d["branch"], r'^pull-[0-9]+$')
@@ -135,22 +140,82 @@ class TestProcessSourceTree(unittest.TestCase):
 class TestPull(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.origin_cls = util.TemporaryGitDirectory()
-        cls.origin = cls.origin_cls.__enter__()
+        # Dummy git origin
+        cls.origin_git_cls = util.TemporaryGitDirectory()
+        cls.origin_git = cls.origin_git_cls.__enter__()
 
-        with open(os.path.join(cls.origin, "asd.txt"), "w") as f:
+        with open(os.path.join(cls.origin_git, "asd.txt"), "w") as f:
             f.write("Origin")
 
-        util.quiet_check_call(["git", "-C", cls.origin, "add", "-A"])
-        util.quiet_check_call(["git", "-C", cls.origin, "commit", "-m", "Some origin commit"])
+        util.quiet_check_call(["git", "-C", cls.origin_git, "add", "-A"])
+        util.quiet_check_call(["git", "-C", cls.origin_git, "commit", "-m", "Some origin commit"])
+
+        # Dummy archive origin
+        tar_buf = io.BytesIO()
+        with tarfile.open(fileobj=tar_buf, mode="w:xz") as t:
+            i = tarfile.TarInfo("asd.txt")
+
+            b = io.BytesIO(b"Hello\n")
+            b.seek(0, io.SEEK_END)
+            i.size = b.tell()
+            b.seek(0)
+
+            t.addfile(i, b)
+
+        util.setup_http(
+            cls=cls,
+            loop=loop,
+            routes=[
+                ("GET", "/test.tar.xz", util.http_write_handler(tar_buf))
+            ],
+        )
 
     @classmethod
     def tearDownClass(cls):
-        cls.origin_cls.cleanup()
+        cls.origin_git_cls.cleanup()
+        util.teardown_http(cls, loop)
 
-    def test_(self):
-        pass
+    def test_git(self):
+        with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
+            with tempfile.TemporaryDirectory() as repo:
+                @asyncio.coroutine
+                def adjust(d):
+                    return "test"
 
-class Test(unittest.TestCase):
-    def test_(self):
-        pass
+                @asyncio.coroutine
+                def repo_provider(p):
+                    return remote
+
+                d = loop.run_until_complete(repour.pull.pull(
+                    pullspec={
+                        "name": "test",
+                        "type": "git",
+                        "ref": "master",
+                        "url": self.origin_git,
+                    },
+                    repo_provider=repo_provider,
+                    adjust_provider=adjust,
+                ))
+                self.assertIsInstance(d, dict)
+
+    def test_archive(self):
+        with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
+            with tempfile.TemporaryDirectory() as repo:
+                @asyncio.coroutine
+                def adjust(d):
+                    return "test"
+
+                @asyncio.coroutine
+                def repo_provider(p):
+                    return remote
+
+                d = loop.run_until_complete(repour.pull.pull(
+                    pullspec={
+                        "name": "test",
+                        "type": "archive",
+                        "url": self.url + "/test.tar.xz",
+                    },
+                    repo_provider=repo_provider,
+                    adjust_provider=adjust,
+                ))
+                self.assertIsInstance(d, dict)

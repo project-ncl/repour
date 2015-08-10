@@ -11,6 +11,8 @@ import aiohttp.web
 import repour.asutil
 import repour.exception
 
+from test import util
+
 loop = asyncio.get_event_loop()
 
 class TestDownload(unittest.TestCase):
@@ -18,40 +20,17 @@ class TestDownload(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = aiohttp.web.Application(loop=loop)
-
-        def write(stream):
-            @asyncio.coroutine
-            def handler(request):
-                resp = aiohttp.web.StreamResponse()
-                resp.start(request)
-
-                stream.seek(0)
-                while True:
-                    buf = stream.read(4096)
-                    if not buf:
-                        break
-                    resp.write(buf)
-                    yield from resp.drain()
-                yield from resp.write_eof()
-
-                return resp
-
-            return handler
-
-        app.router.add_route("GET", "/foo_bar", write(cls.foo_bar))
-
-        host = "localhost"
-        port = 51854
-        cls.url = "http://{host}:{port}".format(**locals())
-        cls.handler = app.make_handler()
-        cls.server = loop.run_until_complete(loop.create_server(cls.handler, host, port))
+        util.setup_http(
+            cls=cls,
+            loop=loop,
+            routes=[
+                ("GET", "/foo_bar", util.http_write_handler(cls.foo_bar))
+            ],
+        )
 
     @classmethod
     def tearDownClass(cls):
-        loop.run_until_complete(cls.handler.finish_connections(0.25))
-        cls.server.close()
-        loop.run_until_complete(cls.server.wait_closed())
+        util.teardown_http(cls, loop)
 
     @staticmethod
     def fake_resp(suggest_filename=None):

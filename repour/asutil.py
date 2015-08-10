@@ -43,6 +43,8 @@ def download(url, stream):
 
     filename = _find_filename(url, resp)
 
+    if hasattr(stream, "flush"):
+        yield from loop.run_in_executor(None, stream.flush)
     if hasattr(stream, "sync"):
         yield from loop.run_in_executor(None, stream.sync)
 

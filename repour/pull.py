@@ -47,11 +47,11 @@ Type: {origin_type}
     return d
 
 @asyncio.coroutine
-def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, origin_type):
+def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, origin_type, origin_ref):
     internal_repo_url = yield from repo_provider(pullspec["name"])
 
     # Process sources into internal branch
-    pull_internal = yield from to_internal(internal_repo_url, repo_dir, pullspec["ref"], pullspec["url"], origin_type)
+    pull_internal = yield from to_internal(internal_repo_url, repo_dir, origin_ref, pullspec["url"], origin_type)
 
     if pullspec.get("adjust", False):
         adjust_type = yield from adjust_provider(repo_dir)
@@ -79,7 +79,7 @@ def pull(pullspec, repo_provider, adjust_provider):
     if pullspec["type"] in scm_types:
         internal = yield from scm_types[pullspec["type"]](pullspec, repo_provider, adjust_provider)
     elif pullspec["type"] == archive_type:
-        internal = yield from pull_archive(repo_provider, pullspec, adjust_provider)
+        internal = yield from pull_archive(pullspec, repo_provider, adjust_provider)
     else:
         raise exception.PullError("Type '{pullspec[type]}' not supported".format(**locals()))
     return internal
@@ -96,7 +96,7 @@ def pull_git(pullspec, repo_provider, adjust_provider):
         yield from asutil.rmtree(os.path.join(d, ".git"))
         logger.info("Got git tree from {pullspec[url]} at ref {pullspec[ref]}".format(**locals()))
 
-        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "git")
+        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "git", pullspec["ref"])
 
     return internal
 
@@ -110,12 +110,12 @@ def pull_archive(pullspec, repo_provider, adjust_provider):
 
             # Use libarchive/bsdtar to extract into temp dir
             yield from expect_ok(
-                cmd=["bsdtar", "-xf", f.name, "-C", d, "--chroot"],
+                cmd=["bsdtar", "-xf", f.name, "-C", d],
                 desc="Could not extract archive with bsdtar",
             )
             # TODO may need to move the files out of an inner dir, but only if single root dir (ex: asd.tar.gz would normally be asd/qwe.txt)
 
-        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "archive")
+        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "archive", archive_filename)
 
     return internal
 
