@@ -64,7 +64,11 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
     else:
         adjust_internal = None
 
-    return adjust_internal or pull_internal
+    if adjust_internal is None:
+        return pull_internal
+    else:
+        adjust_internal["pull"] = pull_internal
+        return adjust_internal
 
 #
 # Pull operations
