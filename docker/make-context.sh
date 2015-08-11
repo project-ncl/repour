@@ -16,7 +16,7 @@ else
 fi
 dest="$context/content.tar"
 
-bsdtar -cf "$dest" -C "$root" "config.yaml" "venv-freeze.txt" -C "$context" ".ssh/config" ".ssh/repour"
+bsdtar -cf "$dest" -C "$root" "venv-freeze.txt" -C "$context" ".ssh/config"
 bsdtar -rf "$dest" -C "$root" --include "*.py" "repour/"
 
 { set +x; } 2>/dev/null

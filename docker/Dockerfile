@@ -5,12 +5,14 @@ EXPOSE 7331
 RUN dnf install -y bsdtar python3 python3-pip python3-devel python3-Cython libyaml-devel "@Development Tools" java-1.8.0-openjdk && \
     pip3 --no-cache-dir install vex && \
     useradd -rm repour && \
+    mkdir /home/repour/vol && \
     dnf clean all
 
 USER repour
 WORKDIR /home/repour
+VOLUME ["/home/repour/vol"]
 ENTRYPOINT ["/bin/vex", "rpo", "python", "-m", "repour"]
-CMD ["run"]
+CMD ["-c", "vol/config.yaml", "run"]
 
 ADD ["content.tar", "/home/repour/"]
 
