@@ -112,7 +112,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
     }
 }
 
-!Body (Example `adjust=true`)
+!Body (Example adjust)
 ![source,javascript]
 {
     "branch": "adjust-1439285354",
