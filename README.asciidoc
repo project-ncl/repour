@@ -12,13 +12,13 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 
 === Pull
 
-[cols="<h,<6a"]
+[cols="h,6a"]
 |===
 |URL
 |/pull
 
 |Request (SCM)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Method
 !POST
@@ -47,7 +47,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 !===
 
 |Request (Archive)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Method
 !POST
@@ -74,7 +74,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 !===
 
 |Response (Success)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Status
 !200
@@ -133,7 +133,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 !===
 
 |Response (Invalid request body)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Status
 !400
@@ -169,7 +169,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 !===
 
 |Response (Processing error)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Status
 !400
@@ -208,13 +208,13 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 
 === Adjust
 
-[cols="<h,<6a"]
+[cols="h,6a"]
 |===
 |URL
 |/adjust
 
 |Request
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Method
 !POST
@@ -238,7 +238,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 !===
 
 |Response (Success)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Status
 !200
@@ -270,7 +270,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 !===
 
 |Response (Invalid request body)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Status
 !400
@@ -306,7 +306,7 @@ Why the name "Repour"? First, it contains the common short word for "repository"
 !===
 
 |Response (Processing error)
-|[cols="<h,<4a"]
+|[cols="h,4a"]
 !===
 !Status
 !400
