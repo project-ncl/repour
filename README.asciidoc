@@ -1,0 +1,393 @@
+= Repour - Archival Code Service
+
+Repour archives source code and any changes made to the archived copy.
+
+Repour can support any origin format that produces a file tree (git, svn, tar archive, etc.). Each "pulled" tree is converted into an orphan branch in an internal git repository. The internal repository is assumed to be history protected (no force-push allowed), but no such requirements are imposed on the origin.
+
+Each archived tree may optionally be "adjusted", making changes that are commited to the internal branch. The adjust operation can be done as part of a pull operation to increase efficiency.
+
+Why the name "Repour"? First, it contains the common short word for "repository" ("repo"); second, the action of "repouring" could be used to describe what the program does to the repositories.
+
+== Interface
+
+=== Pull
+
+[cols="h,6a"]
+|===
+|URL
+|/pull
+
+|Request (SCM)
+|[cols="h,4a"]
+!===
+!Method
+!POST
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "name": nonempty_str,
+    "type": Any("git"),
+    "ref": nonempty_str,
+    "url": Url(),
+    Optional("adjust"): bool,
+}
+
+!Body (Example)
+![source,javascript]
+{
+    "name": "example",
+    "type": "git",
+    "ref": "teiid-parent-8.11.0.Final",
+    "url": "git@github.com:teiid/teiid.git"
+}
+!===
+
+|Request (Archive)
+|[cols="h,4a"]
+!===
+!Method
+!POST
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "name": nonempty_str,
+    "type": "archive",
+    "url": Url(),
+    Optional("adjust"): bool,
+}
+
+!Body (Example)
+![source,javascript]
+{
+    "name": "example",
+    "type": "archive",
+    "url": "https://github.com/teiid/teiid/archive/teiid-parent-8.11.0.Final.tar.gz"
+}
+!===
+
+|Response (Success)
+|[cols="h,4a"]
+!===
+!Status
+!200
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "branch": str,
+    "tag": str,
+    "url": {
+        "readwrite": Url(),
+        "readonly": Url(),
+    }
+    Optional("pull"): {
+        "branch": str,
+        "tag": str,
+        "url": {
+            "readwrite": Url(),
+            "readonly": Url(),
+        }
+    }
+}
+
+!Body (Example)
+![source,javascript]
+{
+    "branch": "pull-1439285353",
+    "tag": "pull-1439285353-root",
+    "url": {
+        "readwrite": "file:///tmp/repour-test-repos/example",
+        "readonly": "file:///tmp/repour-test-repos/example"
+    }
+}
+
+!Body (Example `adjust=true`)
+![source,javascript]
+{
+    "branch": "adjust-1439285354",
+    "tag": "adjust-1439285354-root",
+    "url": {
+        "readwrite": "file:///tmp/repour-test-repos/example",
+        "readonly": "file:///tmp/repour-test-repos/example"
+    },
+    "pull": {
+        "branch": "pull-1439285353",
+        "tag": "pull-1439285353-root",
+        "url": {
+            "readwrite": "file:///tmp/repour-test-repos/example",
+            "readonly": "file:///tmp/repour-test-repos/example"
+        },
+    }
+}
+!===
+
+|Response (Invalid request body)
+|[cols="h,4a"]
+!===
+!Status
+!400
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+[
+    {
+        "error_message": str,
+        "error_type": str,
+        "path": [str],
+    }
+]
+
+!Body (Example)
+![source,javascript]
+[
+    {
+        "error_message": "expected a URL",
+        "error_type": "dictionary value",
+        "path": ["url"]
+    },
+    {
+        "error_message": "expected str",
+        "error_type": "dictionary value",
+        "path": ["name"]
+    }
+]
+
+!===
+
+|Response (Processing error)
+|[cols="h,4a"]
+!===
+!Status
+!400
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "desc": str,
+    "error_type": str,
+    str: object,
+}
+
+!Body (Example)
+![source,javascript]
+{
+    "desc": "Could not clone with git",
+    "error_type": "PullCommandError",
+    "cmd": [
+        "git",
+        "clone",
+        "--branch",
+        "teiid-parent-8.11.0.Final",
+        "--depth",
+        "1",
+        "--",
+        "git@github.com:teiid/teiid.gitasd",
+        "/tmp/tmppizdwfsigit"
+    ],
+    "exit_code": 128
+}
+!===
+|===
+
+=== Adjust
+
+[cols="h,6a"]
+|===
+|URL
+|/adjust
+
+|Request
+|[cols="h,4a"]
+!===
+!Method
+!POST
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "name": nonempty_str,
+    "ref": nonempty_str,
+}
+
+!Body (Example)
+![source,javascript]
+{
+    "name": "example",
+    "ref": "pull-1436349331-root"
+}
+!===
+
+|Response (Success)
+|[cols="h,4a"]
+!===
+!Status
+!200
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "branch": str,
+    "tag": str,
+    "url": {
+        "readwrite": Url(),
+        "readonly": Url(),
+    }
+}
+
+!Body (Example)
+![source,javascript]
+{
+    "branch": "adjust-1439285354",
+    "tag": "adjust-1439285354-root",
+    "url": {
+        "readwrite": "file:///tmp/repour-test-repos/example",
+        "readonly": "file:///tmp/repour-test-repos/example"
+    }
+}
+!===
+
+|Response (Invalid request body)
+|[cols="h,4a"]
+!===
+!Status
+!400
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+[
+    {
+        "error_message": str,
+        "error_type": str,
+        "path": [str],
+    }
+]
+
+!Body (Example)
+![source,javascript]
+[
+    {
+        "error_message": "expected a URL",
+        "error_type": "dictionary value",
+        "path": ["url"]
+    },
+    {
+        "error_message": "expected str",
+        "error_type": "dictionary value",
+        "path": ["name"]
+    }
+]
+
+!===
+
+|Response (Processing error)
+|[cols="h,4a"]
+!===
+!Status
+!400
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "desc": str,
+    "error_type": str,
+    str: object,
+}
+
+!Body (Example)
+![source,javascript]
+{
+    "desc": "Could not clone with git",
+    "error_type": "PullCommandError",
+    "cmd": [
+        "git",
+        "clone",
+        "--branch",
+        "teiid-parent-8.11.0.Final",
+        "--depth",
+        "1",
+        "--",
+        "git@github.com:teiid/teiid.gitasd",
+        "/tmp/tmppizdwfsigit"
+    ],
+    "exit_code": 128
+}
+!===
+|===
+
+=== Cloning from the internal repositories
+
+Each successful operation creates a branch in the returned repository with a tag at its root. Here's an example git command to clone the `testing` repository after a pull operation returns:
+
+[source,bash]
+git clone --branch pull-1436349331-root file:///tmp/repour-test-repos/testing
+
+The server in this case is configured to use the `local` repo provider.
+
+== Server Setup
+
+=== Prerequisites
+
+- Python 3.4.1+
+- Git 2.4.3+
+- pip
+
+=== Setup the virtual environment with vex
+
+1. Install vex for the current user with `pip3 install --user vex`
+2. Ensure `$PATH` includes `$HOME/.local/bin`
+3. Install the required C libraries with system package manager.
+4. `vex -m --python python3.4 rpo pip install -r venv-freeze.txt`
+
+On Fedora step three is:
+
+[source,bash]
+dnf install python3-devel python3-Cython libyaml-devel
+
+==== Recreating the virtual environment
+
+1. Delete the old environment with `vex -r rpo true`
+2. Rerun the last command in the parent section, above.
+
+=== Configure
+
+Copy the example configuration in `config-example.yaml` to `config.yaml`, then edit.
+
+=== Start the server
+
+[source,bash]
+vex rpo python -m repour run
+
+For more information, add the `-h` switch to the command.
+
+== License
+
+The content of this repository is released under the ASL 2.0, as provided in the LICENSE file. See the NOTICE file for the copyright statement and a list of contributors. By submitting a "pull request" or otherwise contributing to this repository, you agree to license your contribution under the license identified above.
