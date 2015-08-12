@@ -20,3 +20,11 @@ class TestCommandError(unittest.TestCase):
                 raise child("something", [], 1)
             with self.assertRaises(repour.exception.DescribedError):
                 raise child("something", [], 1)
+
+class TestHttpClientError(unittest.TestCase):
+    def test_children(self):
+        for child in _yield_matching(repour.exception, "HttpClientError"):
+            with self.assertRaises(repour.exception.HttpClientError):
+                raise child("something", 1, "")
+            with self.assertRaises(repour.exception.DescribedError):
+                raise child("something", 1, "")
