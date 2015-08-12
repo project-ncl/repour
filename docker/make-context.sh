@@ -16,8 +16,11 @@ else
 fi
 dest="$context/content.tar"
 
-bsdtar -cf "$dest" -C "$root" "venv-freeze.txt" -C "$context" ".ssh/config"
-git ls-files -z "repour/" | xargs -0 bsdtar -rf "$dest" -C "$root"
+owner="--gid 1000 --gname repour --uid 1000 --uname repour"
+
+chmod 600 "$context/.ssh/config"
+bsdtar $owner -cf "$dest" -C "$root" "venv-freeze.txt" -C "$context" ".ssh/config"
+git ls-files -z "repour/" | xargs -0 bsdtar $owner -rf "$dest" -C "$root"
 
 { set +x; } 2>/dev/null
 echo "Done"

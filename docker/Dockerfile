@@ -4,7 +4,8 @@ EXPOSE 7331
 
 RUN dnf install -y bsdtar python3 python3-pip python3-devel python3-Cython libyaml-devel "@Development Tools" java-1.8.0-openjdk && \
     pip3 --no-cache-dir install vex && \
-    useradd -rm repour && \
+    groupadd -rg 1000 repour && \
+    useradd -rm -u 1000 -g repour repour && \
     mkdir /home/repour/vol && \
     dnf clean all
 
