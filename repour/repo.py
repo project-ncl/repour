@@ -21,15 +21,17 @@ logger = logging.getLogger(__name__)
 @asyncio.coroutine
 def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
     resp = None
-    while resp is None or retry_count > 0:
+    while resp is None or retry_count >= 0:
         resp = yield from action()
         if resp.status == reauth_status:
+            resp.close()
             retry_count -= 1
             yield from auth()
         else:
             break
     else:
-        raise exception.RepoError("Could not authenticate, status {}".format(resp.status))
+        e = yield from exception.RepoHttpClientError.from_response("Repository provider authentication failed", resp)
+        raise e
 
     return resp
 
@@ -166,18 +168,22 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                 "password": password,
             }).encode("utf-8"),
         )
-        if resp.status // 100 != 2:
-            raise exception.RepoError("Unable to authenticate, status {}".format(resp.status))
+        try:
+            if resp.status // 100 != 2:
+                e = yield from exception.RepoHttpClientError.from_response("GitLab credentials not accepted", resp)
+                raise e
 
-        data = yield from resp.json()
-        access_token = data["access_token"]
+            data = yield from resp.json()
+            access_token = data["access_token"]
+        finally:
+            resp.close()
 
     @asyncio.coroutine
     def get_url(repo_name, create=True):
         repo_url_suffix = "/{}/{}.git".format(group["name"], urllib.parse.quote(repo_name))
         repo_url = RepoUrls(
-            readwrite=root_url + repo_url_suffix,
-            readonly=ssh_root_url + repo_url_suffix,
+            readwrite=ssh_root_url + repo_url_suffix,
+            readonly=root_url + repo_url_suffix,
         )
         if not create:
             return repo_url
@@ -203,18 +209,24 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
             action=create_repo,
             auth=new_token,
         )
-
-        if resp.status == 400:
-            try:
-                data = yield from resp.json()
-            except Exception:
-                data = {}
-            if "has already been taken" in data.get("message", {}).get("name", []):
-                # Repo already exists
+        try:
+            if resp.status == 400:
+                try:
+                    data = yield from resp.json()
+                except Exception:
+                    data = {}
+                if "has already been taken" in data.get("message", {}).get("name", []):
+                    # Repo already exists
+                    return repo_url
+                e = yield from exception.RepoHttpClientError.from_response("Project creation unsuccessful", resp)
+                raise e
+            elif resp.status // 100 != 2:
+                e = yield from exception.RepoHttpClientError.from_response("Project creation unsuccessful", resp)
+                raise e
+            else:
                 return repo_url
-            raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
-        elif resp.status // 100 != 2:
-            raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
+        finally:
+            resp.close()
 
     return get_url
 
