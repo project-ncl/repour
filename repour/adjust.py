@@ -63,7 +63,6 @@ def adjust_noop():
         return "NoOp"
     return adjust
 
-@asyncio.coroutine
 def adjust_subprocess(description, cmd):
     @asyncio.coroutine
     def adjust(repo_dir):
