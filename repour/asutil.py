@@ -83,7 +83,7 @@ def _convert_bytes(b, mode):
 
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
-    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error"):
+    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None):
         if env is None:
             sub_env = None
         else:
@@ -99,7 +99,8 @@ def expect_ok_closure(exc_type=exception.CommandError):
             stdin=asyncio.subprocess.DEVNULL,
             stdout=sub_stdout,
             stderr=sub_stderr,
-            env=sub_env
+            env=sub_env,
+            cwd=cwd
         )
         if stdout or stderr:
             stdout_data, stderr_data = yield from p.communicate()
