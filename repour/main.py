@@ -81,7 +81,7 @@ def load_config(config_path):
     config_dir = os.path.dirname(config_path)
     def config_relative(loader, node):
         value = loader.construct_scalar(node)
-        return os.path.normpath(os.path.join(config_dir, value))
+        return os.path.abspath(os.path.join(config_dir, value))
     yaml.add_constructor("!config_relative", config_relative)
 
     with open(config_path, "r") as f:
