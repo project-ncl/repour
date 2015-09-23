@@ -17,4 +17,5 @@ CMD ["-c", "vol/config.yaml", "run"]
 
 ADD ["content.tar", "/home/repour/"]
 
-RUN vex -m --python python3.4 rpo pip --no-cache-dir install -r venv-freeze.txt
+RUN chown -R repour: /home/repour/ && \
+    vex -m --python python3.4 rpo pip --no-cache-dir install -r venv-freeze.txt
