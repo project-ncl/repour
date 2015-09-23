@@ -9,13 +9,14 @@ RUN dnf install -y bsdtar python3 python3-pip python3-devel python3-Cython libya
     mkdir /home/repour/vol && \
     dnf clean all
 
-USER repour
 WORKDIR /home/repour
 VOLUME ["/home/repour/vol"]
+
+ADD ["content.tar", "/home/repour/"]
+RUN chown -R repour: /home/repour/
+
+USER repour
 ENTRYPOINT ["/bin/vex", "rpo", "python", "-m", "repour"]
 CMD ["-c", "vol/config.yaml", "run"]
 
-ADD ["content.tar", "/home/repour/"]
-
-RUN chown -R repour: /home/repour/ && \
-    vex -m --python python3.4 rpo pip --no-cache-dir install -r venv-freeze.txt
+RUN vex -m --python python3.4 rpo pip --no-cache-dir install -r venv-freeze.txt
