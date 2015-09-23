@@ -180,7 +180,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
 
     @asyncio.coroutine
     def get_url(repo_name, create=True):
-        repo_url_suffix = "/{}/{}.git".format(group["name"], urllib.parse.quote(repo_name))
+        repo_url_suffix = "/{}/{}.git".format(group["name"], urllib.parse.quote(repo_name.lower()))
         repo_url = RepoUrls(
             readwrite=ssh_root_url + repo_url_suffix,
             readonly=root_url + repo_url_suffix,
