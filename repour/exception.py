@@ -6,10 +6,12 @@ class DescribedError(Exception):
         self.desc = desc
 
 class CommandError(DescribedError):
-    def __init__(self, desc, cmd, exit_code):
+    def __init__(self, desc, cmd, exit_code, stdout=None, stderr=None):
         super().__init__(desc)
         self.cmd = cmd
         self.exit_code = exit_code
+        self.stdout = stdout
+        self.stderr = stderr
 
 class HttpClientError(DescribedError):
     @classmethod

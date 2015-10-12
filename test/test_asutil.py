@@ -103,8 +103,16 @@ class TestExpectOk(unittest.TestCase):
         expect_ok = repour.asutil.expect_ok_closure(repour.exception.PullCommandError)
 
         ret = None
-        with self.assertRaises(repour.exception.PullCommandError):
-            ret = loop.run_until_complete(expect_ok(["/bin/false"]))
+        with self.assertRaises(repour.exception.PullCommandError) as cm:
+            ret = loop.run_until_complete(expect_ok(["false"]))
+            self.assertEqual(cm.exception.stderr, "")
+            self.assertEqual(cm.exception.stdout, "")
+        self.assertIsNone(ret)
+
+        with self.assertRaises(repour.exception.PullCommandError) as cm:
+            ret = loop.run_until_complete(expect_ok(["git", "clone"], stderr=None))
+            self.assertIn(cm.exception.stderr, "You must specify a repository to clone.")
+            self.assertEqual(cm.exception.stdout, "")
         self.assertIsNone(ret)
 
     def test_stdout(self):

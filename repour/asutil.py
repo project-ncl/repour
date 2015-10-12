@@ -91,35 +91,31 @@ def expect_ok_closure(exc_type=exception.CommandError):
             sub_env = os.environ.copy()
             sub_env.update(env)
 
-        sub_stdout = asyncio.subprocess.PIPE if stdout else asyncio.subprocess.DEVNULL
-        sub_stderr = asyncio.subprocess.PIPE if stderr else asyncio.subprocess.DEVNULL
-
         p = yield from asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.DEVNULL,
-            stdout=sub_stdout,
-            stderr=sub_stderr,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
             env=sub_env,
             cwd=cwd
         )
-        if stdout or stderr:
-            stdout_data, stderr_data = yield from p.communicate()
-        else:
-            stdout_data = None
-            stderr_data = None
-            yield from p.wait()
 
-        if stderr_data:
-            if stderr == "log" or (stderr == "log_on_error" and p.returncode != 0):
-                logger.error(stderr_data.decode("utf-8"))
+        stdout_data, stderr_data = yield from p.communicate()
+
+        stderr_text = stderr_data.decode("utf-8")
+
+        if stderr == "log" or (stderr == "log_on_error" and p.returncode != 0):
+            logger.error(stderr_text)
 
         if not p.returncode == 0:
             raise exc_type(
                 desc=desc,
                 cmd=cmd,
                 exit_code=p.returncode,
+                stdout=stdout_data.decode("utf-8"),
+                stderr=stderr_text,
             )
-
-        return _convert_bytes(stdout_data, stdout)
+        else:
+            return _convert_bytes(stdout_data, stdout)
 
     return expect_ok
