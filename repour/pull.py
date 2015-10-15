@@ -70,6 +70,12 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
         adjust_internal["pull"] = pull_internal
         return adjust_internal
 
+def _log_scm_success(pullspec):
+    msg = "Got {pullspec[type]} tree from {pullspec[url]}".format(**locals())
+    if "ref" in pullspec:
+        msg += " at ref {pullspec[ref]}".format(**locals())
+    logger.info(msg)
+
 #
 # Pull operations
 #
@@ -83,6 +89,57 @@ def pull(pullspec, repo_provider, adjust_provider):
     else:
         raise exception.PullError("Type '{pullspec[type]}' not supported".format(**locals()))
     return internal
+
+def _simple_scm_pull_function(start, if_ref, end, cleanup=(,)):
+    @asyncio.coroutine
+    def pull(pullspec, repo_provider, adjust_provider):
+        with asutil.TemporaryDirectory(suffix=pullspec["type"]) as clone_dir:
+            # Build clone command and failure description
+            desc = "Could not clone"
+            cmd = start(pullspec, clone_dir)
+            if "ref" in pullspec:
+                cmd += if_ref(pullspec, clone_dir)
+                desc += " ref {pullspec[ref]}".format(**locals())
+            cmd += end(pullspec, clone_dir)
+            desc += "with {pullspec[type]}".format(**locals())
+
+            # Run clone command
+            yield from expect_ok(
+                cmd=cmd,
+                desc=desc,
+            )
+
+            # Cleanup files (ex: .git/)
+            for child in cleanup:
+                yield from asutil.rmtree(os.path.join(clone_dir, child))
+
+            _log_scm_success(pullspec)
+
+            internal = yield from process_source_tree(
+                pullspec=pullspec,
+                repo_provider=repo_provider,
+                adjust_provider=adjust_provider,
+                repo_dir=d,
+                origin_type=pullspec["type"],
+                origin_ref=pullspec.get("ref", None),
+            )
+
+            return internal
+
+    return pull
+
+pull_subversion = _simple_scm_pull_function(
+    start=lambda p,d: ["svn", "export"],
+    if_ref=lambda p,d: ["--revision", p["ref"]],
+    end=lambda p,d: [p["url"], d],
+)
+
+pull_mercurial = _simple_scm_pull_function(
+    start=lambda p,d: ["hg", "clone"],
+    if_ref=lambda p,d: ["--updaterev", p["ref"]],
+    end=lambda p,d: [p["url"], d],
+    cleanup=[".hg"],
+)
 
 @asyncio.coroutine
 def pull_git(pullspec, repo_provider, adjust_provider):
@@ -123,5 +180,9 @@ def pull_archive(pullspec, repo_provider, adjust_provider):
 # Supported
 #
 
-scm_types = {"git": pull_git}
+scm_types = {
+    "git": pull_git,
+    "svn": pull_subversion,
+    "hg": pull_mercurial,
+}
 archive_type = "archive"

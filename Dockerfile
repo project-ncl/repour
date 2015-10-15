@@ -4,7 +4,7 @@ EXPOSE 7331
 
 RUN groupadd -rg 1000 repour && \
     useradd -rm -u 1000 -g repour repour && \
-    dnf install -y bsdtar python3 python3-Cython libyaml java-1.8.0-openjdk-headless git && \
+    dnf install -y bsdtar python3 python3-Cython libyaml java-1.8.0-openjdk-headless git subversion mercurial && \
     dnf clean all && \
     printf '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /home/repour/vol/repour.key' >> /etc/ssh/ssh_config
 

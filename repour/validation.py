@@ -36,7 +36,7 @@ pull_scm = Schema(
     {
         "name": nonempty_str,
         "type": Any(*pullmodule.scm_types),
-        "ref": nonempty_str,
+        Optional("ref"): nonempty_str,
         "url": Url(), #pylint: disable=no-value-for-parameter
         Optional("adjust"): bool,
     },
