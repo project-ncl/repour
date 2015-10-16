@@ -161,6 +161,7 @@ def pull_git(pullspec, repo_provider, adjust_provider):
                 yield from expect_ok(
                     cmd=["git", "clone", "--branch", pullspec["ref"], "--depth", "1", "--", pullspec["url"], clone_dir],
                     desc="Could not clone with git",
+                    stderr=None,
                 )
             except exception.CommandError as e:
                 if "not found" in e.stderr:
@@ -168,7 +169,7 @@ def pull_git(pullspec, repo_provider, adjust_provider):
                     yield from deep()
                     # Checkout tag or branch or commit-id
                     yield from expect_ok(
-                        cmd=["git", "clone", "--", pullspec["url"], clone_dir],
+                        cmd=["git", "-C", clone_dir, "checkout", pullspec["ref"], "--"],
                         desc="Could not checkout ref {pullspec[ref]} from clone of {pullspec[url]} with git".format(**locals()),
                     )
                 else:

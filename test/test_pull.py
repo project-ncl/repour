@@ -150,6 +150,8 @@ class TestPull(unittest.TestCase):
         util.quiet_check_call(["git", "-C", cls.origin_git, "add", "-A"])
         util.quiet_check_call(["git", "-C", cls.origin_git, "commit", "-m", "Some origin commit"])
 
+        cls.origin_git = "file://" + cls.origin_git
+
         # Dummy archive origin
         tar_buf = io.BytesIO()
         with tarfile.open(fileobj=tar_buf, mode="w:xz") as t:
@@ -199,7 +201,7 @@ class TestPull(unittest.TestCase):
                 def repo_provider(p):
                     return remote
 
-                d = loop.run_until_complete(repour.pull.pull(
+                d_shallow = loop.run_until_complete(repour.pull.pull(
                     pullspec={
                         "name": "test",
                         "type": "git",
@@ -209,7 +211,23 @@ class TestPull(unittest.TestCase):
                     repo_provider=repo_provider,
                     adjust_provider=adjust,
                 ))
-                self.assertIsInstance(d, dict)
+                self.assertIsInstance(d_shallow, dict)
+
+                d_deep = loop.run_until_complete(repour.pull.pull(
+                    pullspec={
+                        "name": "test",
+                        "type": "git",
+                        # Use HEAD here, normally would expect this to be a
+                        # commit id, but does the same thing of triggering deep
+                        # clone.
+                        "ref": "HEAD",
+                        "url": self.origin_git,
+                    },
+                    repo_provider=repo_provider,
+                    adjust_provider=adjust,
+                ))
+                # Deduplication should be activated
+                self.assertEqual(d_deep, d_shallow)
 
     def test_archive(self):
         with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
