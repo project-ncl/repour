@@ -43,6 +43,29 @@ class TestPrimitives(unittest.TestCase):
         with self.assertRaises(voluptuous.MultipleInvalid):
             repour.validation.port_num(False)
 
+    def test_name_str(self):
+        self.assertEqual("asd", repour.validation.name_str("asd"))
+        self.assertEqual("ASD", repour.validation.name_str("ASD"))
+        self.assertEqual("123", repour.validation.name_str("123"))
+        self.assertEqual("_", repour.validation.name_str("_"))
+        self.assertEqual("asd-1.5.0", repour.validation.name_str("asd-1.5.0"))
+        self.assertEqual("_ASD-", repour.validation.name_str("_ASD-"))
+
+        with self.assertRaises(voluptuous.MatchInvalid):
+            repour.validation.name_str("")
+        with self.assertRaises(voluptuous.MatchInvalid):
+            repour.validation.name_str(" ")
+        with self.assertRaises(voluptuous.MatchInvalid):
+            repour.validation.name_str("-asd-1.5.0")
+        with self.assertRaises(voluptuous.MatchInvalid):
+            repour.validation.name_str("asd!1.5.0")
+        with self.assertRaises(voluptuous.MatchInvalid):
+            repour.validation.name_str("%")
+        with self.assertRaises(voluptuous.MatchInvalid):
+            repour.validation.name_str(0)
+        with self.assertRaises(voluptuous.MatchInvalid):
+            repour.validation.name_str(False)
+
 class TestAdjust(unittest.TestCase):
     def test_adjust(self):
         valid = {
@@ -95,6 +118,14 @@ class TestPull(unittest.TestCase):
         self.assertEqual(valid_scm, repour.validation.pull(valid_scm))
         check_adjust(valid_scm)
 
+        valid_scm["type"] = "hg"
+        self.assertEqual(valid_scm, repour.validation.pull(valid_scm))
+        check_adjust(valid_scm)
+
+        del valid_scm["ref"]
+        self.assertEqual(valid_scm, repour.validation.pull(valid_scm))
+        check_adjust(valid_scm)
+
         valid_archive = {
             "name": "someproject",
             "type": "archive",
@@ -103,6 +134,9 @@ class TestPull(unittest.TestCase):
         self.assertEqual(valid_archive, repour.validation.pull(valid_archive))
         check_adjust(valid_archive)
 
+        with self.assertRaises(voluptuous.MultipleInvalid):
+            valid_archive["name"] = ""
+            repour.validation.pull(valid_archive)
         with self.assertRaises(voluptuous.MultipleInvalid):
             repour.validation.pull({})
         with self.assertRaises(voluptuous.MultipleInvalid):
