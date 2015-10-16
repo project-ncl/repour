@@ -179,54 +179,109 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
             resp.close()
 
     @asyncio.coroutine
-    def get_url(repo_name, create=True):
-        repo_url_suffix = "/{}/{}.git".format(group["name"], urllib.parse.quote(repo_name.lower()))
-        repo_url = RepoUrls(
-            readwrite=ssh_root_url + repo_url_suffix,
-            readonly=root_url + repo_url_suffix,
+    def search_project(name):
+        resp = yield from session.get(
+            api_url + "/projects",
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+                "Authorization": "Bearer " + access_token,
+            },
+            data=urllib.parse.urlencode({
+                "search": name,
+            }).encode("utf-8"),
         )
-        if not create:
-            return repo_url
+        return resp
 
-        @asyncio.coroutine
-        def create_repo():
-            resp = yield from session.post(
-                api_url + "/projects",
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Accept": "application/json",
-                    "Authorization": "Bearer " + access_token,
-                },
-                data=urllib.parse.urlencode({
-                    "name": repo_name,
-                    "namespace_id": group["id"],
-                    "visibility_level": 20,
-                }).encode("utf-8"),
-            )
-            return resp
+    @asyncio.coroutine
+    def create_project(name):
+        resp = yield from session.post(
+            api_url + "/projects",
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+                "Authorization": "Bearer " + access_token,
+            },
+            data=urllib.parse.urlencode({
+                "name": name,
+                "namespace_id": group["id"],
+                "visibility_level": 20,
+            }).encode("utf-8"),
+        )
+        return resp
+
+    # As an additional complication, the hostname in the docker-based GitLab
+    # instances can be incorrect, so we need to parse the returned URLs to
+    # extract the path portion only.
+    def path_to_urls(path_with_namespace):
+        suffix = "/{path_with_namespace}.git".format(**locals())
+        repo_url = RepoUrls(
+            readwrite=ssh_root_url + suffix,
+            readonly=root_url + suffix,
+        )
+
+    @asyncio.coroutine
+    def get_url(repo_name, create=True):
+        # GitLab has a weird non-deterministic relationship between "name" and
+        # "path", making it difficult where name and path differ to check if a
+        # repo already exists, as the long-form identifier is namespace/path,
+        # not namespace/name. So, to get accurate clone urls, we must always
+        # search for the project (a "name contains query" search, exact match
+        # isn't available), then look in the returned array for the exact
+        # matching name.
+
+        # On the assumption that creating new repos is less common than reusing
+        # existing ones, do search fallback create, instead of create fallback
+        # search.
 
         resp = yield from _retry_with_auth(
-            action=create_repo,
+            action=lambda: search_project(repo_name),
             auth=new_token,
         )
         try:
-            if resp.status == 400:
-                try:
-                    data = yield from resp.json()
-                except Exception:
-                    data = {}
-                if "has already been taken" in data.get("message", {}).get("name", []):
-                    # Repo already exists
-                    return repo_url
-                e = yield from exception.RepoHttpClientError.from_response("Project creation unsuccessful", resp)
-                raise e
-            elif resp.status // 100 != 2:
-                e = yield from exception.RepoHttpClientError.from_response("Project creation unsuccessful", resp)
+            if resp.status // 100 != 2:
+                e = yield from exception.RepoHttpClientError.from_response("Unable to search for existing projects", resp)
                 raise e
             else:
-                return repo_url
+                projects = yield from resp.json()
         finally:
             resp.close()
+
+        for project in projects:
+            if project.get("name", None) == repo_name:
+                repo_url = path_to_urls(project["path_with_namespace"])
+                break
+        else:
+            # Project doesn't exist
+            if create:
+                resp = yield from _retry_with_auth(
+                    action=lambda: create_project(repo_name),
+                    auth=new_token,
+                )
+                try:
+                    if resp.status == 400:
+                        try:
+                            data = yield from resp.json()
+                        except Exception:
+                            data = {}
+                        if "has already been taken" in data.get("message", {}).get("name", []):
+                            # Repo already exists (interleaving with another create probably)
+                            # Redo the search
+                            repo_url = yield from get_url(repo_name, create=False)
+                        else:
+                            e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp)
+                            raise e
+                    elif resp.status // 100 != 2:
+                        e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp)
+                        raise e
+                    else:
+                        project = yield from resp.json()
+                        repo_url = path_to_urls(project["path_with_namespace"])
+                finally:
+                    resp.close()
+            else:
+                raise exception.RepoError("Repo {repo_name} does not exist".format(**locals()))
+        return repo_url
 
     return get_url
 
