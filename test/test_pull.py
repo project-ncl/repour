@@ -162,11 +162,24 @@ class TestPull(unittest.TestCase):
 
             t.addfile(i, b)
 
+        # Dummy archive origin (with single root dir)
+        srd_tar_buf = io.BytesIO()
+        with tarfile.open(fileobj=srd_tar_buf, mode="w:xz") as t:
+            i = tarfile.TarInfo("srd/asd.txt")
+
+            b = io.BytesIO(b"Hello\n")
+            b.seek(0, io.SEEK_END)
+            i.size = b.tell()
+            b.seek(0)
+
+            t.addfile(i, b)
+
         util.setup_http(
             cls=cls,
             loop=loop,
             routes=[
-                ("GET", "/test.tar.xz", util.http_write_handler(tar_buf))
+                ("GET", "/test.tar.xz", util.http_write_handler(tar_buf)),
+                ("GET", "/srd_test.tar.xz", util.http_write_handler(srd_tar_buf)),
             ],
         )
 
@@ -219,3 +232,15 @@ class TestPull(unittest.TestCase):
                     adjust_provider=adjust,
                 ))
                 self.assertIsInstance(d, dict)
+
+                new_d = loop.run_until_complete(repour.pull.pull(
+                    pullspec={
+                        "name": "test",
+                        "type": "archive",
+                        "url": self.url + "/srd_test.tar.xz",
+                    },
+                    repo_provider=repo_provider,
+                    adjust_provider=adjust,
+                ))
+                # Single root directory should be shucked, resulting in deduplication
+                self.assertEqual(d, new_d)

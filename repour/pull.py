@@ -202,7 +202,7 @@ def pull_archive(pullspec, repo_provider, adjust_provider):
         # Determine if there is a single inner root dir, as is common with archive files
         entry_count = 0
         for entry in os.listdir(extract_dir):
-            if not os.path.isdir(entry) or entry_count > 1:
+            if not os.path.isdir(os.path.join(extract_dir, entry)) or entry_count > 0:
                 shuck = None
                 break
             entry_count += 1
