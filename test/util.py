@@ -1,4 +1,5 @@
 import asyncio
+import os
 import subprocess
 import tempfile
 
@@ -27,6 +28,23 @@ class TemporaryGitDirectory(tempfile.TemporaryDirectory):
             return repour.repo.RepoUrls(readonly=self.ro_url, readwrite=self.name)
         else:
             return self.name
+
+class TemporaryHgDirectory(tempfile.TemporaryDirectory):
+    def __init__(self, add_commit=True):
+        super().__init__()
+        self.add_commit = add_commit
+
+    def __enter__(self):
+        cmd = ["hg", "init", self.name]
+        quiet_check_call(cmd)
+
+        if self.add_commit:
+            with open(os.path.join(self.name, "hello.txt"), "w") as f:
+                f.write("Hello!\n")
+            quiet_check_call(["hg", "--cwd", self.name, "add", "hello.txt"])
+            quiet_check_call(["hg", "--cwd", self.name, "commit", "-m", "A friendly commit"])
+
+        return self.name
 
 def quiet_check_call(cmd):
     return subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

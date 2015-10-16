@@ -102,7 +102,7 @@ def _simple_scm_pull_function(start, if_ref, end, cleanup=[]):
                 cmd += if_ref(pullspec, clone_dir)
                 desc += " ref {pullspec[ref]}".format(**locals())
             cmd += end(pullspec, clone_dir)
-            desc += "with {pullspec[type]}".format(**locals())
+            desc += " with {pullspec[type]}".format(**locals())
 
             # Run clone command
             yield from expect_ok(

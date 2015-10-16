@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import io
 import os
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -228,6 +229,30 @@ class TestPull(unittest.TestCase):
                 ))
                 # Deduplication should be activated
                 self.assertEqual(d_deep, d_shallow)
+
+    @unittest.skipIf(shutil.which("hg") is None, "requires mercurial")
+    def test_hg(self):
+        with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
+            with util.TemporaryHgDirectory(add_commit=True) as origin_hg:
+                @asyncio.coroutine
+                def adjust(d):
+                    return "test"
+
+                @asyncio.coroutine
+                def repo_provider(p):
+                    return remote
+
+                d = loop.run_until_complete(repour.pull.pull(
+                    pullspec={
+                        "name": "test",
+                        "type": "hg",
+                        "ref": "tip",
+                        "url": origin_hg,
+                    },
+                    repo_provider=repo_provider,
+                    adjust_provider=adjust,
+                ))
+                self.assertIsInstance(d, dict)
 
     def test_archive(self):
         with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
