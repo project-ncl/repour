@@ -3,6 +3,7 @@ import collections
 import datetime
 import logging
 import os
+import shutil
 import tempfile
 import urllib.parse
 
@@ -159,22 +160,52 @@ def pull_git(pullspec, repo_provider, adjust_provider):
 
 @asyncio.coroutine
 def pull_archive(pullspec, repo_provider, adjust_provider):
-    with asutil.TemporaryDirectory(suffix="extract") as d:
-        with tempfile.NamedTemporaryFile(suffix="archive") as f:
+    with asutil.TemporaryDirectory(suffix="extract") as extract_dir:
+        with tempfile.NamedTemporaryFile(suffix="archive") as archive_file:
             # Download archive into stream
-            archive_filename = yield from asutil.download(pullspec["url"], f)
+            archive_filename = yield from asutil.download(pullspec["url"], archive_file)
             logger.info("Got archive tree from {pullspec[url]} named {archive_filename}".format(**locals()))
 
             # Use libarchive/bsdtar to extract into temp dir
             yield from expect_ok(
-                cmd=["bsdtar", "-xf", f.name, "-C", d],
+                cmd=["bsdtar", "-xf", archive_file.name, "-C", extract_dir],
                 desc="Could not extract archive with bsdtar",
             )
-            # TODO may need to move the files out of an inner dir, but only if single root dir (ex: asd.tar.gz would normally be asd/qwe.txt)
 
-        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "archive", archive_filename)
+        # Determine if there is a single inner root dir, as is common with archive files
+        entry_count = 0
+        for entry in os.listdir(extract_dir):
+            if not os.path.isdir(entry) or entry_count > 1:
+                shuck = None
+                break
+            entry_count += 1
+        else:
+            shuck = os.path.join(extract_dir, entry)
 
-    return internal
+        @asyncio.coroutine
+        def process(process_dir):
+            internal = yield from process_source_tree(
+                pullspec=pullspec,
+                repo_provider=repo_provider,
+                adjust_provider=adjust_provider,
+                repo_dir=process_dir,
+                origin_type=pullspec["type"],
+                origin_ref=archive_filename,
+            )
+            return internal
+
+        if shuck is None:
+            internal = yield from process(extract_dir)
+            return internal
+        else:
+            # To avoid any possiblity of a name collision between the inner dir
+            # and its contents, create a new tempdir and move them there
+            with asutil.TemporaryDirectory(suffix="archive") as repo_dir:
+                # Move the contents of the inner dir
+                for entry in os.listdir(shuck):
+                    shutil.move(os.path.join(shuck, entry), repo_dir)
+                internal = yield from process(repo_dir)
+                return internal
 
 #
 # Supported
