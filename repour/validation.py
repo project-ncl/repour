@@ -13,13 +13,14 @@ from . import repo
 nonempty_str = All(str, Length(min=1))
 nonempty_noblank_str = All(str, Match(r'^\S+$'))
 port_num = All(int, Range(min=1, max=65535))
+name_str = Match(r'^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<!\.git)$')
 
 #
 # Adjust
 #
 
 adjust_raw = {
-    "name": nonempty_str,
+    "name": name_str,
     "ref": nonempty_str,
 }
 
@@ -34,7 +35,7 @@ adjust = Schema(
 #
 pull_scm = Schema(
     {
-        "name": nonempty_str,
+        "name": name_str,
         "type": Any(*pullmodule.scm_types),
         Optional("ref"): nonempty_str,
         "url": Url(), #pylint: disable=no-value-for-parameter
@@ -46,7 +47,7 @@ pull_scm = Schema(
 
 pull_archive = Schema(
     {
-        "name": nonempty_str,
+        "name": name_str,
         "type": pullmodule.archive_type,
         "url": Url(), #pylint: disable=no-value-for-parameter
         Optional("adjust"): bool,
