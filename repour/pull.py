@@ -90,7 +90,7 @@ def pull(pullspec, repo_provider, adjust_provider):
         raise exception.PullError("Type '{pullspec[type]}' not supported".format(**locals()))
     return internal
 
-def _simple_scm_pull_function(start, if_ref, end, cleanup=(,)):
+def _simple_scm_pull_function(start, if_ref, end, cleanup=[]):
     @asyncio.coroutine
     def pull(pullspec, repo_provider, adjust_provider):
         with asutil.TemporaryDirectory(suffix=pullspec["type"]) as clone_dir:
@@ -119,7 +119,7 @@ def _simple_scm_pull_function(start, if_ref, end, cleanup=(,)):
                 pullspec=pullspec,
                 repo_provider=repo_provider,
                 adjust_provider=adjust_provider,
-                repo_dir=d,
+                repo_dir=clone_dir,
                 origin_type=pullspec["type"],
                 origin_ref=pullspec.get("ref", None),
             )
