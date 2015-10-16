@@ -144,17 +144,44 @@ pull_mercurial = _simple_scm_pull_function(
 
 @asyncio.coroutine
 def pull_git(pullspec, repo_provider, adjust_provider):
-    with asutil.TemporaryDirectory(suffix="git") as d:
-        # Shallow clone of the git ref (tag or branch)
-        yield from expect_ok(
-            cmd=["git", "clone", "--branch", pullspec["ref"], "--depth", "1", "--", pullspec["url"], d],
-            desc="Could not clone with git",
-        )
-        # Clean up git metadata
-        yield from asutil.rmtree(os.path.join(d, ".git"))
-        logger.info("Got git tree from {pullspec[url]} at ref {pullspec[ref]}".format(**locals()))
+    with asutil.TemporaryDirectory(suffix="git") as clone_dir:
+        @asyncio.coroutine
+        def deep():
+            yield from expect_ok(
+                cmd=["git", "clone", "--", pullspec["url"], clone_dir],
+                desc="Could not clone with git",
+            )
 
-        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, d, "git", pullspec["ref"])
+        if "ref" in pullspec:
+            # Distinguishing a reference from a commit-id is hard, so apply the
+            # "Easier to Ask for Forgiveness than Permission" pattern,
+            # delegating to git.
+            try:
+                # Shallow clone of the git ref (tag or branch)
+                yield from expect_ok(
+                    cmd=["git", "clone", "--branch", pullspec["ref"], "--depth", "1", "--", pullspec["url"], clone_dir],
+                    desc="Could not clone with git",
+                )
+            except exception.CommandError as e:
+                if "not found" in e.stderr:
+                    # Fallback to deep+checkout
+                    yield from deep()
+                    # Checkout tag or branch or commit-id
+                    yield from expect_ok(
+                        cmd=["git", "clone", "--", pullspec["url"], clone_dir],
+                        desc="Could not checkout ref {pullspec[ref]} from clone of {pullspec[url]} with git".format(**locals()),
+                    )
+                else:
+                    raise
+        else:
+            yield from deep()
+            # No checkout, use HEAD
+
+        # Clean up metadata
+        yield from asutil.rmtree(os.path.join(clone_dir, ".git"))
+        _log_scm_success(pullspec)
+
+        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, clone_dir, pullspec["type"], pullspec["ref"])
 
     return internal
 
