@@ -366,18 +366,14 @@ The server in this case is configured to use the `local` repo provider.
 
 1. Install vex for the current user with `pip3 install --user vex`
 2. Ensure `$PATH` includes `$HOME/.local/bin`
-3. Install the required C libraries with system package manager.
-4. `vex -m --python python3.4 rpo pip install -r venv-freeze.txt`
-
-On Fedora step three is:
-
-[source,bash]
-dnf install python3-devel python3-Cython libyaml-devel
+3. Install the required C libraries with system package manager. On Fedora: `dnf install python3-devel python3-Cython libyaml-devel`
+4. `vex -m --python python3.4 rpo pip install -r venv/runtime.txt`
+5. Optionally: `vex rpo pip install -r venv/integration-test.txt`
 
 ==== Recreating the virtual environment
 
 1. Delete the old environment with `vex -r rpo true`
-2. Rerun the last command in the parent section, above.
+2. Rerun the `vex` `pip install` commands
 
 === Configure
 
