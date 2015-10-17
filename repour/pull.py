@@ -130,7 +130,7 @@ def _simple_scm_pull_function(start, if_ref, end, cleanup=[]):
     return pull
 
 pull_subversion = _simple_scm_pull_function(
-    start=lambda p,d: ["svn", "export"],
+    start=lambda p,d: ["svn", "export", "--force"],
     if_ref=lambda p,d: ["--revision", p["ref"]],
     end=lambda p,d: [p["url"], d],
 )
@@ -182,7 +182,14 @@ def pull_git(pullspec, repo_provider, adjust_provider):
         yield from asutil.rmtree(os.path.join(clone_dir, ".git"))
         _log_scm_success(pullspec)
 
-        internal = yield from process_source_tree(pullspec, repo_provider, adjust_provider, clone_dir, pullspec["type"], pullspec["ref"])
+        internal = yield from process_source_tree(
+            pullspec=pullspec,
+            repo_provider=repo_provider,
+            adjust_provider=adjust_provider,
+            repo_dir=clone_dir,
+            origin_type=pullspec["type"],
+            origin_ref=pullspec.get("ref", None),
+        )
 
     return internal
 

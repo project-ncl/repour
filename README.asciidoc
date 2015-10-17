@@ -361,7 +361,7 @@ The server in this case is configured to use the `local` repo provider.
 - Git 2.4.3+
 - Mercural (optional, for hg support)
 - Subversion (optional, for svn support)
-- Docker 1.7.0+ (optional, for integration tests)
+- Docker 1.7.1+ (optional, for integration tests)
 
 === Setup the virtual environment with vex
 

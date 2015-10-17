@@ -93,8 +93,8 @@ if run_integration_tests:
                 "repo_provider": {
                     "type": "gitlab",
                     "params": {
-                        "root_url": "http://gitlab:8282",
-                        "ssh_root_url": "ssh://git@gitlab:2222",
+                        "root_url": "http://gitlab:80",
+                        "ssh_root_url": "ssh://git@gitlab:22",
                         "group": {
                             "id": None,
                             "name": "mw-build",
@@ -124,6 +124,7 @@ if run_integration_tests:
 
             cls.containers = []
             try:
+                # TODO could the large gitlab startup time be skipped by persisting/caching the container and repour config dir?
                 # Pull/create/start GitLab
                 cls.gitlab_port = 54421
                 docker_image = "docker.io/gitlab/gitlab-ce:8.0.4-ce.1"
@@ -210,6 +211,7 @@ if run_integration_tests:
                     yaml.dump(repour_config, f)
 
                 # Create/start Repour
+                # TODO use constant container name (ex: repour_integration_test_repour)?
                 cls.repour_port = 54422
                 cls.repour_api_url="http://localhost:{cls.repour_port}".format(**locals())
                 repour_container = cls.client.create_container(
@@ -263,7 +265,7 @@ if run_integration_tests:
             # TODO apply validation schema
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"])
+            self.assertIn("jboss-modules", internal["url"]["readonly"])
 
         def test_pull_git_ref(self):
             r = self.gitlab.post(
@@ -279,7 +281,7 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"])
+            self.assertIn("jboss-modules", internal["url"]["readonly"])
 
         def test_pull_git_commitid(self):
             r = self.gitlab.post(
@@ -295,7 +297,7 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"])
+            self.assertIn("jboss-modules", internal["url"]["readonly"])
 
         def test_pull_hg_noref(self):
             r = self.gitlab.post(
@@ -310,7 +312,7 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("hello", internal["url"])
+            self.assertIn("hello", internal["url"]["readonly"])
 
         def test_pull_hg_ref(self):
             r = self.gitlab.post(
@@ -326,7 +328,7 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("hello", internal["url"])
+            self.assertIn("hello", internal["url"]["readonly"])
 
         def test_pull_svn_noref(self):
             r = self.gitlab.post(
@@ -341,7 +343,7 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("apache-commons-io", internal["url"])
+            self.assertIn("apache-commons-io", internal["url"]["readonly"])
 
         def test_pull_svn_ref(self):
             r = self.gitlab.post(
@@ -357,7 +359,7 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("apache-commons-io", internal["url"])
+            self.assertIn("apache-commons-io", internal["url"]["readonly"])
 
         def test_pull_archive_targz(self):
             r = self.gitlab.post(
@@ -372,7 +374,7 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"])
+            self.assertIn("jboss-modules", internal["url"]["readonly"])
 
         def test_pull_archive_zip(self):
             r = self.gitlab.post(
@@ -387,6 +389,6 @@ if run_integration_tests:
             internal = r.json()
             self.assertIn("pull", internal["branch"])
             self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"])
+            self.assertIn("jboss-modules", internal["url"]["readonly"])
 
         # TODO possibly use decorator on adjust tests to skip if PME restURL host isn't accessible

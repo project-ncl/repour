@@ -219,6 +219,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
             readwrite=ssh_root_url + suffix,
             readonly=root_url + suffix,
         )
+        return repo_url
 
     @asyncio.coroutine
     def get_url(repo_name, create=True):
