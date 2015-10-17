@@ -44,20 +44,12 @@ def wait_in_logs(client, container, target_text):
 if run_integration_tests:
     class TestGitLabIntegration(unittest.TestCase):
         @classmethod
-        def remove_containers(cls):
-            for container in cls.containers:
-                cls.client.remove_container(
-                    container=container,
-                    force=True,
-                )
-
-        @classmethod
         def setUpClass(cls):
             # current file is in test/ relative to repo root
             repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
             # Docker client
-            cls.client = docker.Client()
+            cls.client = docker.Client(version="1.19")
 
             # Build main image
             repour_it_image = "repour_integration_test"
@@ -74,7 +66,7 @@ if run_integration_tests:
 
             # Create key pair
             rkp = os.path.join(cls.config_dir.name, "repour")
-            subprocess.check_call("ssh-keygen", "-f", rkp)
+            subprocess.check_call(["ssh-keygen", "-f", rkp, "-N", ""])
             os.rename(rkp, os.path.join(cls.config_dir.name, "repour.key"))
             with open(os.path.join(cls.config_dir.name, "repour.pub"), "r") as f:
                 repour_public_key = f.read().strip()
@@ -132,20 +124,22 @@ if run_integration_tests:
 
             cls.containers = []
             try:
-                # Create/start GitLab
+                # Pull/create/start GitLab
                 cls.gitlab_port = 54421
+                docker_image = "docker.io/gitlab/gitlab-ce:8.0.4-ce.1"
+                cls.client.pull(docker_image)
                 gitlab_container = cls.client.create_container(
-                    image="gitlab-ce:8.0.4-ce.1",
+                    image=docker_image,
                     detach=True,
                     host_config=cls.client.create_host_config(
                         port_bindings={
-                            8282: ("127.0.0.1", cls.gitlab_port)
+                            80: ("127.0.0.1", cls.gitlab_port)
                         },
                     ),
                 )["Id"]
                 cls.containers.append(gitlab_container)
                 cls.client.start(gitlab_container)
-                wait_in_logs(cls.client, gitlab_container, "gitlab Reconfigured!")
+                wait_in_logs(cls.client, gitlab_container, "master process ready")
 
                 # Setup requests for GitLab OAuth
                 cls.gitlab_url="http://localhost:{cls.gitlab_port}".format(**locals())
@@ -155,6 +149,8 @@ if run_integration_tests:
                         client_id="",
                     ),
                 )
+                # Disable InsecureTransportError
+                os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
                 cls.gitlab.fetch_token(
                     token_url="{cls.gitlab_url}/oauth/token".format(**locals()),
                     username="root",
@@ -166,7 +162,7 @@ if run_integration_tests:
                 r = cls.gitlab.post(
                     url=cls.gitlab_api_url + "/users",
                     data={
-                        "email": "repour@localhost",
+                        "email": "repour@localhost.local",
                         "password": repour_config["repo_provider"]["params"]["password"],
                         "username": repour_config["repo_provider"]["params"]["username"],
                         "name": "Repour",
@@ -178,7 +174,7 @@ if run_integration_tests:
 
                 # Add ssh key to repour user
                 r = cls.gitlab.post(
-                    url="{cls.gitlab_api_url}/user/{cls.gitlab_repour_uid}/keys".format(**locals()),
+                    url="{cls.gitlab_api_url}/users/{cls.gitlab_repour_uid}/keys".format(**locals()),
                     data={
                         "title": "main",
                         "key": repour_public_key,
@@ -210,7 +206,7 @@ if run_integration_tests:
                 r.raise_for_status()
 
                 # Write repour config
-                with open(os.path.join(cls.config_dir, "config.yaml"), "w") as f:
+                with open(os.path.join(cls.config_dir.name, "config.yaml"), "w") as f:
                     yaml.dump(repour_config, f)
 
                 # Create/start Repour
@@ -235,13 +231,21 @@ if run_integration_tests:
                 cls.client.start(repour_container)
                 wait_in_logs(cls.client, repour_container, "Server started on socket")
             except Exception:
-                cls.remove_containers()
+                for container in cls.containers:
+                    cls.client.remove_container(
+                        container=container,
+                        force=True,
+                    )
                 cls.config_dir.cleanup()
                 raise
 
         @classmethod
         def tearDownClass(cls):
-            cls.remove_containers()
+            for container in cls.containers:
+                cls.client.remove_container(
+                    container=container,
+                    force=True,
+                )
             cls.config_dir.cleanup()
 
         def test_pull_git_noref(self):
