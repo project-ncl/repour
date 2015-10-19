@@ -34,6 +34,7 @@ def _validated_json_endpoint(validator, coro):
         try:
             ret = yield from coro(spec, **request.app)
         except exception.DescribedError as e:
+            logger.exception(coro.__name__)
             error = {k: v for k, v in e.__dict__.items() if not k.startswith("_")}
             error["error_type"] = e.__class__.__name__
             return web.Response(
@@ -41,6 +42,18 @@ def _validated_json_endpoint(validator, coro):
                 content_type="application/json",
                 text=json.dumps(
                     obj=error,
+                    ensure_ascii=False,
+                ),
+            )
+        except Exception as e:
+            logger.exception(coro.__name__)
+            return web.Response(
+                status=500,
+                content_type="application/json",
+                text=json.dumps(
+                    obj={
+                        "error_type": e.__class__.__name__,
+                    },
                     ensure_ascii=False,
                 ),
             )

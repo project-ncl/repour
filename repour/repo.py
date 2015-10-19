@@ -270,7 +270,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                             # Redo the search
                             repo_url = yield from get_url(repo_name, create=False)
                         else:
-                            e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp)
+                            e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp, data)
                             raise e
                     elif resp.status // 100 != 2:
                         e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp)

@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 class DescribedError(Exception):
     def __init__(self, desc):
@@ -16,12 +17,20 @@ class CommandError(DescribedError):
 class HttpClientError(DescribedError):
     @classmethod
     @asyncio.coroutine
-    def from_response(cls, desc, response):
+    def from_response(cls, desc, response, body=None):
         if response.content and not response.content.at_eof():
-            body = yield from response.text()
+            b = yield from response.text()
         else:
-            body = None
-        return cls(desc, response.status, body)
+            if body is None:
+                b = None
+            elif isinstance(body, str):
+                b = body
+            else:
+                try:
+                    b = json.dumps(body)
+                except Exception:
+                    b = None
+        return cls(desc, response.status, b)
 
     def __init__(self, desc, status, body):
         super().__init__(desc)
