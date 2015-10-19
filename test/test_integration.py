@@ -251,84 +251,50 @@ if run_integration_tests:
                 )
             cls.config_dir.cleanup()
 
-        def test_pull_git_noref(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "jboss-modules-1.5.0",
-                    "type": "git",
-                    "url": "https://github.com/jboss-modules/jboss-modules.git",
-                },
-            )
-            r.raise_for_status()
-            internal = r.json()
-            # TODO apply validation schema
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"]["readonly"])
+        def check_clone(self, http_clone_url, expected_files):
+            # TODO clone from the url, check expected_files are present
+            pass
 
-        def test_pull_git_ref(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "jboss-modules-1.5.0",
-                    "type": "git",
-                    "ref": "1.5.0.Beta1",
-                    "url": "https://github.com/jboss-modules/jboss-modules.git",
-                },
-            )
-            r.raise_for_status()
-            internal = r.json()
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"]["readonly"])
+        def test_pull_git(self):
+            for ref in ["1.5.0.Beta1", "master", None, "2d8307585e97fff3a86c34eb86c681ba81bb1811"]:
+                with self.subTest(ref=ref):
+                    body = {
+                        "name": "jboss-modules-1.5.0",
+                        "type": "git",
+                        "url": "https://github.com/jboss-modules/jboss-modules.git",
+                    }
+                    if ref is not None:
+                        body["ref"] = ref
+                    r = self.gitlab.post(
+                        url=self.repour_api_url + "/pull",
+                        json=body,
+                    )
+                    r.raise_for_status()
+                    internal = r.json()
+                    # TODO apply validation schema
+                    self.assertIn("pull", internal["branch"])
+                    self.assertIn("pull", internal["tag"])
+                    self.assertIn("jboss-modules", internal["url"]["readonly"])
 
-        def test_pull_git_commitid(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "jboss-modules-1.5.0",
-                    "type": "git",
-                    "ref": "2d8307585e97fff3a86c34eb86c681ba81bb1811",
-                    "url": "https://github.com/jboss-modules/jboss-modules.git",
-                },
-            )
-            r.raise_for_status()
-            internal = r.json()
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"]["readonly"])
-
-        def test_pull_hg_noref(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "hello",
-                    "type": "hg",
-                    "url": "https://selenic.com/repo/hello",
-                },
-            )
-            r.raise_for_status()
-            internal = r.json()
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("hello", internal["url"]["readonly"])
-
-        def test_pull_hg_ref(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "hello",
-                    "type": "hg",
-                    "ref": "default",
-                    "url": "https://selenic.com/repo/hello",
-                },
-            )
-            r.raise_for_status()
-            internal = r.json()
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("hello", internal["url"]["readonly"])
+        def test_pull_hg(self):
+            for ref in ["default", None]:
+                with self.subTest(ref=ref):
+                    body = {
+                        "name": "hello",
+                        "type": "hg",
+                        "url": "https://selenic.com/repo/hello",
+                    }
+                    if ref is not None:
+                        body["ref"] = ref
+                    r = self.gitlab.post(
+                        url=self.repour_api_url + "/pull",
+                        json=body,
+                    )
+                    r.raise_for_status()
+                    internal = r.json()
+                    self.assertIn("pull", internal["branch"])
+                    self.assertIn("pull", internal["tag"])
+                    self.assertIn("hello", internal["url"]["readonly"])
 
         def test_pull_svn_noref(self):
             r = self.gitlab.post(
@@ -361,34 +327,21 @@ if run_integration_tests:
             self.assertIn("pull", internal["tag"])
             self.assertIn("apache-commons-io", internal["url"]["readonly"])
 
-        def test_pull_archive_targz(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "jboss-modules-1.5.0",
-                    "type": "archive",
-                    "url": "https://github.com/jboss-modules/jboss-modules/archive/1.4.4.Final.tar.gz",
-                },
-            )
-            r.raise_for_status()
-            internal = r.json()
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"]["readonly"])
-
-        def test_pull_archive_zip(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "jboss-modules-1.5.0",
-                    "type": "archive",
-                    "url": "https://github.com/jboss-modules/jboss-modules/archive/1.4.4.Final.zip",
-                },
-            )
-            r.raise_for_status()
-            internal = r.json()
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("jboss-modules", internal["url"]["readonly"])
+        def test_pull_archive(self):
+            for ext in [".tar.gz", ".zip"]:
+                with self.subTest(ext=ext):
+                    r = self.gitlab.post(
+                        url=self.repour_api_url + "/pull",
+                        json={
+                            "name": "jboss-modules-1.5.0",
+                            "type": "archive",
+                            "url": "https://github.com/jboss-modules/jboss-modules/archive/1.4.4.Final" + ext,
+                        },
+                    )
+                    r.raise_for_status()
+                    internal = r.json()
+                    self.assertIn("pull", internal["branch"])
+                    self.assertIn("pull", internal["tag"])
+                    self.assertIn("jboss-modules", internal["url"]["readonly"])
 
         # TODO possibly use decorator on adjust tests to skip if PME restURL host isn't accessible
