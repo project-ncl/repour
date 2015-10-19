@@ -1,7 +1,9 @@
 import asyncio
 import collections
+import hashlib
 import json
 import logging
+import traceback
 
 import aiohttp
 from aiohttp import web
@@ -14,6 +16,12 @@ from . import repo
 from . import validation
 
 logger = logging.getLogger(__name__)
+
+def create_traceback_id():
+    tb = traceback.format_exc()
+    h = hashlib.md5()
+    h.update(tb.encode("utf-8"))
+    return h.hexdigest()
 
 def _validated_json_endpoint(validator, coro):
     @asyncio.coroutine
@@ -34,9 +42,11 @@ def _validated_json_endpoint(validator, coro):
         try:
             ret = yield from coro(spec, **request.app)
         except exception.DescribedError as e:
-            logger.exception(coro.__name__)
+            traceback_id = create_traceback_id()
+            logger.exception(traceback_id)
             error = {k: v for k, v in e.__dict__.items() if not k.startswith("_")}
             error["error_type"] = e.__class__.__name__
+            error["error_traceback"] = traceback_id
             return web.Response(
                 status=400,
                 content_type="application/json",
@@ -46,13 +56,15 @@ def _validated_json_endpoint(validator, coro):
                 ),
             )
         except Exception as e:
-            logger.exception(coro.__name__)
+            traceback_id = create_traceback_id()
+            logger.exception(traceback_id)
             return web.Response(
                 status=500,
                 content_type="application/json",
                 text=json.dumps(
                     obj={
                         "error_type": e.__class__.__name__,
+                        "error_traceback": traceback_id,
                     },
                     ensure_ascii=False,
                 ),
