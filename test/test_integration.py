@@ -1,5 +1,6 @@
 import io
 import os
+import pprint
 import shutil
 import subprocess
 import tempfile
@@ -42,7 +43,6 @@ def wait_in_logs(client, container, target_text):
 #
 
 if run_integration_tests:
-    check_failed = False
     class TestGitLabIntegration(unittest.TestCase):
         @classmethod
         def setUpClass(cls):
@@ -235,6 +235,9 @@ if run_integration_tests:
                 cls.client.start(repour_container)
                 cls.repour_container = repour_container
                 wait_in_logs(cls.client, repour_container, "Server started on socket")
+
+                # For run(s) to activate the log dumper in tearDownClass
+                cls.dump_logs = set()
             except Exception:
                 for container in cls.containers:
                     cls.client.remove_container(
@@ -246,9 +249,10 @@ if run_integration_tests:
 
         @classmethod
         def tearDownClass(cls):
-            if check_failed:
-                print("\nRepour Logs:")
-                print(cls.client.logs(cls.repour_container).decode("utf-8"))
+            for container in cls.dump_logs:
+                print("\n\nContainer Logs:".format(container))
+                print(cls.client.logs(container).decode("utf-8"))
+                print()
 
             for container in cls.containers:
                 cls.client.remove_container(
@@ -258,106 +262,132 @@ if run_integration_tests:
             cls.config_dir.cleanup()
             cls.gitlab.close()
 
-        def check_clone(self, http_clone_url, expected_files):
-            # TODO clone from the url, check expected_files are present
-            pass
+        def run(self, result=None):
+            result = super().run(result) or result
+            # Activate log dump if anything didn't succeed
+            if len(result.errors) + len(result.failures) > 0:
+                self.dump_logs.add(self.repour_container)
+            return result
 
-        def check_response(self, resp, schema):
-            global check_failed
-            internal = resp.json()
+        def do_pull(self, body, patch=None, expect="ok_pull", expected_files=[]):
+            if patch is not None:
+                body = body.copy()
+                for k,v in patch.items():
+                    if v is not None:
+                        body[k] = v
+            resp = self.gitlab.post(
+                url=self.repour_api_url + "/pull",
+                json=body,
+            )
+            ret = resp.json()
+
             try:
-                internal = schema(internal)
-                self.assertEqual(resp.status_code, 200)
-                return internal
+                if expect == "ok_pull":
+                    self.assertEqual(resp.status_code, 200)
+                    # TODO schema validation, normal /pull return
+                    self.assertRegex(ret["branch"], "^pull-[0-9]+$")
+                    self.assertRegex(ret["tag"], "^pull-[0-9]+-root$")
+                    # TODO clone from the url, check expected_files are present
+                elif expect == "ok_adjust":
+                    self.assertEqual(resp.status_code, 200)
+                    # TODO schema validation, adjust /pull return
+                    self.assertRegex(ret["branch"], "^adjust-[0-9]+$")
+                    self.assertRegex(ret["tag"], "^adjust-[0-9]+-root$")
+                    # TODO clone from the url, check expected_files are present
+                elif expect == "validation_error":
+                    self.assertEqual(resp.status_code, 400)
+                    # TODO schema validation, validation error
+                elif expect == "described_error":
+                    self.assertEqual(resp.status_code, 400)
+                    # TODO schema validation, described error
+                elif expect == "other_error":
+                    self.assertEqual(resp.status_code, 500)
+                    # TODO schema validation, other error
+                else:
+                    raise Exception("Don't know how to expect {}".format(expect))
             except Exception:
-                check_failed = True
-                print("\n\nResponse Body:")
-                import pprint
-                pprint.pprint(internal)
+                print("\nResponse Body:")
+                print(resp.status_code)
+                pprint.pprint(ret)
+                print("")
                 raise
+
+            return ret
 
         def test_pull_git(self):
             for ref in ["1.5.0.Beta1", "master", None, "2d8307585e97fff3a86c34eb86c681ba81bb1811"]:
                 with self.subTest(ref=ref):
-                    body = {
-                        "name": "jboss-modules-1.5.0",
-                        "type": "git",
-                        "url": "https://github.com/jboss-modules/jboss-modules.git",
-                    }
-                    if ref is not None:
-                        body["ref"] = ref
-                    r = self.gitlab.post(
-                        url=self.repour_api_url + "/pull",
-                        json=body,
+                    self.do_pull(
+                        body={
+                            "name": "jboss-modules-1.5.0",
+                            "type": "git",
+                            "url": "https://github.com/jboss-modules/jboss-modules.git",
+                        },
+                        patch={
+                            "ref": ref
+                        },
                     )
-                    # TODO apply validation schema
-                    internal = self.check_response(r, lambda d: d)
-                    self.assertIn("pull", internal["branch"])
-                    self.assertIn("pull", internal["tag"])
-                    self.assertIn("jboss-modules", internal["url"]["readonly"])
+
+        def test_name_capitals(self):
+            body = {
+                "name": "JGroups",
+                "type": "git",
+                "ref": "master",
+                "url": "https://github.com/belaban/JGroups.git",
+            }
+            for i in range(2):
+                with self.subTest(stage=i):
+                    self.do_pull(
+                        body=body,
+                    )
+            with self.subTest(stage="lowercase"):
+                ret = self.do_pull(
+                    body=body,
+                    patch={
+                        "name": body["name"].lower(),
+                    },
+                    expect="described_error"
+                )
+                self.assertEqual(ret["desc"], "Repo jgroups does not exist")
 
         def test_pull_hg(self):
             for ref in ["default", None]:
                 with self.subTest(ref=ref):
-                    body = {
-                        "name": "hello",
-                        "type": "hg",
-                        "url": "https://selenic.com/repo/hello",
-                    }
-                    if ref is not None:
-                        body["ref"] = ref
-                    r = self.gitlab.post(
-                        url=self.repour_api_url + "/pull",
-                        json=body,
+                    ret = self.do_pull(
+                        body={
+                            "name": "hello",
+                            "type": "hg",
+                            "url": "https://selenic.com/repo/hello",
+                        },
+                        patch={
+                            "ref": ref,
+                        },
                     )
-                    internal = self.check_response(r, lambda d: d)
-                    self.assertIn("pull", internal["branch"])
-                    self.assertIn("pull", internal["tag"])
-                    self.assertIn("hello", internal["url"]["readonly"])
+                    self.assertIn("hello", ret["url"]["readonly"])
 
-        def test_pull_svn_noref(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "apache-commons-io",
-                    "type": "svn",
-                    "url": "https://svn.apache.org/viewvc/commons/proper/io/tags/commons-io-2.5",
-                },
-            )
-            internal = self.check_response(r, lambda d: d)
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("apache-commons-io", internal["url"]["readonly"])
-
-        def test_pull_svn_ref(self):
-            r = self.gitlab.post(
-                url=self.repour_api_url + "/pull",
-                json={
-                    "name": "apache-commons-io",
-                    "type": "svn",
-                    "ref": "1709188",
-                    "url": "https://svn.apache.org/viewvc/commons/proper/io/trunk",
-                },
-            )
-            internal = self.check_response(r, lambda d: d)
-            self.assertIn("pull", internal["branch"])
-            self.assertIn("pull", internal["tag"])
-            self.assertIn("apache-commons-io", internal["url"]["readonly"])
+        def test_pull_svn(self):
+            for ref,suffix in [(None,"tags/commons-io-2.5"), ("1709188","trunk")]:
+                with self.subTest(ref=ref, suffix=suffix):
+                    self.do_pull(
+                        body={
+                            "name": "apache-commons-io",
+                            "type": "svn",
+                            "url": "https://svn.apache.org/viewvc/commons/proper/io/" + suffix,
+                        },
+                        patch={
+                            "ref": ref,
+                        },
+                    )
 
         def test_pull_archive(self):
             for ext in [".tar.gz", ".zip"]:
                 with self.subTest(ext=ext):
-                    r = self.gitlab.post(
-                        url=self.repour_api_url + "/pull",
-                        json={
+                    self.do_pull(
+                        body={
                             "name": "jboss-modules-1.5.0",
                             "type": "archive",
                             "url": "https://github.com/jboss-modules/jboss-modules/archive/1.4.4.Final" + ext,
                         },
                     )
-                    internal = self.check_response(r, lambda d: d)
-                    self.assertIn("pull", internal["branch"])
-                    self.assertIn("pull", internal["tag"])
-                    self.assertIn("jboss-modules", internal["url"]["readonly"])
 
         # TODO possibly use decorator on adjust tests to skip if PME restURL host isn't accessible
