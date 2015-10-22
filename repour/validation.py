@@ -65,6 +65,68 @@ pull = Schema(
 )
 
 #
+# Returns
+#
+
+error_validation = Schema(
+    [{
+        "error_message": str,
+        "path": [str],
+        "error_type": str,
+    }],
+    required=True,
+    extra=False,
+)
+
+error_described = Schema(
+    {
+        "error_type": nonempty_str,
+        "error_traceback": nonempty_str,
+        str: object,
+    },
+    required=True,
+    extra=False,
+)
+
+error_other = Schema(
+    {
+        "error_type": nonempty_str,
+        "error_traceback": nonempty_str,
+    },
+    required=True,
+    extra=False,
+)
+
+success_pull = Schema(
+    {
+        "branch": nonempty_str,
+        "tag": nonempty_str,
+        "url": {
+            "readonly": Url(), #pylint: disable=no-value-for-parameter
+            "readwrite": Url(), #pylint: disable=no-value-for-parameter
+        },
+    },
+    required=True,
+    extra=False,
+)
+
+success_adjust = success_pull
+
+success_pull_adjust = Schema(
+    {
+        "branch": nonempty_str,
+        "tag": nonempty_str,
+        "url": {
+            "readonly": Url(), #pylint: disable=no-value-for-parameter
+            "readwrite": Url(), #pylint: disable=no-value-for-parameter
+        },
+        "pull": success_pull,
+    },
+    required=True,
+    extra=False,
+)
+
+#
 # Server configuration
 #
 

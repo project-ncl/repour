@@ -17,6 +17,8 @@ try:
 except ImportError:
     deps_available=False
 
+import repour.validation
+
 # Only run integration tests if able and requested
 run_integration_tests = deps_available and "REPOUR_RUN_IT" in os.environ
 
@@ -252,7 +254,7 @@ if run_integration_tests:
             cls.gitlab.close()
 
             for container in cls.dump_logs:
-                print("\n\nContainer Logs:".format(container))
+                print("\n\nContainer Logs:")
                 print(cls.client.logs(container).decode("utf-8"))
                 print()
 
@@ -285,25 +287,25 @@ if run_integration_tests:
             try:
                 if expect == "ok_pull":
                     self.assertEqual(resp.status_code, 200)
-                    # TODO schema validation, normal /pull return
+                    repour.validation.success_pull(ret)
                     self.assertRegex(ret["branch"], "^pull-[0-9]+$")
                     self.assertRegex(ret["tag"], "^pull-[0-9]+-root$")
                     # TODO clone from the url, check expected_files are present
                 elif expect == "ok_adjust":
                     self.assertEqual(resp.status_code, 200)
-                    # TODO schema validation, adjust /pull return
+                    repour.validation.success_pull_adjust(ret)
                     self.assertRegex(ret["branch"], "^adjust-[0-9]+$")
                     self.assertRegex(ret["tag"], "^adjust-[0-9]+-root$")
                     # TODO clone from the url, check expected_files are present
                 elif expect == "validation_error":
                     self.assertEqual(resp.status_code, 400)
-                    # TODO schema validation, validation error
+                    repour.validation.error_validation(ret)
                 elif expect == "described_error":
                     self.assertEqual(resp.status_code, 400)
-                    # TODO schema validation, described error
+                    repour.validation.error_described(ret)
                 elif expect == "other_error":
                     self.assertEqual(resp.status_code, 500)
-                    # TODO schema validation, other error
+                    repour.validation.error_other(ret)
                 else:
                     raise Exception("Don't know how to expect {}".format(expect))
             except Exception:
