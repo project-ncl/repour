@@ -249,8 +249,9 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
             resp.close()
 
         for project in projects:
-            if project.get("name", None) == repo_name:
+            if project["name"] == repo_name:
                 repo_url = path_to_urls(project["path_with_namespace"])
+                logger.debug("Returning existing GitLab repo at {repo_url}".format(**locals()))
                 break
         else:
             # Project doesn't exist
@@ -266,9 +267,18 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                         except Exception:
                             data = {}
                         if "has already been taken" in data.get("message", {}).get("name", []):
-                            # Repo already exists (interleaving with another create probably)
-                            # Redo the search
+                            # Repo with name=repo_name already exists
+                            # (interleaving with another create probably), so
+                            # search again.
+                            logger.info("Recovering from GitLab create interleaving for {repo_name}".format(**locals()))
                             repo_url = yield from get_url(repo_name, create=False)
+                        elif "has already been taken" in data.get("message", {}).get("path", []):
+                            e = yield from exception.RepoHttpClientError.from_response(
+                                desc="The path for the given name has already been allocated to a different project",
+                                response=resp,
+                                body=data,
+                            )
+                            raise e
                         else:
                             e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp, data)
                             raise e
@@ -278,6 +288,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                     else:
                         project = yield from resp.json()
                         repo_url = path_to_urls(project["path_with_namespace"])
+                        logger.info("Created new GitLab repo at {repo_url}".format(**locals()))
                 finally:
                     resp.close()
             else:

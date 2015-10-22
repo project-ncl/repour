@@ -349,7 +349,7 @@ if run_integration_tests:
                     },
                     expect="described_error"
                 )
-                self.assertEqual(ret["desc"], "Repo jgroups does not exist")
+                self.assertIn("already been allocated", ret["desc"])
 
         def test_pull_hg(self):
             for ref in ["default", None]:
