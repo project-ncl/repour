@@ -249,6 +249,8 @@ if run_integration_tests:
 
         @classmethod
         def tearDownClass(cls):
+            cls.gitlab.close()
+
             for container in cls.dump_logs:
                 print("\n\nContainer Logs:".format(container))
                 print(cls.client.logs(container).decode("utf-8"))
@@ -260,7 +262,6 @@ if run_integration_tests:
                     force=True,
                 )
             cls.config_dir.cleanup()
-            cls.gitlab.close()
 
         def run(self, result=None):
             result = super().run(result) or result
