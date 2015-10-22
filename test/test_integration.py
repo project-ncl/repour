@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import urllib.parse
 
 import yaml
 
@@ -272,6 +273,21 @@ if run_integration_tests:
                 self.dump_logs.add(self.repour_container)
             return result
 
+        def check_clone(self, url, tag, expected_files=[]):
+            # Replace host in returned url
+            url = urllib.parse.urlunparse(urllib.parse.urlparse(url)._replace(netloc="localhost:{}".format(self.gitlab_port)))
+
+            with tempfile.TemporaryDirectory() as repo_dir:
+                try:
+                    subprocess.check_output(["git", "clone", "--branch", tag, "--", url, repo_dir], stderr=subprocess.STDOUT)
+                except subprocess.CalledProcessError as e:
+                    print(e.output)
+                for expected_file in expected_files:
+                    self.assertTrue(
+                        expr=os.path.exists(os.path.join(repo_dir, expected_file)),
+                        msg="{expected_file} does not exist in internal repository".format(**locals()),
+                    )
+
         def do_pull(self, body, patch=None, expect="ok_pull", expected_files=[]):
             if patch is not None:
                 body = body.copy()
@@ -290,13 +306,26 @@ if run_integration_tests:
                     repour.validation.success_pull(ret)
                     self.assertRegex(ret["branch"], "^pull-[0-9]+$")
                     self.assertRegex(ret["tag"], "^pull-[0-9]+-root$")
-                    # TODO clone from the url, check expected_files are present
+                    self.check_clone(
+                        url=ret["url"]["readonly"],
+                        tag=ret["tag"],
+                        expected_files=expected_files,
+                    )
                 elif expect == "ok_adjust":
                     self.assertEqual(resp.status_code, 200)
                     repour.validation.success_pull_adjust(ret)
                     self.assertRegex(ret["branch"], "^adjust-[0-9]+$")
                     self.assertRegex(ret["tag"], "^adjust-[0-9]+-root$")
-                    # TODO clone from the url, check expected_files are present
+                    self.check_clone(
+                        url=ret["url"]["readonly"],
+                        tag=ret["tag"],
+                        expected_files=expected_files,
+                    )
+                    self.check_clone(
+                        url=ret["url"]["readonly"],
+                        tag=ret["pull"]["tag"],
+                        expected_files=expected_files,
+                    )
                 elif expect == "validation_error":
                     self.assertEqual(resp.status_code, 400)
                     repour.validation.error_validation(ret)
@@ -329,6 +358,7 @@ if run_integration_tests:
                         patch={
                             "ref": ref
                         },
+                        expected_files=["pom.xml"],
                     )
 
         def test_name_capitals(self):
@@ -342,6 +372,7 @@ if run_integration_tests:
                 with self.subTest(stage=i):
                     self.do_pull(
                         body=body,
+                        expected_files=["pom.xml"],
                     )
             with self.subTest(stage="lowercase"):
                 ret = self.do_pull(
@@ -349,7 +380,7 @@ if run_integration_tests:
                     patch={
                         "name": body["name"].lower(),
                     },
-                    expect="described_error"
+                    expect="described_error",
                 )
                 self.assertIn("already been allocated", ret["desc"])
 
@@ -365,6 +396,7 @@ if run_integration_tests:
                         patch={
                             "ref": ref,
                         },
+                        expected_files=["Makefile"],
                     )
                     self.assertIn("hello", ret["url"]["readonly"])
 
@@ -380,6 +412,7 @@ if run_integration_tests:
                         patch={
                             "ref": ref,
                         },
+                        expected_files=["pom.xml"],
                     )
 
         def test_pull_archive(self):
@@ -391,6 +424,7 @@ if run_integration_tests:
                             "type": "archive",
                             "url": "https://github.com/jboss-modules/jboss-modules/archive/1.4.4.Final" + ext,
                         },
+                        expected_files=["pom.xml"],
                     )
 
         # TODO possibly use decorator on adjust tests to skip if PME restURL host isn't accessible
