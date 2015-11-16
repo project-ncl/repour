@@ -352,9 +352,11 @@ git clone --branch pull-1436349331-root file:///tmp/repour-test-repos/testing
 
 The server in this case is configured to use the `local` repo provider.
 
-== Server Setup
+== Development
 
-=== Prerequisites
+=== Local Server Setup
+
+==== Prerequisites
 
 - Python 3.4.1+
 - pip
@@ -363,7 +365,7 @@ The server in this case is configured to use the `local` repo provider.
 - Subversion (optional, for svn support)
 - Docker 1.7.1+ (optional, for integration tests)
 
-=== Setup the virtual environment with vex
+==== Setup the virtual environment with vex
 
 1. Install vex for the current user with `pip3 install --user vex`
 2. Ensure `$PATH` includes `$HOME/.local/bin`
@@ -371,21 +373,36 @@ The server in this case is configured to use the `local` repo provider.
 4. `vex -m --python python3.4 rpo pip install -r venv/runtime.txt`
 5. Optionally: `vex rpo pip install -r venv/integration-test.txt`
 
-==== Recreating the virtual environment
+===== Recreating the virtual environment
 
 1. Delete the old environment with `vex -r rpo true`
 2. Rerun the `vex` `pip install` commands
 
-=== Configure
+==== Configure
 
 Copy the example configuration in `config-example.yaml` to `config.yaml`, then edit.
 
-=== Start the server
+==== Start the server
 
 [source,bash]
 vex rpo python -m repour run
 
 For more information, add the `-h` switch to the command.
+
+=== Tests
+
+==== Unit Tests
+
+Unit tests are self-contained and work without an internet connection. To run them:
+
+1. `vex rpo python -m unittest`
+
+==== Integration Tests
+
+GitLab integration tests will be executed using the local Docker server. To run them:
+
+1. ensure your vex environment includes `venv/integration-test.txt`
+2. prefix `REPOUR_RUN_IT=1` before the `unittest` command, to set the triggering environment variable. For example: `REPOUR_RUN_IT=1 vex rpo python -m unittest`
 
 == License
 
