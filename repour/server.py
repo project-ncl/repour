@@ -1,8 +1,10 @@
 import asyncio
+import base64
 import collections
 import hashlib
 import json
 import logging
+import os
 import traceback
 
 import aiohttp
@@ -17,13 +19,33 @@ from . import validation
 
 logger = logging.getLogger(__name__)
 
+def create_callback_id():
+    return base64.b32encode(os.urandom(30)).decode("ascii")
+
 def create_traceback_id():
     tb = traceback.format_exc()
     h = hashlib.md5()
     h.update(tb.encode("utf-8"))
     return h.hexdigest()
 
+def described_error_to_obj(exception):
+    traceback_id = create_traceback_id()
+    error = {k: v for k, v in exception.__dict__.items() if not k.startswith("_")}
+    error["error_type"] = exception.__class__.__name__
+    error["error_traceback"] = traceback_id
+    return (traceback_id, error)
+
+def exception_to_obj(exception):
+    traceback_id = create_traceback_id()
+    error = {
+        "error_type": exception.__class__.__name__,
+        "error_traceback": traceback_id,
+    }
+    return (traceback_id, error)
+
 def _validated_json_endpoint(validator, coro):
+    client_session = aiohttp.ClientSession() #pylint: disable=no-member
+
     @asyncio.coroutine
     def handler(request):
         spec = yield from request.json()
@@ -40,45 +62,73 @@ def _validated_json_endpoint(validator, coro):
             )
 
         try:
-            ret = yield from coro(spec, **request.app)
-        except exception.DescribedError as e:
-            traceback_id = create_traceback_id()
-            logger.exception(traceback_id)
-            error = {k: v for k, v in e.__dict__.items() if not k.startswith("_")}
-            error["error_type"] = e.__class__.__name__
-            error["error_traceback"] = traceback_id
-            return web.Response(
-                status=400,
-                content_type="application/json",
-                text=json.dumps(
-                    obj=error,
-                    ensure_ascii=False,
-                ),
-            )
-        except Exception as e:
-            traceback_id = create_traceback_id()
-            logger.exception(traceback_id)
-            return web.Response(
-                status=500,
-                content_type="application/json",
-                text=json.dumps(
-                    obj={
-                        "error_type": e.__class__.__name__,
-                        "error_traceback": traceback_id,
-                    },
-                    ensure_ascii=False,
-                ),
-            )
+            # Callback requested?
+            validation.callback(spec)
+        except voluptuous.MultipleInvalid as x:
+            try:
+                ret = yield from coro(spec, **request.app)
+            except exception.DescribedError as e:
+                status = 400
+                traceback_id, obj = described_error_to_obj(e)
+                logger.exception(traceback_id)
+            except Exception as e:
+                status = 500
+                traceback_id, obj = exception_to_obj(e)
+                logger.exception(traceback_id)
+            else:
+                status = 200
+                obj = ret
 
-        return web.Response(
-            status=200,
+        else:
+            callback_id = create_callback_id()
+
+            @asyncio.coroutine
+            def send_callback(callback_spec):
+                try:
+                    ret = yield from coro(spec, **request.app)
+                except exception.DescribedError as e:
+                    status = 400
+                    traceback_id, obj = described_error_to_obj(e)
+                    logger.exception(traceback_id)
+                except Exception as e:
+                    status = 500
+                    traceback_id, obj = exception_to_obj(e)
+                    logger.exception(traceback_id)
+                else:
+                    status = 200
+                    obj = ret
+
+                obj["callback"] = {
+                    "status": status,
+                    "id": callback_id,
+                }
+
+                client_session.request(
+                    callback_spec["method"],
+                    callback_spec["url"],
+                    data=json.dumps(
+                        obj=obj,
+                        ensure_ascii=False,
+                    ).encode("utf-8")
+                )
+
+            request.app.loop.create_task(send_callback(spec["callback"]))
+            status = 202
+            obj = {
+                "callback": {
+                    "id": callback_id,
+                }
+            }
+
+        response = web.Response(
+            status=status,
             content_type="application/json",
             text=json.dumps(
-                obj=ret,
+                obj=obj,
                 ensure_ascii=False,
-            )
+            ),
         )
-
+        return response
     return handler
 
 #
