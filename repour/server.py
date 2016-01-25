@@ -83,7 +83,7 @@ def _validated_json_endpoint(validator, coro):
             callback_id = create_callback_id()
 
             @asyncio.coroutine
-            def send_callback(callback_spec):
+            def do_callback(callback_spec):
                 try:
                     ret = yield from coro(spec, **request.app)
                 except exception.DescribedError as e:
@@ -103,16 +103,29 @@ def _validated_json_endpoint(validator, coro):
                     "id": callback_id,
                 }
 
-                client_session.request(
-                    callback_spec["method"],
-                    callback_spec["url"],
-                    data=json.dumps(
-                        obj=obj,
-                        ensure_ascii=False,
-                    ).encode("utf-8")
-                )
+                @asyncio.coroutine
+                def send_result():
+                    resp = yield from client_session.request(
+                        callback_spec["method"],
+                        callback_spec["url"],
+                        data=json.dumps(
+                            obj=obj,
+                            ensure_ascii=False,
+                        ).encode("utf-8")
+                    )
+                    return resp
+                resp = yield from send_result()
+                backoff = 0
+                while resp.status // 100 != 2:
+                    if backoff > 9:
+                        logger.error("Giving up on callback {callback_id}".format(**locals()))
+                        break
+                    logger.info("Unable to send result of callback {callback_id} to {callback_spec[url]} status {resp.status} attempt {backoff}/9".format(**locals()))
+                    yield from asyncio.sleep(2 ** backoff)
+                    backoff += 1
+                    resp = yield from send_result()
 
-            request.app.loop.create_task(send_callback(spec["callback"]))
+            request.app.loop.create_task(do_callback(spec["callback"]))
             status = 202
             obj = {
                 "callback": {
