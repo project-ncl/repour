@@ -3,10 +3,6 @@ import logging
 import os
 import sys
 
-import yaml
-
-from . import validation
-
 logger = logging.getLogger(__name__)
 
 def override(config, config_coords, args, arg_name):
@@ -23,15 +19,76 @@ def override(config, config_coords, args, arg_name):
 # Subcommands
 #
 
-def run_subcommand(args, config):
+def run_subcommand(args):
     from . import server
 
+    # Config
+    config = load_config(args.config)
+    override(config, ("log", "path"), args, "log")
     override(config, ("bind", "address"), args, "address")
     override(config, ("bind", "port"), args, "port")
+
+    # Logging
+    log_default_level = logging._nameToLevel[config["log"]["level"]]
+    configure_logging(log_default_level, config["log"]["path"], args.verbose, args.quiet, args.silent)
+
+    # Go
     server.start_server(
         bind=config["bind"],
         repo_provider=config["repo_provider"],
         adjust_provider=config["adjust_provider"],
+    )
+
+def run_container_subcommand():
+    from . import server
+
+    # Log to stdout/stderr only (no file)
+    configure_logging(logging.INFO)
+
+    # Read required config from env vars, most of it is hardcoded though
+    missing_envs = []
+    def required_env(name, desc):
+        val = os.environ.get(name, None)
+        # Val should not be empty or None
+        if not val:
+            missing_envs.append((name, desc))
+        return val
+    da_url = required_env("REPOUR_PME_DA_URL", "The REST endpoint required by PME to look up GAVs")
+    # gitolite uses ssh key auth, will be mounted as OpenShift Secret file in secrets/gitolite/repour.key
+    # https://github.com/kubernetes/kubernetes/blob/master/docs/design/secrets.md#use-case-pod-with-ssh-keys
+    gitolite_ssh_url = required_env("REPOUR_GITOLITE_URL", "The SSH URL for the repository provider")
+    if missing_envs:
+        print("Missing environment variable(s):")
+        for missing_env in missing_envs:
+            print("{m[0]} ({m[1]})".format(m=missing_env))
+        return 2
+
+    # Go
+    server.start_server(
+        bind={
+            "address": None,
+            "port": 7331,
+        },
+        repo_provider = {
+            "type": "gitolite",
+            "params": {
+                "ssh_url": gitolite_ssh_url,
+            },
+        },
+        adjust_provider = {
+            "type": "subprocess",
+            "params": {
+                "description": "PME",
+                "cmd": [
+                    "java", "-jar", os.path.join(os.getcwd(), "pom-manipulation-cli.jar"),
+                    "-s", "settings.xml",
+                    "-d",
+                    "-DrestURL=" + da_url,
+                    "-Dversion.incremental.suffix=redhat",
+                    "-DstrictAlignment=true",
+                ],
+            },
+        },
     )
 
 #
@@ -40,7 +97,6 @@ def run_subcommand(args, config):
 
 def create_argparser():
     parser = argparse.ArgumentParser(description="Run repour server in various modes")
-    parser.add_argument("-c", "--config", default="config.yaml", help="Path to the configuration file. Default: config.yaml")
     parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase logging verbosity one level, repeatable.")
     parser.add_argument("-q", "--quiet", action="count", default=0, help="Decrease logging verbosity one level, repeatable.")
     parser.add_argument("-s", "--silent", action="store_true", help="Do not log to stdio.")
@@ -52,12 +108,18 @@ def create_argparser():
     run_parser = subparsers.add_parser("run", help=run_desc)
     run_parser.description = run_desc
     run_parser.set_defaults(func=run_subcommand)
+    run_parser.add_argument("-c", "--config", default="config.yaml", help="Path to the configuration file. Default: config.yaml")
     run_parser.add_argument("-a", "--address", help="Override the bind IP address provided in the config file.")
     run_parser.add_argument("-p", "--port", help="Override the bind port number provided in the config file.")
 
+    run_container_desc = "Run the server in a container environment"
+    run_container_parser = subparsers.add_parser("run-container", help=run_container_desc)
+    run_container_parser.description = run_container_desc
+    run_container_parser.set_defaults(func=run_container_subcommand)
+
     return parser
 
-def configure_logging(log_path, default_level, verbose_count, quiet_count, silent):
+def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count=0, silent=False):
     formatter = logging.Formatter(
         fmt="{asctime} {levelname} {name}:{lineno} {message}",
         style="{",
@@ -65,9 +127,10 @@ def configure_logging(log_path, default_level, verbose_count, quiet_count, silen
 
     root_logger = logging.getLogger()
 
-    file_log = logging.FileHandler(log_path)
-    file_log.setFormatter(formatter)
-    root_logger.addHandler(file_log)
+    if log_path is not None:
+        file_log = logging.FileHandler(log_path)
+        file_log.setFormatter(formatter)
+        root_logger.addHandler(file_log)
 
     if not silent:
         console_log = logging.StreamHandler()
@@ -78,6 +141,9 @@ def configure_logging(log_path, default_level, verbose_count, quiet_count, silen
     root_logger.setLevel(log_level)
 
 def load_config(config_path):
+    import yaml
+    from . import validation
+
     config_dir = os.path.dirname(config_path)
     def config_relative(loader, node):
         value = loader.construct_scalar(node)
@@ -94,16 +160,8 @@ def main():
     parser = create_argparser()
     args = parser.parse_args()
 
-    # Config
-    config = load_config(args.config)
-
-    # Logging
-    override(config, ("log", "path"), args, "log")
-    log_default_level = logging._nameToLevel[config["log"]["level"]]
-    configure_logging(config["log"]["path"], log_default_level, args.verbose, args.quiet, args.silent)
-
     if "func" in args:
-        sys.exit(args.func(args, config))
+        sys.exit(args.func(args))
     else:
         parser.print_help()
         sys.exit(1)
