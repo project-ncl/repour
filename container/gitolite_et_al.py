@@ -22,7 +22,6 @@ def do_setup():
     subprocess.check_call(["git", "clone", "repositories/gitolite-admin.git", admin_clone_path])
     # TODO add repour user with RW wild repo permission, public key from secrets mount
 
-
     # SSHD config
     subprocess.check_call(["ssh-keygen", "-t", "rsa", "-f", "ssh_host_rsa_key", "-N", ""])
     with ("sshd_config", "w") as f:
@@ -42,8 +41,6 @@ LoadModule unixd_module /etc/httpd/modules/mod_unixd.so
 LoadModule mpm_prefork_module /etc/httpd/modules/mod_mpm_prefork.so
 LoadModule cgi_module /etc/httpd/modules/mod_cgi.so
 LoadModule authz_core_module /etc/httpd/modules/mod_authz_core.so
-LoadModule authz_host_module /etc/httpd/modules/mod_authz_host.so
-LoadModule access_compat_module /etc/httpd/modules/mod_access_compat.so
 LoadModule alias_module /etc/httpd/modules/mod_alias.so
 LoadModule mime_module /etc/httpd/modules/mod_mime.so
 LoadModule log_config_module /etc/httpd/modules/mod_log_config.so
@@ -52,21 +49,12 @@ TypesConfig /etc/mime.types
 AddDefaultCharset UTF-8
 
 LogLevel warn
-ErrorLog "|/bin/cat"
+ErrorLog "||/bin/cat"
 LogFormat "%h %l %u %t \"%r\" %>s %b" common
-CustomLog "|/bin/cat" common
+CustomLog "||/bin/cat" common
 
-ScriptAlias /cgit /var/www/cgi-bin/cgit
-<Directory "/var/www/cgi-bin">
-    AllowOverride None
-    Options +ExecCGI
-    Order allow,deny
-    Allow from all
-</Directory>
 Alias /cgit-data /usr/share/cgit
-<Directory "/usr/share/cgit">
-    Require all granted
-</Directory>
+ScriptAlias /cgit /var/www/cgi-bin/cgit/
 """.format(d=os.getcwd()))
 
 # TODO now need to:
