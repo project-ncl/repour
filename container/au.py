@@ -33,16 +33,18 @@ def exec_with_fake_user(cmd):
     uid_present = uid_exists(uid)
     gid_present = gid_exists(gid)
 
+    env = os.environ.copy()
     if not (uid_present and gid_present):
-        env = os.environ.copy()
         env["LD_PRELOAD"] = "libnss_wrapper.so"
 
         real_passwd_path="/etc/passwd"
         fake_passwd_path="/tmp/passwd"
         if uid_present:
             env["NSS_WRAPPER_PASSWD"] = real_passwd_path
+            env["USER"] = pwd.getpwuid(uid).pw_name
         else:
             env["NSS_WRAPPER_PASSWD"] = fake_passwd_path
+            env["USER"] = env.get("AU_USERNAME", "default")
             shutil.copy(real_passwd_path, fake_passwd_path)
             with open(fake_passwd_path, "a") as f:
                 f.write("{name}:x:{uid}:{gid}::{home}:{shell}\n".format(
@@ -66,7 +68,7 @@ def exec_with_fake_user(cmd):
                     gid=gid,
                 ))
     else:
-        env = os.environ
+        env["USER"] = pwd.getpwuid(uid).pw_name
 
     # Replace the current process
     os.execvpe(cmd[0], cmd, env)

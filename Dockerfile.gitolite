@@ -27,6 +27,6 @@ RUN echo "tsflags=nodocs" >> /etc/dnf/dnf.conf && \
     rm -rf /var/lib/gitolite3/.ssh
 
 COPY ["container/pid1.py", "container/au.py", "container/gitolite_et_al.py", "/usr/bin/"]
-RUN chmod og+rx /bin/{pid1,au,setup_gitolite}.py
+RUN chmod og+rx /bin/{pid1,au,gitolite_et_al}.py
 
 USER 995

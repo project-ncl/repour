@@ -26,6 +26,7 @@ def do_server_setup():
         f.write("""Host localhost
     PreferredAuthentications publickey
     IdentityFile ~/admin
+    StrictHostKeyChecking no
 """)
 
     # SSHD config
@@ -57,7 +58,7 @@ AddDefaultCharset UTF-8
 
 LogLevel warn
 ErrorLog "||/bin/cat"
-LogFormat "%h %l %u %t \"%r\" %>s %b" common
+LogFormat "%h %l %u %t '%r' %>s %b" common
 CustomLog "||/bin/cat" common
 
 SetEnv GIT_PROJECT_ROOT /var/lib/gitolite3/repositories
@@ -86,7 +87,7 @@ def do_setup():
         subprocess.check_call([
             "git",
             "clone",
-            "ssh://{user}@localhost:2222/gitolite-admin".format(pwd.getpwuid(os.getuid()).pw_name),
+            "ssh://{user}@localhost:2222/gitolite-admin".format(user=pwd.getpwuid(os.getuid()).pw_name),
             d,
         ])
         with open(os.path.join(d, "conf/gitolite.conf"), "a") as f:
@@ -122,7 +123,10 @@ def reap_children(pids):
                 overall_status = status
                 first_child_to_quit = False
                 for cp in pids:
-                    os.kill(cp, signal.SIGTERM)
+                    try:
+                        os.kill(cp, signal.SIGTERM)
+                    except ProcessLookupError as e:
+                        pids.remove(cp)
     return overall_status
 
 def setup_then_spawn():
