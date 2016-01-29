@@ -19,7 +19,16 @@ name_str = Match(r'^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<!\.git)$')
 # Callback
 #
 
-# TODO
+callback_raw = {
+    "url": Url(), #pylint: disable=no-value-for-parameter
+    Optional("method"): Any("PUT", "POST"),
+}
+
+callback = Schema(
+    {"callback": callback_raw},
+    required=True,
+    extra=True,
+)
 
 #
 # Adjust
@@ -28,6 +37,7 @@ name_str = Match(r'^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<!\.git)$')
 adjust_raw = {
     "name": name_str,
     "ref": nonempty_str,
+    Optional("callback"): callback_raw,
 }
 
 adjust = Schema(
@@ -46,6 +56,7 @@ pull_scm = Schema(
         Optional("ref"): nonempty_str,
         "url": Url(), #pylint: disable=no-value-for-parameter
         Optional("adjust"): bool,
+        Optional("callback"): callback_raw,
     },
     required=True,
     extra=False,
@@ -57,6 +68,7 @@ pull_archive = Schema(
         "type": pullmodule.archive_type,
         "url": Url(), #pylint: disable=no-value-for-parameter
         Optional("adjust"): bool,
+        Optional("callback"): callback_raw,
     },
     required=True,
     extra=False,

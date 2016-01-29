@@ -106,7 +106,7 @@ def _validated_json_endpoint(validator, coro):
                 @asyncio.coroutine
                 def send_result():
                     resp = yield from client_session.request(
-                        callback_spec["method"],
+                        callback_spec.get("method", "POST"),
                         callback_spec["url"],
                         data=json.dumps(
                             obj=obj,
