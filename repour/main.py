@@ -56,12 +56,19 @@ def run_container_subcommand():
     da_url = required_env("REPOUR_PME_DA_URL", "The REST endpoint required by PME to look up GAVs")
     # gitolite uses ssh key auth, will be mounted as OpenShift Secret file in secrets/gitolite/repour.key
     # https://github.com/kubernetes/kubernetes/blob/master/docs/design/secrets.md#use-case-pod-with-ssh-keys
-    gitolite_ssh_url = required_env("REPOUR_GITOLITE_URL", "The SSH URL for the repository provider")
+    gitolite_host = required_env("REPOUR_GITOLITE_HOST", "The hostname of the repository provider")
     if missing_envs:
         print("Missing environment variable(s):")
         for missing_env in missing_envs:
             print("{m[0]} ({m[1]})".format(m=missing_env))
         return 2
+    # Read optional env vars
+    gitolite_ssh_port = os.environ.get("REPOUR_GITOLITE_SSH_PORT", "2222")
+    gitolite_ssh_user = os.environ.get("REPOUR_GITOLITE_SSH_USER", "git")
+    gitolite_http_port = os.environ.get("REPOUR_GITOLITE_HTTP_PORT", "8080")
+
+    gitolite_ssh_url = "ssh://{user}@{host}:{port}".format(host=gitolite_host, port=gitolite_ssh_port, user=gitolite_ssh_user)
+    gitolite_http_url = "http://{host}:{port}".format(host=gitolite_host, port=gitolite_http_port)
 
     # Go
     server.start_server(
@@ -73,6 +80,7 @@ def run_container_subcommand():
             "type": "gitolite",
             "params": {
                 "ssh_url": gitolite_ssh_url,
+                "http_url": gitolite_http_url,
             },
         },
         adjust_provider = {
