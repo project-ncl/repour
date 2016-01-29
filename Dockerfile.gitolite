@@ -22,9 +22,8 @@ WORKDIR /var/lib/gitolite3
 ENTRYPOINT ["pid1.py", "au.py", "gitolite_et_al.py"]
 
 RUN echo "tsflags=nodocs" >> /etc/dnf/dnf.conf && \
-    dnf install -y gitolite3 hostname findutils openssh-server nss_wrapper gettext cgit httpd && \
+    dnf install -y gitolite3 hostname findutils openssh-server nss_wrapper gettext httpd && \
     dnf clean all && \
-    printf 'project-list=/var/lib/gitolite3/projects.list\nscan-path=/var/lib/gitolite3/repositories\ncache-root=/tmp\n' >> /etc/cgitrc && \
     rm -rf /var/lib/gitolite3/.ssh
 
 COPY ["container/pid1.py", "container/au.py", "container/gitolite_et_al.py", "/usr/bin/"]

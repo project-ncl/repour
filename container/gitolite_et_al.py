@@ -1,30 +1,36 @@
 #!/usr/bin/env python3
 
 import os
+import pwd
+import shutil
+import signal
 import subprocess
 import sys
+import tempfile
 
 # Ensure Gitolite, SSHD, and Apache HTTPD are setup for use in OSE within the
 # CWD, and then run SSHD and HTTPD at the same time. Forward signals to both,
-# quit after both quit or one quits in error. Pass back logs from both to
-# stdout/stderr.
+# quit after both quit. Pass back logs from both to stdout/stderr.
 # See /usr/share/doc/gitolite3/gitolite3-README-fedora
 # See https://serverfault.com/questions/344295/is-it-possible-to-run-sshd-as-a-normal-user
+# See https://gist.github.com/zroger/5990997
+# See https://www.kernel.org/pub/software/scm/git/docs/git-http-backend.html
 
-def do_setup():
+def do_server_setup():
     # Shouldn't need to change the umask as this is all within the persistent volume, and all the same user
-    admin_publickey_path = "/mnt/secrets/admin/admin.pub"
-    subprocess.check_call(["gitolite", "setup", "-pk", admin_publickey_path])
 
-    # Temporarily clone admin repo using local as SSHD isn't set up yet
-    repour_publickey_path = "/mnt/secrets/repour/repour.pub"
-    admin_clone_path = "temp_admin_clone"
-    subprocess.check_call(["git", "clone", "repositories/gitolite-admin.git", admin_clone_path])
-    # TODO add repour user with RW wild repo permission, public key from secrets mount
+    # Setup gitolite with a temporary admin key
+    subprocess.check_call(["ssh-keygen", "-f", "admin", "-N", ""])
+    subprocess.check_call(["gitolite", "setup", "-pk", "admin.pub"])
+    with os.fdopen(os.open(".ssh/config", os.O_WRONLY | os.O_CREAT, 0o600), "w") as f:
+        f.write("""Host localhost
+    PreferredAuthentications publickey
+    IdentityFile ~/admin
+""")
 
     # SSHD config
     subprocess.check_call(["ssh-keygen", "-t", "rsa", "-f", "ssh_host_rsa_key", "-N", ""])
-    with ("sshd_config", "w") as f:
+    with open("sshd_config", "w") as f:
         f.write("""Port 2222
 HostKey {d}/ssh_host_rsa_key
 PidFile /tmp/sshd.pid
@@ -33,7 +39,7 @@ PasswordAuthentication no
 """.format(d=os.getcwd()))
 
     # Apache HTTPD config
-    with ("httpd.conf", "w") as f:
+    with open("httpd.conf", "w") as f:
         f.write("""Listen 8080
 PidFile /tmp/httpd.pid
 
@@ -44,6 +50,7 @@ LoadModule authz_core_module /etc/httpd/modules/mod_authz_core.so
 LoadModule alias_module /etc/httpd/modules/mod_alias.so
 LoadModule mime_module /etc/httpd/modules/mod_mime.so
 LoadModule log_config_module /etc/httpd/modules/mod_log_config.so
+LoadModule env_module /etc/httpd/modules/mod_env.so
 
 TypesConfig /etc/mime.types
 AddDefaultCharset UTF-8
@@ -53,29 +60,86 @@ ErrorLog "||/bin/cat"
 LogFormat "%h %l %u %t \"%r\" %>s %b" common
 CustomLog "||/bin/cat" common
 
-Alias /cgit-data /usr/share/cgit
-ScriptAlias /cgit /var/www/cgi-bin/cgit/
+SetEnv GIT_PROJECT_ROOT /var/lib/gitolite3/repositories
+SetEnv GIT_HTTP_EXPORT_ALL
+ScriptAlias / /usr/libexec/git-core/git-http-backend/
 """.format(d=os.getcwd()))
 
-# TODO now need to:
-# - do gitolite config
-# - write sshd and httpd config, with appropriate changes like, setting the ports to 2222/8080, log to stdout only (if possible)
-#   - /sbin/sshd -f ./sshd_config -D -e
-#   - httpd -d . -f httpd.conf -DFOREGROUND
-# - run sshd and apache httpd as children concurrently
-# - also get the gitolite logs to stdout somehow, ideally with no local log file, but tail -f that if nothing else
-# - forward signals to both
-# - quit when both have quit
-def setup_then_exec(cmd):
-    if not os.path.exists("sshd_config"):
+def start_servers():
+    sshd_cmd = ["/sbin/sshd", "-f", "./sshd_config", "-D", "-e"]
+    sshd_pid = os.spawnvp(os.P_NOWAIT, sshd_cmd[0], sshd_cmd)
+    httpd_cmd = ["httpd", "-d", ".", "-f", "httpd.conf", "-DFOREGROUND"]
+    httpd_pid = os.spawnvp(os.P_NOWAIT, httpd_cmd[0], httpd_cmd)
+    return set((sshd_pid, httpd_pid))
+
+def forward_signals_to(pids):
+    def forward_handler(signum, frame):
+        for pid in pids:
+            os.kill(pid, signum)
+    for signum in [signal.SIGTERM, signal.SIGINT]:
+        signal.signal(signum, forward_handler)
+
+def do_setup():
+    # Temporarily clone admin repo to add repour user
+    repour_publickey_path = "/mnt/secrets/repour/repour.pub"
+    with tempfile.TemporaryDirectory() as d:
+        subprocess.check_call([
+            "git",
+            "clone",
+            "ssh://{user}@localhost:2222/gitolite-admin".format(pwd.getpwuid(os.getuid()).pw_name),
+            d,
+        ])
+        with open(os.path.join(d, "conf/gitolite.conf"), "a") as f:
+            f.write("""
+repo CREATOR/..*
+    C   = repour
+    RW+ = admin
+    RW  = CREATOR WRITERS
+    R   = @all READERS
+""")
+        shutil.copy(repour_publickey_path, os.path.join(d, "keydir/repour.pub"))
+        for k,v in [("user.name", "admin"), ("user.email", "<>")]:
+            subprocess.check_call(["git", "-C", d, "config", "--local", k, v])
+        subprocess.check_call(["git", "-C", d, "add", "-A"])
+        subprocess.check_call(["git", "-C", d, "commit", "-m", "Add repour"])
+        subprocess.check_call(["git", "-C", d, "push"])
+
+    # Change admin key so we don't know the admin's private key
+    admin_publickey_path = "/mnt/secrets/admin/admin.pub"
+    subprocess.check_call(["gitolite", "setup", "-pk", admin_publickey_path])
+    os.remove(".ssh/config")
+    os.remove("admin")
+    os.remove("admin.pub")
+
+def reap_children(pids):
+    first_child_to_quit = True
+    overall_status = 0
+    while pids:
+        pid, status = os.waitpid(os.P_ALL, 0)
+        if pid in pids:
+            pids.remove(pid)
+            if first_child_to_quit:
+                overall_status = status
+                first_child_to_quit = False
+                for cp in pids:
+                    os.kill(cp, signal.SIGTERM)
+    return overall_status
+
+def setup_then_spawn():
+    setup_required = not os.path.exists("sshd_config")
+    if setup_required:
+        do_server_setup()
+
+    server_pids = start_servers()
+    forward_signals_to(server_pids)
+
+    if setup_required:
         do_setup()
 
-    # Replace the current process
-    os.execvp(cmd[0], cmd)
-    # Will never get here
+    return reap_children(server_pids)
 
 def main():
-    setup_then_exec(sys.argv[1:])
+    sys.exit(setup_then_spawn())
 
 if __name__ == "__main__":
     main()
