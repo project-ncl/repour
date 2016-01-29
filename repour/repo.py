@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import urllib.parse
 
 import aiohttp
@@ -298,8 +299,13 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
     return get_url
 
 def repo_gitolite(ssh_url, http_url):
+    name_pattern = re.compile(r'^[0-9a-zA-Z][-0-9a-zA-Z._@/+]*$')
     @asyncio.coroutine
     def get_url(repo_name, create=True):
+        match = name_pattern.match(repo_name)
+        if not match:
+            raise exception.RepoError("Repo name '{repo_name}' does not match pattern '{name_pattern.pattern}'".format(**locals()))
+
         encoded_name = urllib.parse.quote(repo_name)
         repo_url = RepoUrls(
             readwrite="{ssh_url}/{encoded_name}".format(**locals()),
@@ -309,24 +315,8 @@ def repo_gitolite(ssh_url, http_url):
         if not create:
             return repo_url
 
-        with asutil.TemporaryDirectory(suffix="create") as d:
-            try:
-                stdout = yield from expect_ok(
-                    cmd=["git", "clone", "--depth", "1", repo_url.readwrite, d],
-                    desc="Could not create gitolite repo with git",
-                    stderr="stdout",
-                    stdout="text",
-                )
-            except exception.RepoCommandError as e:
-                if "invalid repo name:" in e.stdout:
-                    raise exception.RepoError("Repo name '{repo_name}' is invalid".format(**locals())) from e
-                else:
-                    raise
-            else:
-                if "Initialized empty Git repository in" in stdout:
-                    logger.info("Created new gitolite repo at {repo_url}".format(**locals()))
-                else:
-                    logger.info("Using existing gitolite repo at {repo_url}".format(**locals()))
+        # Gitolite will create-on-push if required
+        logger.info("Using gitolite repo at {repo_url}".format(**locals()))
 
         return repo_url
     return get_url
