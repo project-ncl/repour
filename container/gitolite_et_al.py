@@ -21,7 +21,9 @@ def do_server_setup():
 
     # Setup gitolite with a temporary admin key
     subprocess.check_call(["ssh-keygen", "-f", "admin", "-N", ""])
-    subprocess.check_call(["gitolite", "setup", "-pk", "admin.pub"])
+    gitolite_setup_env = os.environ.copy()
+    gitolite_setup_env["GL_LOGFILE"] = "/dev/null"
+    subprocess.check_call(["gitolite", "setup", "-pk", "admin.pub"], env=gitolite_setup_env)
     with os.fdopen(os.open(".ssh/config", os.O_WRONLY | os.O_CREAT, 0o600), "w") as f:
         f.write("""Host localhost
     PreferredAuthentications publickey
@@ -121,7 +123,9 @@ repo CREATOR/..*
 
     # Change admin key so we don't know the admin's private key
     admin_publickey_path = "/mnt/secrets/admin/admin.pub"
-    subprocess.check_call(["gitolite", "setup", "-pk", admin_publickey_path])
+    gitolite_setup_env = os.environ.copy()
+    gitolite_setup_env["GL_LOGFILE"] = "/dev/null"
+    subprocess.check_call(["gitolite", "setup", "-pk", admin_publickey_path], env=gitolite_setup_env)
     os.remove(".ssh/config")
     os.remove("admin")
     os.remove("admin.pub")

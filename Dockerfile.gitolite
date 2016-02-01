@@ -24,6 +24,7 @@ ENTRYPOINT ["pid1.py", "au.py", "gitolite_et_al.py"]
 RUN echo "tsflags=nodocs" >> /etc/dnf/dnf.conf && \
     dnf install -y gitolite3 hostname findutils openssh-server nss_wrapper gettext httpd && \
     dnf clean all && \
+    chmod og+wrx /var/lib/gitolite3 && \
     rm -rf /var/lib/gitolite3/.ssh
 
 COPY ["container/pid1.py", "container/au.py", "container/gitolite_et_al.py", "/usr/bin/"]

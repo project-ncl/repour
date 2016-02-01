@@ -12,8 +12,6 @@ import yaml
 try:
     import docker
     import requests
-    import requests_oauthlib
-    import oauthlib.oauth2
     deps_available=True
 except ImportError:
     deps_available=False
@@ -24,7 +22,7 @@ import repour.validation
 run_integration_tests = deps_available and "REPOUR_RUN_IT" in os.environ
 
 #
-# Docker Utils
+# Utils
 #
 
 def wait_in_logs(client, container, target_text):
@@ -46,7 +44,9 @@ def wait_in_logs(client, container, target_text):
 #
 
 if run_integration_tests:
-    class TestGitLabIntegration(unittest.TestCase):
+    da_url = "http://10.19.208.25:8180/da/rest/v-0.4/reports/lookup/gavs"
+
+    class TestGitoliteIntegration(unittest.TestCase):
         @classmethod
         def setUpClass(cls):
             # current file is in test/ relative to repo root
@@ -55,7 +55,7 @@ if run_integration_tests:
             # Docker client
             cls.client = docker.Client(version="1.19")
 
-            # Build main image
+            # Build images
             repour_it_image = "repour_integration_test"
             # Using list to drain the log stream (don't care about it)
             list(cls.client.build(
@@ -64,185 +64,86 @@ if run_integration_tests:
                 forcerm=True,
                 tag=repour_it_image,
             ))
+            repour_it_git_image = "repour_integration_test_git"
+            list(cls.client.build(
+                path=repo_root,
+                dockerfile="Dockerfile.gitolite",
+                rm=True,
+                forcerm=True,
+                tag=repour_it_git_image,
+            ))
 
-            # Create repour volume dir
+            # Create OSE-like Secrets volume dir
             cls.config_dir = tempfile.TemporaryDirectory()
 
-            # Create key pair
-            rkp = os.path.join(cls.config_dir.name, "repour")
-            subprocess.check_call(["ssh-keygen", "-f", rkp, "-N", ""])
-            os.rename(rkp, os.path.join(cls.config_dir.name, "repour.key"))
-            with open(os.path.join(cls.config_dir.name, "repour.pub"), "r") as f:
-                repour_public_key = f.read().strip()
-
-            # Download PME jar
-            r = requests.get(
-                url="http://central.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-cli/1.7/pom-manipulation-cli-1.7.jar",
-                stream=True,
-            )
-            r.raise_for_status()
-            with open(os.path.join(cls.config_dir.name, "pom-manipulation-cli.jar"), "wb") as f:
-                shutil.copyfileobj(r.raw, f)
-
-            # Inital repour config, to be updated once GitLab is configured
-            repour_config = {
-                "log": {
-                    "path": "/home/repour/vol/server.log",
-                    "level": "DEBUG",
-                },
-                "bind": {
-                    "address": None,
-                    "port": 7331,
-                },
-                "repo_provider": {
-                    "type": "gitlab",
-                    "params": {
-                        "root_url": "http://gitlab:80",
-                        "ssh_root_url": "ssh://git@gitlab:22",
-                        "group": {
-                            "id": None,
-                            "name": "mw-build",
-                        },
-                        "username": "repour",
-                        "password": "pa$$w0rd",
-                    },
-                },
-                "adjust_provider": {
-                    "type": "subprocess",
-                    "params": {
-                        "description": "PME",
-                        "cmd": [
-                            "java",
-                            "-jar",
-                            "/home/repour/vol/pom-manipulation-cli.jar",
-                            "-s",
-                            "settings.xml",
-                            "-d",
-                            "-DrestURL=http://10.19.208.25:8180/da/rest/v-0.2/reports/lookup/gav",
-                            "-Dversion.incremental.suffix=redhat",
-                            "-DstrictAlignment=true",
-                        ],
-                    },
-                },
-            }
+            # Create key pairs
+            for n in ["repour", "admin"]:
+                key_dir = os.path.join(cls.config_dir.name, n)
+                os.mkdir(key_dir)
+                priv_key = os.path.join(key_dir, n)
+                subprocess.check_call(["ssh-keygen", "-q", "-f", priv_key, "-N", ""])
+            key_owner = os.getuid()
 
             cls.containers = []
             try:
-                # TODO could the large gitlab startup time be skipped by persisting/caching the container and repour config dir?
-                # Pull/create/start GitLab
-                cls.gitlab_port = 54421
-                docker_image = "docker.io/gitlab/gitlab-ce:8.0.4-ce.1"
-                cls.client.pull(docker_image)
-                gitlab_container = cls.client.create_container(
-                    image=docker_image,
+                # Create/start Git
+                git_container = cls.client.create_container(
+                    image=repour_it_git_image,
                     detach=True,
                     host_config=cls.client.create_host_config(
-                        port_bindings={
-                            80: ("127.0.0.1", cls.gitlab_port)
+                        binds={
+                            cls.config_dir.name: {
+                                "bind": "/mnt/secrets",
+                                "mode": "z",
+                            }
                         },
                     ),
+                    user=key_owner,
                 )["Id"]
-                cls.containers.append(gitlab_container)
-                cls.client.start(gitlab_container)
-                wait_in_logs(cls.client, gitlab_container, "master process ready")
-
-                # Setup requests for GitLab OAuth
-                cls.gitlab_url="http://localhost:{cls.gitlab_port}".format(**locals())
-                cls.gitlab_api_url="{cls.gitlab_url}/api/v3".format(**locals())
-                cls.gitlab = requests_oauthlib.OAuth2Session(
-                    client=oauthlib.oauth2.LegacyApplicationClient(
-                        client_id="",
-                    ),
-                )
-                # Disable InsecureTransportError
-                os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-                cls.gitlab.fetch_token(
-                    token_url="{cls.gitlab_url}/oauth/token".format(**locals()),
-                    username="root",
-                    password="5iveL!fe",
-                )
-
-                # Configure GitLab
-                # Create repour user
-                r = cls.gitlab.post(
-                    url=cls.gitlab_api_url + "/users",
-                    data={
-                        "email": "repour@localhost.local",
-                        "password": repour_config["repo_provider"]["params"]["password"],
-                        "username": repour_config["repo_provider"]["params"]["username"],
-                        "name": "Repour",
-                        "confirm": "false",
-                    },
-                )
-                r.raise_for_status()
-                cls.gitlab_repour_uid = r.json()["id"]
-
-                # Add ssh key to repour user
-                r = cls.gitlab.post(
-                    url="{cls.gitlab_api_url}/users/{cls.gitlab_repour_uid}/keys".format(**locals()),
-                    data={
-                        "title": "main",
-                        "key": repour_public_key,
-                    }
-                )
-                r.raise_for_status()
-
-                # Create group
-                r = cls.gitlab.post(
-                    url="{cls.gitlab_api_url}/groups".format(**locals()),
-                    data={
-                        "name": repour_config["repo_provider"]["params"]["group"]["name"],
-                        "path": repour_config["repo_provider"]["params"]["group"]["name"],
-                        "description": "Build sources",
-                    }
-                )
-                r.raise_for_status()
-                cls.gitlab_gid = r.json()["id"]
-                repour_config["repo_provider"]["params"]["group"]["id"] = cls.gitlab_gid
-
-                # Add repour user to group
-                r = cls.gitlab.post(
-                    url="{cls.gitlab_api_url}/groups/{cls.gitlab_gid}/members".format(**locals()),
-                    data={
-                        "user_id": cls.gitlab_repour_uid,
-                        "access_level": "50",
-                    }
-                )
-                r.raise_for_status()
-
-                # Write repour config
-                with open(os.path.join(cls.config_dir.name, "config.yaml"), "w") as f:
-                    yaml.dump(repour_config, f)
+                cls.containers.append(git_container)
+                cls.client.start(git_container)
+                cls.git_container = git_container
+                wait_in_logs(cls.client, git_container, "Server listening on")
+                git_hostname = cls.client.inspect_container(git_container)["NetworkSettings"]["IPAddress"]
 
                 # Create/start Repour
-                # TODO use constant container name (ex: repour_integration_test_repour)?
-                cls.repour_port = 54422
-                cls.repour_api_url="http://localhost:{cls.repour_port}".format(**locals())
                 repour_container = cls.client.create_container(
                     image=repour_it_image,
                     detach=True,
                     host_config=cls.client.create_host_config(
-                        links={ gitlab_container: "gitlab" },
+                        links={ git_container: "git" },
                         binds={
                             cls.config_dir.name: {
-                                "bind": "/home/repour/vol",
+                                "bind": "/mnt/secrets",
                                 "mode": "z",
                             }
                         },
-                        port_bindings={
-                            7331: ("127.0.0.1", cls.repour_port)
-                        },
                     ),
+                    # Note that the forced UID change activates au.py, so
+                    # setting REPOUR_GITOLITE_SSH_USER isn't required (will be
+                    # source default user git instead of gitolite3)
+                    user=key_owner,
+                    environment={
+                        "REPOUR_GITOLITE_HOST": git_hostname,
+                        "REPOUR_PME_DA_URL": da_url,
+                    }
                 )["Id"]
                 cls.containers.append(repour_container)
                 cls.client.start(repour_container)
                 cls.repour_container = repour_container
                 wait_in_logs(cls.client, repour_container, "Server started on socket")
+                repour_hostname = cls.client.inspect_container(repour_container)["NetworkSettings"]["IPAddress"]
+                cls.repour_api_url="http://{repour_hostname}:7331".format(**locals())
+
+                cls.requests_session = requests.Session()
 
                 # For run(s) to activate the log dumper in tearDownClass
                 cls.dump_logs = set()
             except Exception:
+                print("\n\nContainer Startup Logs:")
                 for container in cls.containers:
+                    print(cls.client.logs(container).decode("utf-8"))
+                    print()
                     cls.client.remove_container(
                         container=container,
                         force=True,
@@ -252,8 +153,6 @@ if run_integration_tests:
 
         @classmethod
         def tearDownClass(cls):
-            cls.gitlab.close()
-
             for container in cls.dump_logs:
                 print("\n\nContainer Logs:")
                 print(cls.client.logs(container).decode("utf-8"))
@@ -274,9 +173,6 @@ if run_integration_tests:
             return result
 
         def check_clone(self, url, tag, expected_files=[]):
-            # Replace host in returned url
-            url = urllib.parse.urlunparse(urllib.parse.urlparse(url)._replace(netloc="localhost:{}".format(self.gitlab_port)))
-
             with tempfile.TemporaryDirectory() as repo_dir:
                 try:
                     subprocess.check_output(["git", "clone", "--branch", tag, "--", url, repo_dir], stderr=subprocess.STDOUT)
@@ -294,7 +190,7 @@ if run_integration_tests:
                 for k,v in patch.items():
                     if v is not None:
                         body[k] = v
-            resp = self.gitlab.post(
+            resp = self.requests_session.post(
                 url=self.repour_api_url + "/pull",
                 json=body,
             )
