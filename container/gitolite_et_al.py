@@ -116,7 +116,7 @@ def reap_children(pids):
     first_child_to_quit = True
     overall_status = 0
     while pids:
-        try
+        try:
             pid, status = os.waitpid(os.P_ALL, 0)
         except InterruptedError as e:
             # Signals are already handled by the children exiting
