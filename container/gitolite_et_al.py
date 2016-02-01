@@ -37,6 +37,7 @@ HostKey {d}/ssh_host_rsa_key
 PidFile /tmp/sshd.pid
 UsePrivilegeSeparation no
 PasswordAuthentication no
+PermitUserEnvironment yes
 """.format(d=os.getcwd()))
 
     # Apache HTTPD config
@@ -67,10 +68,20 @@ ScriptAlias / /usr/libexec/git-core/git-http-backend/
 """.format(d=os.getcwd()))
 
 def start_servers():
+    gitolite_log_fifo = "/tmp/gitolite_logs.fifo"
+    if not os.path.exists(gitolite_log_fifo):
+        os.mkfifo(gitolite_log_fifo)
+    with open(".ssh/environment", "w") as f:
+        f.write("GL_LOGFILE={gitolite_log_fifo}\n".format(**locals()))
+    tail_cmd = ["tail", "-f", gitolite_log_fifo]
+    tail_pid = os.spawnvp(os.P_NOWAIT, tail_cmd[0], tail_cmd)
+
     sshd_cmd = ["/sbin/sshd", "-f", "./sshd_config", "-D", "-e"]
     sshd_pid = os.spawnvp(os.P_NOWAIT, sshd_cmd[0], sshd_cmd)
+
     httpd_cmd = ["httpd", "-d", ".", "-f", "httpd.conf", "-DFOREGROUND"]
     httpd_pid = os.spawnvp(os.P_NOWAIT, httpd_cmd[0], httpd_cmd)
+
     return set((sshd_pid, httpd_pid))
 
 def forward_signals_to(pids):
