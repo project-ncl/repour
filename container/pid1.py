@@ -57,7 +57,10 @@ def reap_children(pid2, reap_all):
 
 def forward_signals_to(pid):
     def forward_handler(signum, frame):
-        os.kill(pid, signum)
+        try:
+            os.kill(pid, signum)
+        except ProcessLookupError:
+            pass
     for signum in [signal.SIGTERM, signal.SIGINT]:
         signal.signal(signum, forward_handler)
 

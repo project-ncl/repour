@@ -76,7 +76,10 @@ def start_servers():
 def forward_signals_to(pids):
     def forward_handler(signum, frame):
         for pid in pids:
-            os.kill(pid, signum)
+            try:
+                os.kill(pid, signum)
+            except ProcessLookupError:
+                pass
     for signum in [signal.SIGTERM, signal.SIGINT]:
         signal.signal(signum, forward_handler)
 
