@@ -22,7 +22,7 @@ RUN cd / && \
     echo "tsflags=nodocs" >> /etc/dnf/dnf.conf && \
     dnf install -y bsdtar python3 java-headless git subversion mercurial && \
     dnf clean all && \
-    printf '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /home/repour/secrets/gitolite/repour.key\n\tControlMaster auto\n\tControlPath /tmp/%r@%h-%p\n\tControlPersist 300\n' >> /etc/ssh/ssh_config
+    printf '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /mnt/secrets/repour/repour\n\tControlMaster auto\n\tControlPath /tmp/%r@%h-%p\n\tControlPersist 300\n' >> /etc/ssh/ssh_config
 
 COPY ["venv/container.txt", "container/pid1.py", "/home/repour/"]
 RUN pip3 --no-cache-dir install -r container.txt && \
