@@ -116,17 +116,22 @@ def reap_children(pids):
     first_child_to_quit = True
     overall_status = 0
     while pids:
-        pid, status = os.waitpid(os.P_ALL, 0)
-        if pid in pids:
-            pids.remove(pid)
-            if first_child_to_quit:
-                overall_status = status
-                first_child_to_quit = False
-                for cp in pids:
-                    try:
-                        os.kill(cp, signal.SIGTERM)
-                    except ProcessLookupError as e:
-                        pids.remove(cp)
+        try
+            pid, status = os.waitpid(os.P_ALL, 0)
+        except InterruptedError as e:
+            # Signals are already handled by the children exiting
+            pass
+        else:
+            if pid in pids:
+                pids.remove(pid)
+                if first_child_to_quit:
+                    overall_status = status
+                    first_child_to_quit = False
+                    for cp in pids:
+                        try:
+                            os.kill(cp, signal.SIGTERM)
+                        except ProcessLookupError as e:
+                            pids.remove(cp)
     return overall_status
 
 def setup_then_spawn():

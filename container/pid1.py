@@ -39,16 +39,20 @@ def reap_children(pid2, reap_all):
     while more_children:
         try:
             pid, status = os.waitpid(os.P_ALL, 0)
-            if pid == pid2:
-                pid2_status = status
-                # Exit now if we're not waiting for everything
-                if not reap_all:
-                    more_children = False
+        except InterruptedError as e:
+            # Signals are already handled by pid2 exiting
+            pass
         except ChildProcessError as e:
             if e.errno == errno.ECHILD:
                 more_children = False
             else:
                 raise
+        else:
+            if pid == pid2:
+                pid2_status = status
+                # Exit now if we're not waiting for everything
+                if not reap_all:
+                    more_children = False
     return pid2_status
 
 def forward_signals_to(pid):
