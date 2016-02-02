@@ -1,12 +1,87 @@
 = Repour - Archival Code Service
 
-Repour archives source code and any changes made to the archived copy.
-
-Repour can support any origin format that produces a file tree (git, svn, tar archive, etc.). Each "pulled" tree is converted into an orphan branch in an internal git repository. The internal repository is assumed to be history protected (no force-push allowed), but no such requirements are imposed on the origin.
-
-Each archived tree may optionally be "adjusted", making changes that are commited to the internal branch. The adjust operation can be done as part of a pull operation to increase efficiency.
+Repour archives source code from many untrusted origins into trusted git repositories. It supports SCMs like link:https://git-scm.com/[git], link:https://www.mercurial-scm.org/[hg], and link:https://subversion.apache.org/[svn], as well as archive formats link:http://www.libarchive.org/[like tar and zip]. Tools like link:https://github.com/release-engineering/pom-manipulation-ext[PME] can optionally be applied as `adjust`ments, and the results archived alongside the unmodified sources.
 
 Why the name "Repour"? First, it contains the common short word for "repository" ("repo"); second, the action of "repouring" could be used to describe what the program does to the repositories.
+
+== Ethos
+
+_Repour *is not* a source repository mirroring service_, it archives source code for builds. This may sound the same but there is a big difference. Repour solves an entire class of problems surrounding the unreliability of "SCM coordinates" (a SCM url and commit/reference/revision), _that a mirror is not able to solve_.
+
+=== Mirrors are flawed
+
+A mirror can only be an exact copy of the upstream repository. Critically, any modifications to existing objects must be propagated, or the mirror ceases to be a mirror. If the upstream repository is not history protected, then neither the upstream repository or the mirror are suitable to build from. If the upstream repository is history protected, then there is no need for a mirror (except to ensure server availability). However, since virtually all upstreams are not history protected, or only weakly protected, a different solution is required.
+
+=== The single requirement
+
+How can the mutability conflict be handled if a mirror can't solve it? Strip everything back to the minimum required and go from there.
+
+The only firm requirement of storing source code for builds is that the same coordinates, point to the same tree of files, forever. Everything else is a nice-to-have, including the upstream history.
+
+== Repour as part of a build system
+
+This section describes how Repour is intended to be employed within the collection of services that form a build system.
+
+=== What Repour will do
+
+Repour provides these guarantees:
+
+==== Coordinate Immutability
+
+The git URL and tag Repour returns will always be valid, and will always point to the same file tree. This is an important part of ensuring builds can be reproduced.
+
+==== File Tree Deduplication
+
+For the same `name` and file tree, the same tag will be returned, as was returned the first time the tree was seen. This can be used to avoid rebuilding the same sources.
+
+==== No Conflict Intervention
+
+The overall design means there are no history conflicts, so manual intervention is never required to archive sources. This is an important part of a highly automated build system.
+
+=== What the repository provider must do and not do
+
+Repour needs a git repository provider that grants it the following permissions:
+
+- Create repositories
+- Clone repositories
+- Push new tags
+- Push commits to new branches
+- Push fast-forward commits to existing branches
+
+Also, the repository provider _must not_ grant the following permissions to Repour and all other users:
+
+- Push non-fast-forward commits
+- Push existing tags (re-tagging)
+- Push non-fast-forward commits (force push)
+
+In this configuration, commits and tags are immutable in the repository, i.e. link:#coordinate-immutability[history is protected].
+
+=== What the rest of the build system must do and not do
+
+Since Repour is probably not exposed at the edge of the build system, other parts will have access to the raw SCM coordinates before Repour processes them. For the vast majority of cases, the rest of the build system should never attempt to interpret the raw SCM coordinates. They should be merely passed along, so there is no duplication of effort, or bad assumptions made about mutability.
+
+Once Repour is called, it returns a set of git coordinates that can be used by the rest of the build system. See link:#what-repour-will-do-and-not-do[What Repour will do and not do].
+
+==== Direct clients
+
+Repour `/pull` has a `name` parameter, which impacts which repository the sources end up in. As the logical grouping of sources is beyond the scope of Repour, it is left to the caller to determine. However unique `name`s result in unique deduplication namespaces, so if the caller wants to use Repour's link:#file-tree-deduplication[deduplication guarantee] optimally, a minimum set of `name`s should be provided.
+
+Repour would be perfectly happy if it were given the same `name` for every request (regardless of relatability), so lean towards too few unique names rather than too many.
+
+==== Builder clients
+
+When a builder host gets the sources, it won't communicate with Repour, but with the git repository provider where Repour has stored the sources.
+
+The builder should not assume there is a default branch (`master` for example) in the repository, there won't be one there, as the repository is a collection of orphan branches.
+
+Repour specifically returns a tag instead of a commit ID so the builder can perform a fast shallow clone. Cloning the full repository is of no benefit to the build, as it uses only the single file tree. Also, the full clone time will grow linearly with the number of unique file trees stored in the repository. This is the recommended git command to use:
+
+[source,bash]
+----
+git clone --depth 1 --branch $tag $readonlyurl
+----
+
+Note that `--branch` is only usable with references (tags or branches), not commit IDs. The builder typically should not clone from a branch name as this is inherently mutable.
 
 == Interface
 
