@@ -1,6 +1,6 @@
 = Repour - Archival Code Service
 
-Repour archives source code from many untrusted origins into trusted git repositories. It supports SCMs like link:https://git-scm.com/[git], link:https://www.mercurial-scm.org/[hg], and link:https://subversion.apache.org/[svn], as well as archive formats link:http://www.libarchive.org/[like tar and zip]. Tools like link:https://github.com/release-engineering/pom-manipulation-ext[PME] can optionally be applied as `adjust`ments, and the results archived alongside the unmodified sources.
+Repour archives source code from many untrusted origins into trusted git repositories. It supports SCMs like link:https://git-scm.com/[git], link:https://www.mercurial-scm.org/[hg], and link:https://subversion.apache.org/[svn], as well as archive formats link:http://www.libarchive.org/[like tar and zip]. Tools like link:https://github.com/release-engineering/pom-manipulation-ext[PME] can optionally be applied as ``adjust``ments, and the results archived alongside the unmodified sources.
 
 Why the name "Repour"? First, it contains the common short word for "repository" ("repo"); second, the action of "repouring" could be used to describe what the program does to the repositories.
 
@@ -22,9 +22,9 @@ The only firm requirement of storing source code for builds is that the same coo
 
 This section describes how Repour is intended to be employed within the collection of services that form a build system.
 
-=== What Repour will do
+=== What Repour will do and not do
 
-Repour provides these guarantees:
+Repour does not mirror or in any way store more from the origins than the files that are required to build from. In exchange Repour provides these guarantees:
 
 ==== Coordinate Immutability
 
@@ -50,6 +50,7 @@ Repour needs a git repository provider that grants it the following permissions:
 
 Also, the repository provider _must not_ grant the following permissions to Repour and all other users:
 
+- Delete repositories
 - Push non-fast-forward commits
 - Push existing tags (re-tagging)
 - Push non-fast-forward commits (force push)
@@ -58,15 +59,15 @@ In this configuration, commits and tags are immutable in the repository, i.e. li
 
 === What the rest of the build system must do and not do
 
-Since Repour is probably not exposed at the edge of the build system, other parts will have access to the raw SCM coordinates before Repour processes them. For the vast majority of cases, the rest of the build system should never attempt to interpret the raw SCM coordinates. They should be merely passed along, so there is no duplication of effort, or bad assumptions made about mutability.
+Since Repour is probably not exposed at the edge of the build system, other parts will have access to the raw SCM coordinates before Repour processes them. For the vast majority of cases, the rest of the build system should not attempt to interpret the raw SCM coordinates. The coordinates should be merely passed along, so there is no duplication of effort, or bad assumptions made about mutability.
 
 Once Repour is called, it returns a set of git coordinates that can be used by the rest of the build system. See link:#what-repour-will-do-and-not-do[What Repour will do and not do].
 
 ==== Direct clients
 
-Repour `/pull` has a `name` parameter, which impacts which repository the sources end up in. As the logical grouping of sources is beyond the scope of Repour, it is left to the caller to determine. However unique `name`s result in unique deduplication namespaces, so if the caller wants to use Repour's link:#file-tree-deduplication[deduplication guarantee] optimally, a minimum set of `name`s should be provided.
+Repour `/pull` has a `name` parameter, which impacts which repository the sources end up in. As the logical grouping of sources is beyond the scope of Repour, it is left to the caller to determine. However, unique ``name``s result in unique deduplication namespaces, so if the caller wants to use Repour's link:#file-tree-deduplication[deduplication guarantee] optimally, a minimal set of ``name``s should be used.
 
-Repour would be perfectly happy if it were given the same `name` for every request (regardless of relatability), so lean towards too few unique names rather than too many.
+Repour would be perfectly happy if it were given the same `name` for every request (regardless of how related the sources are), so lean towards too few unique names rather than too many.
 
 ==== Builder clients
 
