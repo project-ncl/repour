@@ -65,12 +65,12 @@ if run_integration_tests:
                     tag=tag,
                 ):
                     pass
-                assert "Successfully built" in logline, "Build of image {tag} failed".format(**locals())
+                assert b"Successfully built" in logline, "Build of image {tag} failed".format(**locals())
 
             repour_it_image = "repour_integration_test"
-            build_image(repour_it_image)
+            build_image("Dockerfile", repour_it_image)
             repour_it_git_image = "repour_integration_test_git"
-            build_image(repour_it_git_image)
+            build_image("Dockerfile.gitolite", repour_it_git_image)
 
             # Create OSE-like Secrets volume dir
             cls.config_dir = tempfile.TemporaryDirectory()
