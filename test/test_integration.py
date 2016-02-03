@@ -56,14 +56,14 @@ if run_integration_tests:
             cls.client = docker.Client(version="1.19")
 
             # Build images
-            def build_image(dockerfile, tag)
+            def build_image(dockerfile, tag):
                 for logline in cls.client.build(
                     path=repo_root,
                     dockerfile=dockerfile,
                     rm=True,
                     forcerm=True,
                     tag=tag,
-                )
+                ):
                     pass
                 assert "Successfully built" in logline, "Build of image {tag} failed".format(**locals())
 
