@@ -56,7 +56,7 @@ def exec_with_fake_user(cmd):
                     uid=uid,
                     gid=gid,
                     home=env["HOME"],
-                    shell=env.get("AU_SHELL", "/sbin/nologin"),
+                    shell=env.get("AU_SHELL", "/bin/sh"),
                 ))
 
         real_group_path="/etc/group"

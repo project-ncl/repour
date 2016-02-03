@@ -103,7 +103,7 @@ if run_integration_tests:
                 cls.containers.append(git_container)
                 cls.client.start(git_container)
                 cls.git_container = git_container
-                wait_in_logs(cls.client, git_container, "Server listening on")
+                wait_in_logs(cls.client, git_container, "==> Ready")
                 git_hostname = cls.client.inspect_container(git_container)["NetworkSettings"]["IPAddress"]
 
                 # Create/start Repour
