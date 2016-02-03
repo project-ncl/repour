@@ -37,6 +37,10 @@ def exec_with_fake_user(cmd):
     if not (uid_present and gid_present):
         env["LD_PRELOAD"] = "libnss_wrapper.so"
 
+        # Docker seems to always set HOME to / when forcing a UID/GID.
+        if "AU_HOME" in env or "HOME" not in env or env["HOME"] == "/":
+            env["HOME"] = env.get("AU_HOME", os.getcwd())
+
         real_passwd_path="/etc/passwd"
         fake_passwd_path="/tmp/passwd"
         if uid_present:
@@ -51,7 +55,7 @@ def exec_with_fake_user(cmd):
                     name=env.get("AU_USERNAME", "default"),
                     uid=uid,
                     gid=gid,
-                    home=env.get("HOME", os.getcwd()),
+                    home=env["HOME"],
                     shell=env.get("AU_SHELL", "/sbin/nologin"),
                 ))
 
