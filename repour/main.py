@@ -39,7 +39,7 @@ def run_subcommand(args):
         adjust_provider=config["adjust_provider"],
     )
 
-def run_container_subcommand():
+def run_container_subcommand(args):
     from . import server
 
     # Log to stdout/stderr only (no file)

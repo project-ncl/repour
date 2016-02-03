@@ -56,22 +56,21 @@ if run_integration_tests:
             cls.client = docker.Client(version="1.19")
 
             # Build images
+            def build_image(dockerfile, tag)
+                for logline in cls.client.build(
+                    path=repo_root,
+                    dockerfile=dockerfile,
+                    rm=True,
+                    forcerm=True,
+                    tag=tag,
+                )
+                    pass
+                assert "Successfully built" in logline, "Build of image {tag} failed".format(**locals())
+
             repour_it_image = "repour_integration_test"
-            # Using list to drain the log stream (don't care about it)
-            list(cls.client.build(
-                path=repo_root,
-                rm=True,
-                forcerm=True,
-                tag=repour_it_image,
-            ))
+            build_image(repour_it_image)
             repour_it_git_image = "repour_integration_test_git"
-            list(cls.client.build(
-                path=repo_root,
-                dockerfile="Dockerfile.gitolite",
-                rm=True,
-                forcerm=True,
-                tag=repour_it_git_image,
-            ))
+            build_image(repour_it_git_image)
 
             # Create OSE-like Secrets volume dir
             cls.config_dir = tempfile.TemporaryDirectory()
