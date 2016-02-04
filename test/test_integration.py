@@ -9,6 +9,7 @@ import tempfile
 import threading
 import unittest
 import urllib.parse
+import warnings
 
 import yaml
 
@@ -168,6 +169,8 @@ if run_integration_tests:
             cls.config_dir.cleanup()
 
         def run(self, result=None):
+            # lots of bugs in the dependency libraries at the current versions used
+            warnings.filterwarnings("ignore", category=ResourceWarning)
             result = super().run(result) or result
             # Activate log dump if anything didn't succeed
             if len(result.errors) + len(result.failures) > 0:
