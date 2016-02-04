@@ -1,9 +1,12 @@
+import http.server
 import io
+import json
 import os
 import pprint
 import shutil
 import subprocess
 import tempfile
+import threading
 import unittest
 import urllib.parse
 
@@ -320,5 +323,48 @@ if run_integration_tests:
                         },
                         expected_files=["pom.xml"],
                     )
+
+        def test_callback(self):
+            server_ip = self.client.inspect_container(self.repour_container)["NetworkSettings"]["Gateway"]
+            server_port = 8080
+
+            server_done = threading.Event()
+            callback_data = None
+            class Handler(http.server.BaseHTTPRequestHandler):
+                def do_POST(self):
+                    nonlocal callback_data
+                    size = int(self.headers.get("content-length", 0))
+                    callback_data = json.loads(self.rfile.read(size).decode("utf-8"))
+                    self.send_response(200)
+                    self.end_headers()
+                    self.flush_headers()
+                    server_done.set()
+
+                def log_request(self, format, *args):
+                    pass
+
+            server = http.server.HTTPServer((server_ip, server_port), Handler)
+            server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+            try:
+                server_thread.start()
+                resp = self.requests_session.post(
+                    url=self.repour_api_url + "/pull",
+                    json={
+                        "name": "jboss-modules",
+                        "type": "git",
+                        "url": "https://github.com/jboss-modules/jboss-modules.git",
+                        "ref": "master",
+                        "callback": {
+                            "url": "http://{server_ip}:{server_port}/".format(**locals()),
+                        },
+                    },
+                )
+                ret = resp.json()
+                server_done.wait(timeout=10)
+            finally:
+                server.shutdown()
+                server_thread.join(timeout=5)
+            self.assertEqual(200, callback_data["callback"]["status"])
+            self.assertEqual(ret["callback"]["id"], callback_data["callback"]["id"])
 
         # TODO possibly use decorator on adjust tests to skip if PME restURL host isn't accessible

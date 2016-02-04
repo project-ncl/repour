@@ -101,6 +101,43 @@ class TestAdjust(unittest.TestCase):
                 "asd": "123",
             })
 
+    def test_callback(self):
+        valid = {
+            "name": "someproject",
+            "ref": "2.2.11.Final",
+            "callback": {
+                "url": "http://localhost/asd"
+            },
+        }
+        self.assertEqual(valid, repour.validation.adjust(valid))
+        valid = {
+            "name": "someproject",
+            "ref": "2.2.11.Final",
+            "callback": {
+                "url": "http://localhost/asd",
+                "method": "POST",
+            },
+        }
+        self.assertEqual(valid, repour.validation.adjust(valid))
+        valid = {
+            "name": "someproject",
+            "ref": "2.2.11.Final",
+            "callback": {
+                "url": "http://localhost/asd",
+                "method": "PUT",
+            },
+        }
+        self.assertEqual(valid, repour.validation.adjust(valid))
+        with self.assertRaises(voluptuous.MultipleInvalid):
+            repour.validation.adjust({
+                "name": "someproject",
+                "ref": "2.2.11.Final",
+                "callback": {
+                    "url": "http://localhost/asd",
+                    "method": "GET",
+                },
+            })
+
 class TestPull(unittest.TestCase):
     def test_pull(self):
         def check_adjust(d):
@@ -151,6 +188,17 @@ class TestPull(unittest.TestCase):
             invalid = valid_scm.copy()
             invalid["url"] = 123
             repour.validation.pull(invalid)
+
+    def test_callback(self):
+        valid = {
+            "name": "someproject",
+            "type": "archive",
+            "url": "http://example.com/someproject.tar.gz",
+            "callback": {
+                "url": "http://localhost/asd",
+            },
+        }
+        self.assertEqual(valid, repour.validation.pull(valid))
 
 class TestServerConfig(unittest.TestCase):
     def test_server_config(self):
