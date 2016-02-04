@@ -12,7 +12,7 @@ LABEL io.k8s.description="Archival code service" \
       io.openshift.min-memory="64Mi"
 
 WORKDIR /home/repour
-ENTRYPOINT ["./pid1.py", "python3", "-m", "repour"]
+ENTRYPOINT ["./pid1.py", "./au.py", "python3", "-m", "repour"]
 CMD ["run-container"]
 
 RUN cd / && \
@@ -24,7 +24,7 @@ RUN cd / && \
     dnf clean all && \
     echo -ne '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /mnt/secrets/repour/repour\n\tControlMaster auto\n\tControlPath /tmp/%r@%h-%p\n\tControlPersist 300\n' >> /etc/ssh/ssh_config
 
-COPY ["venv/container.txt", "container/pid1.py", "/home/repour/"]
+COPY ["venv/container.txt", "container/pid1.py", "container/au.py", "/home/repour/"]
 RUN pip3 --no-cache-dir install -r container.txt && \
     chmod og+rx *.py && \
     curl -Lo pom-manipulation-cli.jar 'http://central.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-cli/1.9.2/pom-manipulation-cli-1.9.2.jar'
