@@ -308,8 +308,8 @@ def repo_gitolite(ssh_url, http_url):
 
         encoded_name = urllib.parse.quote(repo_name)
         repo_url = RepoUrls(
-            readwrite="{ssh_url}/{encoded_name}".format(**locals()),
-            readonly="{http_url}/{encoded_name}".format(**locals()),
+            readwrite="{root}/{name}".format(root=ssh_url, name=encoded_name),
+            readonly="{root}/{name}".format(root=http_url, name=encoded_name),
         )
 
         if not create:

@@ -270,14 +270,13 @@ if run_integration_tests:
                         expected_files=["pom.xml"],
                     )
             with self.subTest(stage="lowercase"):
-                ret = self.do_pull(
+                self.do_pull(
                     body=body,
                     patch={
                         "name": body["name"].lower(),
                     },
-                    expect="described_error",
+                    expected_files=["pom.xml"],
                 )
-                self.assertIn("already been allocated", ret["desc"])
 
         def test_pull_hg(self):
             for ref in ["default", None]:
@@ -296,7 +295,7 @@ if run_integration_tests:
                     self.assertIn("hello", ret["url"]["readonly"])
 
         def test_pull_svn(self):
-            for ref,suffix in [(None,"tags/commons-io-2.5"), ("1709188","trunk")]:
+            for ref,suffix in [(None,"tags/commons-io-1.3.2"), ("1709188","trunk")]:
                 with self.subTest(ref=ref, suffix=suffix):
                     self.do_pull(
                         body={

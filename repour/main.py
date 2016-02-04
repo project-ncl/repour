@@ -66,9 +66,19 @@ def run_container_subcommand(args):
     gitolite_ssh_port = os.environ.get("REPOUR_GITOLITE_SSH_PORT", "2222")
     gitolite_ssh_user = os.environ.get("REPOUR_GITOLITE_SSH_USER", "git")
     gitolite_http_port = os.environ.get("REPOUR_GITOLITE_HTTP_PORT", "8080")
+    gitolite_user = os.environ.get("REPOUR_GITOLITE_USER", "repour")
 
-    gitolite_ssh_url = "ssh://{user}@{host}:{port}".format(host=gitolite_host, port=gitolite_ssh_port, user=gitolite_ssh_user)
-    gitolite_http_url = "http://{host}:{port}".format(host=gitolite_host, port=gitolite_http_port)
+    gitolite_ssh_url = "ssh://{ssh_user}@{host}:{port}/{user}".format(
+        host=gitolite_host,
+        port=gitolite_ssh_port,
+        ssh_user=gitolite_ssh_user,
+        user=gitolite_user,
+    )
+    gitolite_http_url = "http://{host}:{port}/{user}".format(
+        host=gitolite_host,
+        port=gitolite_http_port,
+        user=gitolite_user,
+    )
 
     # Go
     server.start_server(
