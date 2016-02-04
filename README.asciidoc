@@ -419,14 +419,43 @@ Note that `--branch` is only usable with references (tags or branches), not comm
 !===
 |===
 
-=== Cloning from the internal repositories
+== Docker Images and Open Shift
 
-Each successful operation creates a branch in the returned repository with a tag at its root. Here's an example git command to clone the `testing` repository after a pull operation returns:
+There are two docker images defined in this repository:
+
+1. ``Dockerfile``, the main image containing the Repour server.
+2. ``Dockerfile.gitolite``, a default repository provider image. Mostly intended for testing or non-critical production use.
+
+The docker images can be run in plain Docker or OpenShift. Some less-than-ideal design choices were made to fit the applications into the OSE-compatible containers:
+
+* `pid1.py` is the entrypoint of both images, and remains running for the life of the container. It works around the "Docker PID1 Zombie Problem" by reaping adopted children in addition to the primary child defined by its arguments.
+* `au.py` runs second in both images, but finishes with an exec call, so it doesn't remain running. It detects if the container UID has been forced to a non-existing user (as OpenShift does). If so, it activates `nss_wrapper` so git and ssh can continue to operate.
+* `gitolite_et_al.py` runs third in `Dockerfile.gitolite` only, it configures and starts the three processes required for gitolite.
+** The HTTP and SSH servers can't be split into seperate images because OSE does not allow containers to share persistent volumes
+** The lack of shared persistent volumes in OSE also means the container is not scalable
+** The third process in the container is tail, it reads the gitolite log so OSE can see it on the container stdout.
+** The configuration can't be included in the image because the working directory is intended to be the persistent volume mount, which will start empty in OSE.
+
+=== Locally Simulated OSE
+
+The integration tests use the Docker images in an OSE-like environment. To do something similar yourself, you first need a volume mount that is structured the same as an OpenShift `Secret` volume would be:
 
 [source,bash]
-git clone --branch pull-1436349331-root file:///tmp/repour-test-repos/testing
+----
+mkdir -p /tmp/secrets/repour /tmp/secrets/admin
+ssh-keygen -f /tmp/secrets/repour/repour -N ""
+ssh-keygen -f /tmp/secrets/admin/admin -N ""
+----
 
-The server in this case is configured to use the `local` repo provider.
+Note the real `Secret` volume could actually be multiple volumes (mounted at `/mnt/secrets/repour` and `/mnt/secrets/admin`), so least privilege can apply. `Dockerfile.gitolite` only needs to know the public keys of both users, and `Dockerfile` only needs to know the private key of the `repour` user. Neither needs to know the `admin` user's private key.
+
+Then start both images, mounting the volume as shared. `Dockerfile` needs some environment variables: where to find the repository provider, and a REST endpoint required by PME (provide a dummy value if not using adjust)
+
+[source,bash]
+----
+docker run --volume "/tmp/secrets:/mnt/secrets:z" --user="$UID" -d --name repour_git repour_integration_test_git:latest
+docker run --volume "/tmp/secrets:/mnt/secrets:z" --user="$UID" -d --link repour_git:git --name repour -e "REPOUR_GITOLITE_HOST=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' repour_git)" -e "REPOUR_PME_DA_URL=foo" repour_integration_test:latest
+----
 
 == Development
 
