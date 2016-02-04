@@ -62,24 +62,13 @@ def _validated_json_endpoint(validator, coro):
             )
 
         try:
-            # Callback requested?
             validation.callback(spec)
         except voluptuous.MultipleInvalid as x:
-            try:
-                ret = yield from coro(spec, **request.app)
-            except exception.DescribedError as e:
-                status = 400
-                traceback_id, obj = described_error_to_obj(e)
-                logger.exception(traceback_id)
-            except Exception as e:
-                status = 500
-                traceback_id, obj = exception_to_obj(e)
-                logger.exception(traceback_id)
-            else:
-                status = 200
-                obj = ret
-
+            callback_mode = False
         else:
+            callback_mode = True
+
+        if callback_mode:
             callback_id = create_callback_id()
 
             @asyncio.coroutine
@@ -132,6 +121,21 @@ def _validated_json_endpoint(validator, coro):
                     "id": callback_id,
                 }
             }
+
+        else:
+            try:
+                ret = yield from coro(spec, **request.app)
+            except exception.DescribedError as e:
+                status = 400
+                traceback_id, obj = described_error_to_obj(e)
+                logger.exception(traceback_id)
+            except Exception as e:
+                status = 500
+                traceback_id, obj = exception_to_obj(e)
+                logger.exception(traceback_id)
+            else:
+                status = 200
+                obj = ret
 
         response = web.Response(
             status=status,
