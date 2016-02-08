@@ -315,8 +315,12 @@ Note that `--branch` is only usable with references (tags or branches), not comm
 !Body (Schema)
 ![source,python]
 {
-    "name": nonempty_str,
+    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<\!\.git)$'),
     "ref": nonempty_str,
+    Optional("callback"): {
+        "url": Url(),
+        Optional("method"): Any("PUT", "POST"),
+    },
 }
 
 !Body (Example)
