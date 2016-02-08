@@ -106,7 +106,7 @@ Note that `--branch` is only usable with references (tags or branches), not comm
 ![source,python]
 ----
 {
-    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<!\.git)$'),
+    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<\!\.git)$'),
     "type": Any("git", "hg", "svn"),
     "ref": nonempty_str,
     "url": Url(),
@@ -141,7 +141,7 @@ Note that `--branch` is only usable with references (tags or branches), not comm
 ![source,python]
 ----
 {
-    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<!\.git)$'),
+    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<\!\.git)$'),
     "type": "archive",
     "url": Url(),
     Optional("adjust"): bool,
