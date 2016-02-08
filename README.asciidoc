@@ -462,6 +462,7 @@ A request that does not pass the initial validation check will return the docume
         "id": "YQSQOIGKB3TPJPB7Q6UARPULTASTXW7WOZF2JZCXLGQCBYSE"
     }
 }
+|===
 
 The body of the usual "Success" or "Processing error" response will then be sent at a later time, as an HTTP request to the URL specified in the `callback` request parameter. A "callback" object will be added, containing the status code and the ID string previously returned.
 
@@ -497,6 +498,7 @@ The body of the usual "Success" or "Processing error" response will then be sent
         "id": "YQSQOIGKB3TPJPB7Q6UARPULTASTXW7WOZF2JZCXLGQCBYSE"
     }
 }
+|===
 
 == Docker Images and Open Shift
 
