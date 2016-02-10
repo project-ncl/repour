@@ -55,5 +55,5 @@ class TestAdjust(unittest.TestCase):
             repo_provider=repo_provider,
             adjust_provider=adjust,
         ))
-        self.assertRegex(d["branch"], r'^adjust-[0-9]+$')
-        self.assertRegex(d["tag"], r'^adjust-[0-9]+-root$')
+        self.assertRegex(d["branch"], r'^branch-adjust-[0-9a-f]+$')
+        self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')

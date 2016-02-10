@@ -205,8 +205,8 @@ if run_integration_tests:
                 if expect == "ok_pull":
                     self.assertEqual(resp.status_code, 200)
                     repour.validation.success_pull(ret)
-                    self.assertRegex(ret["branch"], "^pull-[0-9]+$")
-                    self.assertRegex(ret["tag"], "^pull-[0-9]+-root$")
+                    self.assertRegex(ret["branch"], "^branch-pull-[0-9a-f]+$")
+                    self.assertRegex(ret["tag"], "^repour-[0-9a-f]+$")
                     self.check_clone(
                         url=ret["url"]["readonly"],
                         tag=ret["tag"],
@@ -215,8 +215,8 @@ if run_integration_tests:
                 elif expect == "ok_adjust":
                     self.assertEqual(resp.status_code, 200)
                     repour.validation.success_pull_adjust(ret)
-                    self.assertRegex(ret["branch"], "^adjust-[0-9]+$")
-                    self.assertRegex(ret["tag"], "^adjust-[0-9]+-root$")
+                    self.assertRegex(ret["branch"], "^branch-adjust-[0-9a-f]+$")
+                    self.assertRegex(ret["tag"], "^repour-[0-9a-f]+$")
                     self.check_clone(
                         url=ret["url"]["readonly"],
                         tag=ret["tag"],

@@ -54,7 +54,8 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
     # Process sources into internal branch
     pull_internal = yield from to_internal(internal_repo_url, repo_dir, origin_ref, pullspec["url"], origin_type)
 
-    if pullspec.get("adjust", False):
+    do_adjust = pullspec.get("adjust", False)
+    if do_adjust:
         adjust_type = yield from adjust_provider(repo_dir)
         adjust_internal = yield from adjust.commit_adjustments(
             repo_dir=repo_dir,
@@ -66,6 +67,9 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
         adjust_internal = None
 
     if adjust_internal is None:
+        if do_adjust:
+            # adjust_internal is None with do_adjust means adjust made no changes
+            pull_internal["pull"] = pull_internal
         return pull_internal
     else:
         adjust_internal["pull"] = pull_internal

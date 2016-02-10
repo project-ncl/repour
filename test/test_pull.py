@@ -58,8 +58,8 @@ class TestProcessSourceTree(unittest.TestCase):
                     origin_ref="v1.0",
                 ))
 
-                self.assertRegex(d["branch"], r'^pull-[0-9]+$')
-                self.assertRegex(d["tag"], r'^pull-[0-9]+-root$')
+                self.assertRegex(d["branch"], r'^branch-pull-[0-9a-f]+$')
+                self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
 
     def test_with_adjust(self):
         with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
@@ -92,10 +92,10 @@ class TestProcessSourceTree(unittest.TestCase):
                     origin_ref="v1.0",
                 ))
 
-                self.assertRegex(d["branch"], r'^adjust-[0-9]+$')
-                self.assertRegex(d["tag"], r'^adjust-[0-9]+-root$')
-                self.assertRegex(d["pull"]["branch"], r'^pull-[0-9]+$')
-                self.assertRegex(d["pull"]["tag"], r'^pull-[0-9]+-root$')
+                self.assertRegex(d["branch"], r'^branch-adjust-[0-9a-f]+$')
+                self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
+                self.assertRegex(d["pull"]["branch"], r'^branch-pull-[0-9a-f]+$')
+                self.assertRegex(d["pull"]["tag"], r'^repour-[0-9a-f]+$')
 
                 # Verify adjust commit is child of pull commit
                 out = subprocess.check_output(["git", "-C", remote.readwrite, "rev-list", "--parents", "-n1", d["tag"]])
@@ -135,8 +135,8 @@ class TestProcessSourceTree(unittest.TestCase):
                     origin_ref="v1.0",
                 ))
 
-                self.assertRegex(d["branch"], r'^pull-[0-9]+$')
-                self.assertRegex(d["tag"], r'^pull-[0-9]+-root$')
+                self.assertRegex(d["branch"], r'^branch-pull-[0-9a-f]+$')
+                self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
 
 class TestPull(unittest.TestCase):
     @classmethod

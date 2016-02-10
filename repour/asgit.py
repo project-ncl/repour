@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import logging
 
 from . import exception
@@ -32,6 +31,12 @@ def fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date="1970-01-
             "GIT_COMMITTER_DATE": commit_date,
         },
     )
+    head_commitid = yield from expect_ok(
+        cmd=["git", "-C", repo_dir, "rev-parse", "HEAD"],
+        desc="Could not get HEAD commitid with git",
+        stdout="single",
+    )
+    return head_commitid
 
 @asyncio.coroutine
 def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
@@ -45,30 +50,15 @@ def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
     )
 
 @asyncio.coroutine
-def deduplicate_head_tag(expect_ok, repo_dir, repo_url, refspec_pattern="refs/tags/*"):
-    head_commitid = yield from expect_ok(
-        cmd=["git", "-C", repo_dir, "rev-parse", "HEAD"],
-        desc="Could not get HEAD commitid with git",
-        stdout="single",
+def replace_branch(expect_ok, repo_dir, current_branch_name, new_name):
+    yield from expect_ok(
+        cmd=["git", "-C", repo_dir, "checkout", "-b", new_name],
+        desc="Could not create replacement branch with git",
     )
-    stdout_lines = yield from expect_ok(
-        cmd=["git", "ls-remote", repo_url, refspec_pattern],
-        desc="Could not read remote refs with git",
-        stdout="lines",
+    yield from expect_ok(
+        cmd=["git", "-C", repo_dir, "branch", "-d", current_branch_name],
+        desc="Could not delete temporary branch with git",
     )
-    for l in stdout_lines:
-        commit_id, refspec = l.split("\t")
-        if commit_id == head_commitid:
-            # ex: refs/tags/proj-1.0_1436360795_root -> proj-1.0_1436360795_root
-            existing_tag = refspec.split("/", 2)[-1]
-            # ex: pull-1234567890-root^{} -> pull-1234567890-root
-            if existing_tag.endswith("^{}"):
-                existing_tag = existing_tag[:-3]
-            break
-    else:
-        existing_tag = None
-
-    return existing_tag
 
 @asyncio.coroutine
 def annotated_tag(expect_ok, repo_dir, tag_name, message):
@@ -88,14 +78,8 @@ def push_with_tags(expect_ok, repo_dir, branch_name):
 # Higher-level operations
 #
 
-def _unix_time(now=None):
-    now = datetime.datetime.utcnow() if now is None else now
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    delta = now - epoch
-    return round(delta.total_seconds())
-
 @asyncio.coroutine
-def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False, no_change_ok=False, now=None):
+def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False, no_change_ok=False):
     # There are a few priorities for reference names:
     #   - Amount of information in the name itself
     #   - Length
@@ -103,17 +87,13 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # The following scheme does not include the origin_ref, although it is good
     # information, because it comprimises length and parsability too much.
 
-    timestamp = _unix_time(now=now)
-    operation_name_lower = operation_name.lower()
-    branch_name = "{operation_name_lower}-{timestamp}".format(**locals())
-    tag_name = "{branch_name}-root".format(**locals())
-    tag_refspec_pattern = "refs/tags/{operation_name_lower}-*".format(**locals())
-
     # As many things as possible are controlled for the commit, so the commitid
     # can be used for deduplication.
-    yield from prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=orphan)
+    temp_branch = "repour_commitid_search_temp_branch"
+    yield from prepare_new_branch(expect_ok, repo_dir, temp_branch, orphan=orphan)
+
     try:
-        yield from fixed_date_commit(expect_ok, repo_dir, operation_name)
+        commit_id = yield from fixed_date_commit(expect_ok, repo_dir, "Repour")
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
             # No changes were made
@@ -121,43 +101,26 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
         else:
             raise
 
-    # Check if any root tag in the internal repo matches the commitid we currently have.
-    # Note that this operation isn't atomic, but it won't matter too much if interleaving happens.
-    # Worst case, you'll have multiple branch/root_tag pairs pointing at the same commit.
-    existing_tag = yield from deduplicate_head_tag(expect_ok, repo_dir, repo_url.readwrite, tag_refspec_pattern)
+    # Apply the actual branch name now we know the commit ID
+    operation_name_lower = operation_name.lower()
+    branch_name = "branch-{operation_name_lower}-{commit_id}".format(**locals())
+    yield from replace_branch(expect_ok, repo_dir, temp_branch, branch_name)
 
-    if existing_tag is None:
-        yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description)
-        yield from push_with_tags(expect_ok, repo_dir, branch_name)
+    tag_name = "repour-{commit_id}".format(**locals())
+    yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description)
+    # The tag and reference names are set up to be the same for the same
+    # file tree, so this is a deduplicated operation. If the branch/tag
+    # already exist, git will return quickly with an 0 (success) status
+    # instead of uploading the objects.
+    yield from push_with_tags(expect_ok, repo_dir, branch_name)
 
-        logger.info("Pushed branch {branch_name} to repo {repo_url}".format(**locals()))
+    logger.info("Pushed branch {branch_name} to repo {repo_url}".format(**locals()))
 
-        return {
-            "branch": branch_name,
-            "tag": tag_name,
-            "url": {
-                "readwrite": repo_url.readwrite,
-                "readonly": repo_url.readonly,
-            },
-        }
-
-    # Discard new branch and use existing branch and tag
-    else:
-        # ex: proj-1.0_1436360795_root -> proj-1.0_1436360795
-        existing_branch = existing_tag[:-5]
-
-        # Have to be careful about this state if anything reuses the repo.
-        # In the adjust scenario, the new branch it creates (from an identical
-        # commitid) will isolate it from the discarded local branches made by
-        # the pull.
-
-        logger.info("Using existing branch {branch_name} in repo {repo_url}".format(**locals()))
-
-        return {
-            "branch": existing_branch,
-            "tag": existing_tag,
-            "url": {
-                "readwrite": repo_url.readwrite,
-                "readonly": repo_url.readonly,
-            },
-        }
+    return {
+        "branch": branch_name,
+        "tag": tag_name,
+        "url": {
+            "readwrite": repo_url.readwrite,
+            "readonly": repo_url.readonly,
+        },
+    }
