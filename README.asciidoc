@@ -124,7 +124,7 @@ Note that `--branch` is only usable with references (tags or branches), not comm
     "name": "teiid",
     "type": "git",
     "ref": "teiid-parent-8.11.0.Final",
-    "url": "git@github.com:teiid/teiid.git"
+    "url": "https://github.com/teiid/teiid.git"
 }
 !===
 
