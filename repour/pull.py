@@ -151,6 +151,28 @@ def pull_git(pullspec, repo_provider, adjust_provider):
                 cmd=["git", "clone", "--", pullspec["url"], clone_dir],
                 desc="Could not clone with git",
             )
+        @asyncio.coroutine
+        def deep_checkout():
+            yield from deep()
+            # Checkout tag or branch or commit-id
+            yield from expect_ok(
+                cmd=["git", "-C", clone_dir, "checkout", pullspec["ref"], "--"],
+                desc="Could not checkout ref {pullspec[ref]} from clone of {pullspec[url]} with git".format(**locals()),
+            )
+        @asyncio.coroutine
+        def shallow():
+            yield from expect_ok(
+                cmd=["git", "clone", "--branch", pullspec["ref"], "--depth", "1", "--", pullspec["url"], clone_dir],
+                desc="Could not clone with git",
+                stderr=None,
+            )
+        @asyncio.coroutine
+        def branchonly():
+            yield from expect_ok(
+                cmd=["git", "clone", "--branch", pullspec["ref"], "--", pullspec["url"], clone_dir],
+                desc="Could not clone with git",
+                stderr=None,
+            )
 
         if "ref" in pullspec:
             # Distinguishing a reference from a commit-id is hard, so apply the
@@ -158,25 +180,26 @@ def pull_git(pullspec, repo_provider, adjust_provider):
             # delegating to git.
             try:
                 # Shallow clone of the git ref (tag or branch)
-                yield from expect_ok(
-                    cmd=["git", "clone", "--branch", pullspec["ref"], "--depth", "1", "--", pullspec["url"], clone_dir],
-                    desc="Could not clone with git",
-                    stderr=None,
-                )
+                yield from shallow()
             except exception.CommandError as e:
-                if "not found" in e.stderr:
-                    # Fallback to deep+checkout
-                    yield from deep()
-                    # Checkout tag or branch or commit-id
-                    yield from expect_ok(
-                        cmd=["git", "-C", clone_dir, "checkout", pullspec["ref"], "--"],
-                        desc="Could not checkout ref {pullspec[ref]} from clone of {pullspec[url]} with git".format(**locals()),
-                    )
+                if "does not support" in e.stderr:
+                    # Fallback to single branch (for dumb http transport)
+                    try:
+                        yield from branchonly()
+                    except exception.CommandError as e:
+                        # Fallback to deep+checkout (for commitid)
+                        if "not found" in e.stderr:
+                            yield from deep_checkout()
+                        else:
+                            raise
+                elif "not found" in e.stderr:
+                    # Fallback to deep+checkout (for commitid)
+                    yield from deep_checkout()
                 else:
                     raise
         else:
+            # No ref, use HEAD/default
             yield from deep()
-            # No checkout, use HEAD
 
         # Clean up metadata
         yield from asutil.rmtree(os.path.join(clone_dir, ".git"))
