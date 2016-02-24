@@ -299,6 +299,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
     return get_url
 
 def repo_gitolite(ssh_url, http_url):
+    logger.info("Using gitolite repository provider, SSH: {ssh_url} HTTP: {http_url}".format(**locals()))
     name_pattern = re.compile(r'^[0-9a-zA-Z][-0-9a-zA-Z._@/+]*$')
     @asyncio.coroutine
     def get_url(repo_name, create=True):
@@ -322,6 +323,7 @@ def repo_gitolite(ssh_url, http_url):
     return get_url
 
 def repo_local(root_url):
+    logger.info("Using local repository provider, root: {root_url}".format(**locals()))
     root_path = urllib.parse.urlparse(root_url).path
     @asyncio.coroutine
     def get_url(repo_name, create=True):

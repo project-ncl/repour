@@ -1,5 +1,8 @@
 import asyncio
+import io
 import logging
+import os
+import zipfile
 
 from . import asgit
 from . import asutil
@@ -10,6 +13,37 @@ logger = logging.getLogger(__name__)
 #
 # Utility
 #
+
+def log_executable_info(cmd):
+    first = True
+    for c in cmd:
+        if c.endswith(".jar"):
+            manifest = {}
+            try:
+                with zipfile.ZipFile(c) as z:
+                    with z.open("META-INF/MANIFEST.MF") as bf:
+                        f = io.TextIOWrapper(bf)
+                        raw_lines = f.readlines()
+                        previous_k = None
+                        for line in raw_lines:
+                            if line.startswith(" "):
+                                assert previous_k is not None
+                                manifest[previous_k] += line.strip()
+                            elif line == "\n":
+                                pass
+                            else:
+                                k,v = line.rstrip().split(":", 1)
+                                manifest[k] = v.lstrip()
+                                previous_k = k
+            except FileNotFoundError:
+                pass
+            except KeyError:
+                pass
+            else:
+                basename = os.path.basename(c)
+                title = manifest.get("Implementation-Title", "Unknown")
+                version = manifest.get("Implementation-Version", "Unknown")
+                logger.info("adjust provider jar: {basename}, {title}, {version}".format(**locals()))
 
 expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
@@ -58,12 +92,15 @@ def adjust(adjustspec, repo_provider, adjust_provider):
 #
 
 def adjust_noop():
+    logger.info("Using noop adjust provider")
     @asyncio.coroutine
     def adjust(repo_dir):
         return "NoOp"
     return adjust
 
 def adjust_subprocess(description, cmd):
+    logger.info("Using subprocess adjust provider, Description: {description} CMD: {cmd}".format(**locals()))
+    log_executable_info(cmd)
     @asyncio.coroutine
     def adjust(repo_dir):
         filled_cmd = [repo_dir if p == "{repo_dir}" else p for p in cmd]
