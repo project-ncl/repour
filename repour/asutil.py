@@ -104,7 +104,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
 
         stderr_text = stderr_data.decode("utf-8")
 
-        if stderr == "log" or (stderr == "log_on_error" and p.returncode != 0):
+        if stderr_text != "" and (stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)):
             logger.error(stderr_text)
 
         if not p.returncode == 0:
