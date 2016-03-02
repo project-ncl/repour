@@ -307,7 +307,7 @@ if run_integration_tests:
                         body={
                             "name": "apache-commons-io",
                             "type": "svn",
-                            "url": "https://svn.apache.org/viewvc/commons/proper/io/" + suffix,
+                            "url": "https://svn.apache.org/repos/asf/commons/proper/io/" + suffix,
                         },
                         patch={
                             "ref": ref,
