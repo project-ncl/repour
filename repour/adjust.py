@@ -68,7 +68,7 @@ Adjust Type: {adjust_type}
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="git") as d:
-        repo_url = yield from repo_provider(adjustspec["name"], create=False)
+        repo_url = yield from repo_provider(adjustspec, create=False)
 
         # Non-shallow, but branch-only clone of internal repo
         yield from expect_ok(

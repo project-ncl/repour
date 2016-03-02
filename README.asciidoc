@@ -542,6 +542,57 @@ docker run --volume "/tmp/secrets:/mnt/secrets:z" --user="$UID" -d --name repour
 docker run --volume "/tmp/secrets:/mnt/secrets:z" --user="$UID" -d --link repour_git:git --name repour -e "REPOUR_GITOLITE_HOST=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' repour_git)" -e "REPOUR_PME_DA_URL=foo" repour_integration_test:latest
 ----
 
+== Operating Mode B
+
+The above sections describe Repour's recommended, default, operating
+mode ("A"). Repour can also run in operating mode "B", which offers some
+of the same functionality *without the same guarantees that mode A
+offers*.
+
+Mode B changes the API such that creating and maintaining the internal
+repositories is the responsibility of the calling user, instead of
+Repour itself.
+
+=== Cautions
+
+1. Repour may not have write access to the given repositories, so _there
+is an extra failure mode added to all operations_.
+2. Repour cannot assert anything about the repositories, so _there is no
+guarantee of coordinate immutability, build reproducibility, or any sort
+of repository consistency_.
+3. Repour's test suite will be unable to confirm repository creation
+works as expected, so _repository creation will be untested_.
+
+=== Enabling Mode B
+
+Add `--mode-b` to the command line.
+
+=== Interface changes
+
+For both `/pull` and `/adjust`, replace the `"name"` parameter with
+`"internal_url"`.
+
+[cols="h,4a"]
+|===
+|Partial Body (Schema)
+|[source,python]
+{
+    "internal_url": {
+        "readwrite": Url(),
+        "readonly": Url(),
+    }
+}
+
+|Partial Body (Example)
+|[source,javascript]
+{
+    "internal_url": {
+        "readwrite": "ssh://git@example.com/somerepo.git",
+        "readonly": "http://example.com/somerepo.git"
+    }
+}
+|===
+
 == Development
 
 === Local Server Setup

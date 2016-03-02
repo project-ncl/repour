@@ -32,10 +32,19 @@ def run_subcommand(args):
     log_default_level = logging._nameToLevel[config["log"]["level"]]
     configure_logging(log_default_level, config["log"]["path"], args.verbose, args.quiet, args.silent)
 
+    # Mode B
+    if args.mode_b:
+        repo_provider = {
+            "type": "modeb",
+            "params": {},
+        }
+    else:
+        repo_provider = config["repo_provider"]
+
     # Go
     server.start_server(
         bind=config["bind"],
-        repo_provider=config["repo_provider"],
+        repo_provider=repo_provider,
         adjust_provider=config["adjust_provider"],
     )
 
@@ -80,19 +89,28 @@ def run_container_subcommand(args):
         user=gitolite_user,
     )
 
-    # Go
-    server.start_server(
-        bind={
-            "address": None,
-            "port": 7331,
-        },
+    # Mode B
+    if args.mode_b:
+        repo_provider = {
+            "type": "modeb",
+            "params": {},
+        }
+    else:
         repo_provider = {
             "type": "gitolite",
             "params": {
                 "ssh_url": gitolite_ssh_url,
                 "http_url": gitolite_http_url,
             },
+        }
+
+    # Go
+    server.start_server(
+        bind={
+            "address": None,
+            "port": 7331,
         },
+        repo_provider = repo_provider,
         adjust_provider = {
             "type": "subprocess",
             "params": {
@@ -129,11 +147,13 @@ def create_argparser():
     run_parser.add_argument("-c", "--config", default="config.yaml", help="Path to the configuration file. Default: config.yaml")
     run_parser.add_argument("-a", "--address", help="Override the bind IP address provided in the config file.")
     run_parser.add_argument("-p", "--port", help="Override the bind port number provided in the config file.")
+    run_parser.add_argument("--mode-b", action="store_true", help="Run the server with client-specified internal repositories")
 
     run_container_desc = "Run the server in a container environment"
     run_container_parser = subparsers.add_parser("run-container", help=run_container_desc)
     run_container_parser.description = run_container_desc
     run_container_parser.set_defaults(func=run_container_subcommand)
+    run_container_parser.add_argument("--mode-b", action="store_true", help="Run the server with client-specified internal repositories")
 
     return parser
 

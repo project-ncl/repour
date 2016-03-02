@@ -82,7 +82,8 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
         return "Digest " + ",".join('{}={}'.format(k,es(v)) for k,v in parts.items())
 
     @asyncio.coroutine
-    def get_url(repo_name, create=True, tried_auth=False):
+    def get_url(spec, create=True, tried_auth=False):
+        repo_name = spec["name"]
         nonlocal realm, ncount, nonce
 
         encoded_repo_name = urllib.parse.quote(repo_name)
@@ -223,7 +224,8 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         return repo_url
 
     @asyncio.coroutine
-    def get_url(repo_name, create=True):
+    def get_url(spec, create=True):
+        repo_name = spec["name"]
         # GitLab has a weird non-deterministic relationship between "name" and
         # "path", making it difficult where name and path differ to check if a
         # repo already exists, as the long-form identifier is namespace/path,
@@ -302,7 +304,8 @@ def repo_gitolite(ssh_url, http_url):
     logger.info("Using gitolite repository provider, SSH: {ssh_url} HTTP: {http_url}".format(**locals()))
     name_pattern = re.compile(r'^[0-9a-zA-Z][-0-9a-zA-Z._@/+]*$')
     @asyncio.coroutine
-    def get_url(repo_name, create=True):
+    def get_url(spec, create=True):
+        repo_name = spec["name"]
         match = name_pattern.match(repo_name)
         if not match:
             raise exception.RepoError("Repo name '{repo_name}' does not match pattern '{name_pattern.pattern}'".format(**locals()))
@@ -326,7 +329,8 @@ def repo_local(root_url):
     logger.info("Using local repository provider, root: {root_url}".format(**locals()))
     root_path = urllib.parse.urlparse(root_url).path
     @asyncio.coroutine
-    def get_url(repo_name, create=True):
+    def get_url(spec, create=True):
+        repo_name = spec["name"]
         repo_path = os.path.join(root_path, repo_name)
         _repo_url = urllib.parse.ParseResult(
             scheme="file",
@@ -356,6 +360,16 @@ def repo_local(root_url):
         return repo_url
     return get_url
 
+def repo_modeb():
+    logger.warn("Using Mode B repository provider (client-specified repositories)".format(**locals()))
+    @asyncio.coroutine
+    def get_url(spec, create=True):
+        return RepoUrls(
+            readwrite=spec["internal_url"]["readwrite"],
+            readonly=spec["internal_url"]["readonly"],
+        )
+    return get_url
+
 #
 # Supported
 #
@@ -365,4 +379,5 @@ provider_types = {
     "gitlab": repo_gitlab,
     "gitolite": repo_gitolite,
     "local": repo_local,
+    "modeb": repo_modeb,
 }

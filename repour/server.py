@@ -159,10 +159,6 @@ def show_id(request):
         text="Repour",
     )
 
-pull_source = _validated_json_endpoint(validation.pull, pull.pull)
-
-adjust_source = _validated_json_endpoint(validation.adjust, adjust.adjust)
-
 #
 # Setup
 #
@@ -175,6 +171,14 @@ def init(loop, bind, repo_provider, adjust_provider):
     logger.debug("Adding application resources")
     app["repo_provider"] = repo.provider_types[repo_provider["type"]](**repo_provider["params"])
     app["adjust_provider"] = adjust.provider_types[adjust_provider["type"]](**adjust_provider["params"])
+
+    if repo_provider["type"] == "modeb":
+        logger.warn("Mode B selected, guarantees rescinded")
+        pull_source = _validated_json_endpoint(validation.pull_modeb, pull.pull)
+        adjust_source = _validated_json_endpoint(validation.adjust_modeb, adjust.adjust)
+    else:
+        pull_source = _validated_json_endpoint(validation.pull, pull.pull)
+        adjust_source = _validated_json_endpoint(validation.adjust, adjust.adjust)
 
     logger.debug("Setting up handlers")
     app.router.add_route("POST", "/pull", pull_source)

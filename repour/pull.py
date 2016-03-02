@@ -49,7 +49,7 @@ Type: {origin_type}
 
 @asyncio.coroutine
 def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, origin_type, origin_ref):
-    internal_repo_url = yield from repo_provider(pullspec["name"])
+    internal_repo_url = yield from repo_provider(pullspec)
 
     # Process sources into internal branch
     pull_internal = yield from to_internal(internal_repo_url, repo_dir, origin_ref, pullspec["url"], origin_type)

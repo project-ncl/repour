@@ -6,6 +6,15 @@ from . import adjust as adjustmodule
 from . import pull as pullmodule
 from . import repo
 
+def mode_b_ify(raw):
+    clone = raw.copy()
+    del clone["name"]
+    clone["internal_url"] = {
+        "readwrite": Url(), #pylint: disable=no-value-for-parameter
+        "readonly": Url(), #pylint: disable=no-value-for-parameter
+    }
+    return clone
+
 #
 # Primitives
 #
@@ -46,30 +55,38 @@ adjust = Schema(
     extra=False,
 )
 
-#
-# Pull
-#
-pull_scm = Schema(
-    {
-        "name": name_str,
-        "type": Any(*pullmodule.scm_types),
-        Optional("ref"): nonempty_str,
-        "url": Url(), #pylint: disable=no-value-for-parameter
-        Optional("adjust"): bool,
-        Optional("callback"): callback_raw,
-    },
+adjust_modeb = Schema(
+    mode_b_ify(adjust_raw),
     required=True,
     extra=False,
 )
 
+#
+# Pull
+#
+pull_scm_raw = {
+    "name": name_str,
+    "type": Any(*pullmodule.scm_types),
+    Optional("ref"): nonempty_str,
+    "url": Url(), #pylint: disable=no-value-for-parameter
+    Optional("adjust"): bool,
+    Optional("callback"): callback_raw,
+}
+pull_scm = Schema(
+    pull_scm_raw,
+    required=True,
+    extra=False,
+)
+
+pull_archive_raw = {
+    "name": name_str,
+    "type": pullmodule.archive_type,
+    "url": Url(), #pylint: disable=no-value-for-parameter
+    Optional("adjust"): bool,
+    Optional("callback"): callback_raw,
+}
 pull_archive = Schema(
-    {
-        "name": name_str,
-        "type": pullmodule.archive_type,
-        "url": Url(), #pylint: disable=no-value-for-parameter
-        Optional("adjust"): bool,
-        Optional("callback"): callback_raw,
-    },
+    pull_archive_raw,
     required=True,
     extra=False,
 )
@@ -78,6 +95,14 @@ pull_raw = Any(pull_scm, pull_archive)
 
 pull = Schema(
     pull_raw,
+    required=True,
+    extra=False,
+)
+
+pull_scm_modeb = mode_b_ify(pull_scm_raw)
+pull_archive_modeb = mode_b_ify(pull_archive_raw)
+pull_modeb = Schema(
+    Any(pull_scm_modeb, pull_archive_modeb),
     required=True,
     extra=False,
 )
