@@ -69,7 +69,7 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
     if adjust_internal is None:
         if do_adjust:
             # adjust_internal is None with do_adjust means adjust made no changes
-            pull_internal["pull"] = pull_internal
+            pull_internal["pull"] = pull_internal.copy()
         return pull_internal
     else:
         adjust_internal["pull"] = pull_internal
