@@ -187,8 +187,14 @@ def reap_children(pids):
     return overall_status
 
 def setup_then_spawn():
+    # To ensure that the container continues to fail if it is restarted after a failed setup
+    setup_failed_marker = "setup-failed"
+    assert not os.path.exists(setup_failed_marker), "Setup in previous run did not complete, see logs"
+
     setup_required = not os.path.exists("sshd_config")
     if setup_required:
+        with open(setup_failed_marker, "w") as f:
+            f.write("")
         do_server_setup()
 
     server_pids = start_servers()
@@ -196,6 +202,7 @@ def setup_then_spawn():
 
     if setup_required:
         do_setup()
+        os.remove(setup_failed_marker)
 
     print("==> Ready", flush=True)
     return reap_children(server_pids)
