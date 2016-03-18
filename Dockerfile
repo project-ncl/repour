@@ -27,7 +27,7 @@ RUN cd / && \
 COPY ["venv/container.txt", "container/pid1.py", "container/au.py", "/home/repour/"]
 RUN pip3 --no-cache-dir install -r container.txt && \
     chmod og+rx *.py && \
-    curl -Lo pom-manipulation-cli.jar 'http://central.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-cli/1.16/pom-manipulation-cli-1.16.jar'
+    curl -Lo pom-manipulation-cli.jar 'http://central.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-cli/1.17/pom-manipulation-cli-1.17.jar'
 
 USER 1001
 
