@@ -19,6 +19,9 @@ from . import validation
 
 logger = logging.getLogger(__name__)
 
+def create_log_context_id():
+    return "repour-" + base64.b32encode(os.urandom(10)).decode("ascii").lower()
+
 def create_callback_id():
     return base64.b32encode(os.urandom(30)).decode("ascii")
 
@@ -48,6 +51,11 @@ def _validated_json_endpoint(validator, coro):
 
     @asyncio.coroutine
     def handler(request):
+        log_context = request.headers.get("LOG-CONTEXT", "").strip()
+        if log_context == "":
+            log_context = create_log_context_id()
+        asyncio.Task.current_task().log_context = log_context
+
         spec = yield from request.json()
         try:
             validator(spec)

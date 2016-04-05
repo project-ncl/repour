@@ -1,9 +1,20 @@
 import argparse
+import asyncio
 import logging
 import os
 import sys
 
 logger = logging.getLogger(__name__)
+
+class ContextLogRecord(logging.LogRecord):
+    no_context_found = "NoContext"
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        task = asyncio.Task.current_task()
+        if task is not None:
+            self.log_context = getattr(task, "log_context", self.no_context_found)
+        else:
+            self.log_context = self.no_context_found
 
 def override(config, config_coords, args, arg_name):
     if getattr(args, arg_name, None) is not None:
@@ -162,8 +173,10 @@ def create_argparser():
     return parser
 
 def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count=0, silent=False):
+    logging.setLogRecordFactory(ContextLogRecord)
+
     formatter = logging.Formatter(
-        fmt="{asctime} {levelname} {name}:{lineno} {message}",
+        fmt="{asctime} [{log_context}] {levelname} {name}:{lineno} {message}",
         style="{",
     )
 
