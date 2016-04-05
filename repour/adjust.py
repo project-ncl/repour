@@ -104,6 +104,7 @@ def adjust_subprocess(description, cmd):
     @asyncio.coroutine
     def adjust(repo_dir):
         filled_cmd = [p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p for p in cmd]
+        logger.info("Executing adjust subprocess")
         yield from expect_ok(filled_cmd, "Alignment subprocess failed", cwd=repo_dir)
         return description
     return adjust

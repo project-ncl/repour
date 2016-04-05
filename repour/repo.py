@@ -320,7 +320,7 @@ def repo_gitolite(ssh_url, http_url):
             return repo_url
 
         # Gitolite will create-on-push if required
-        logger.info("Using gitolite repo at {repo_url}".format(**locals()))
+        logger.info("Using gitolite repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(**locals()))
 
         return repo_url
     return get_url
@@ -349,13 +349,13 @@ def repo_local(root_url):
             return repo_url
 
         if os.path.exists(repo_path):
-            logger.debug("Returning existing local repo at {repo_path}".format(**locals()))
+            logger.info("Returning existing local repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(**locals()))
         else:
             yield from expect_ok(
                 cmd=["git", "init", "--bare", repo_path],
                 desc="Could not create local repo with git",
             )
-            logger.info("Created new local repo at {repo_path}".format(**locals()))
+            logger.info("Created new local repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(**locals()))
 
         return repo_url
     return get_url

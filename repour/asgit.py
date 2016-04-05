@@ -114,7 +114,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # instead of uploading the objects.
     yield from push_with_tags(expect_ok, repo_dir, branch_name)
 
-    logger.info("Pushed branch {branch_name} to repo {repo_url}".format(**locals()))
+    logger.info("Pushed to repo: branch {branch_name}, tag {tag_name}".format(**locals()))
 
     return {
         "branch": branch_name,
