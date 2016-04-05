@@ -48,7 +48,7 @@ def exception_to_obj(exception):
 
 def log_traceback_multi_line():
     text = traceback.format_exc()
-    for line in text:
+    for line in text.split("\n"):
         if line != "":
             logger.error(line)
 
@@ -119,12 +119,12 @@ def _validated_json_endpoint(validator, coro):
             except exception.DescribedError as e:
                 status = 400
                 traceback_id, obj = described_error_to_obj(e)
-                logger.error("Failed {e.__class__.__name__}, traceback {traceback_id}".format(**locals()))
+                logger.error("Failed ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
                 log_traceback_multi_line()
             except Exception as e:
                 status = 500
                 traceback_id, obj = exception_to_obj(e)
-                logger.error("Internal failure {e.__class__.__name__}, traceback {traceback_id}".format(**locals()))
+                logger.error("Internal failure ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
                 log_traceback_multi_line()
             else:
                 status = 200
