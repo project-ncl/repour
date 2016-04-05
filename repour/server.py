@@ -46,6 +46,12 @@ def exception_to_obj(exception):
     }
     return (traceback_id, error)
 
+def log_traceback_multi_line():
+    text = traceback.format_exc()
+    for line in text:
+        if line != "":
+            logger.error(line)
+
 shutdown_callbacks = []
 
 def _validated_json_endpoint(validator, coro):
@@ -59,10 +65,32 @@ def _validated_json_endpoint(validator, coro):
             log_context = create_log_context_id()
         asyncio.Task.current_task().log_context = log_context
 
-        spec = yield from request.json()
+        try:
+            spec = yield from request.json()
+        except ValueError:
+            logger.error("Rejected {method} {path}: body is not parsable as json".format(
+                method=request.method,
+                path=request.path,
+            ))
+            return web.Response(
+                status=400,
+                content_type="application/json",
+                text=json.dumps(
+                    obj=[{
+                        "error_message": "expected json",
+                        "error_type": "json parsability",
+                        "path": [],
+                    }],
+                    ensure_ascii=False,
+                ),
+            )
         try:
             validator(spec)
         except voluptuous.MultipleInvalid as x:
+            logger.error("Rejected {method} {path}: body failed input validation".format(
+                method=request.method,
+                path=request.path,
+            ))
             return web.Response(
                 status=400,
                 content_type="application/json",
@@ -71,6 +99,11 @@ def _validated_json_endpoint(validator, coro):
                     ensure_ascii=False,
                 ),
             )
+        logger.info("Accepted {method} {path}: {params}".format(
+            method=request.method,
+            path=request.path,
+            params=spec,
+        ))
 
         try:
             validation.callback(spec)
@@ -79,24 +112,32 @@ def _validated_json_endpoint(validator, coro):
         else:
             callback_mode = True
 
+        @asyncio.coroutine
+        def do_call():
+            try:
+                ret = yield from coro(spec, **request.app)
+            except exception.DescribedError as e:
+                status = 400
+                traceback_id, obj = described_error_to_obj(e)
+                logger.error("Failed {e.__class__.__name__}, traceback {traceback_id}".format(**locals()))
+                log_traceback_multi_line()
+            except Exception as e:
+                status = 500
+                traceback_id, obj = exception_to_obj(e)
+                logger.error("Internal failure {e.__class__.__name__}, traceback {traceback_id}".format(**locals()))
+                log_traceback_multi_line()
+            else:
+                status = 200
+                obj = ret
+                logger.info("Completed ok")
+            return status, obj
+
         if callback_mode:
             callback_id = create_callback_id()
 
             @asyncio.coroutine
             def do_callback(callback_spec):
-                try:
-                    ret = yield from coro(spec, **request.app)
-                except exception.DescribedError as e:
-                    status = 400
-                    traceback_id, obj = described_error_to_obj(e)
-                    logger.exception(traceback_id)
-                except Exception as e:
-                    status = 500
-                    traceback_id, obj = exception_to_obj(e)
-                    logger.exception(traceback_id)
-                else:
-                    status = 200
-                    obj = ret
+                status, obj = yield from do_call()
 
                 obj["callback"] = {
                     "status": status,
@@ -114,18 +155,25 @@ def _validated_json_endpoint(validator, coro):
                         ).encode("utf-8")
                     )
                     return resp
-                resp = yield from send_result()
                 backoff = 0
+                max_attempts = 9
+                resp = yield from send_result()
                 while resp.status // 100 != 2:
-                    if backoff > 9:
-                        logger.error("Giving up on callback {callback_id}".format(**locals()))
+                    if backoff > max_attempts:
+                        logger.error("Giving up on callback")
                         break
-                    logger.info("Unable to send result of callback {callback_id} to {callback_spec[url]} status {resp.status} attempt {backoff}/9".format(**locals()))
-                    yield from asyncio.sleep(2 ** backoff)
+                    logger.info("Unable to send result of callback, status {resp.status} attempt {backoff}/9".format(**locals()))
+                    sleep_period = 2 ** backoff
+                    logger.debug("Sleeping for {sleep_period}".format(**locals()))
+                    yield from asyncio.sleep(sleep_period)
                     backoff += 1
                     resp = yield from send_result()
+                if backoff <= max_attempts:
+                    logger.info("Callback result sent successfully")
 
-            request.app.loop.create_task(do_callback(spec["callback"]))
+            logger.info("Creating callback task {callback_id}, returning ID now".format(**locals()))
+            callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
+            callback_task.log_context = log_context
             status = 202
             obj = {
                 "callback": {
@@ -134,19 +182,7 @@ def _validated_json_endpoint(validator, coro):
             }
 
         else:
-            try:
-                ret = yield from coro(spec, **request.app)
-            except exception.DescribedError as e:
-                status = 400
-                traceback_id, obj = described_error_to_obj(e)
-                logger.exception(traceback_id)
-            except Exception as e:
-                status = 500
-                traceback_id, obj = exception_to_obj(e)
-                logger.exception(traceback_id)
-            else:
-                status = 200
-                obj = ret
+            status, obj = yield from do_call()
 
         response = web.Response(
             status=status,
