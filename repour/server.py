@@ -46,8 +46,11 @@ def exception_to_obj(exception):
     }
     return (traceback_id, error)
 
+shutdown_callbacks = []
+
 def _validated_json_endpoint(validator, coro):
     client_session = aiohttp.ClientSession() #pylint: disable=no-member
+    shutdown_callbacks.append(client_session.close)
 
     @asyncio.coroutine
     def handler(request):
@@ -222,6 +225,8 @@ def start_server(bind, repo_provider, adjust_provider):
         for task in tasks:
             task.cancel()
         results = loop.run_until_complete(asyncio.gather(*tasks, loop=loop, return_exceptions=True))
+        for shutdown_callback in shutdown_callbacks:
+            shutdown_callback()
         exception_results = [r for r in results if isinstance(r, Exception) and not isinstance(r, asyncio.CancelledError)]
         if len(exception_results) > 1:
             raise Exception(exception_results)
