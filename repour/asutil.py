@@ -10,6 +10,7 @@ import aiohttp
 from . import exception
 
 logger = logging.getLogger(__name__)
+subprocess_logger = logging.getLogger(__name__ + ".stderr")
 
 def _find_filename(url, resp):
     # Filename should be url basename, or Content-Disposition header if it exists
@@ -105,7 +106,9 @@ def expect_ok_closure(exc_type=exception.CommandError):
         stderr_text = stderr_data.decode("utf-8")
 
         if stderr_text != "" and (stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)):
-            logger.error(stderr_text)
+            for line in stderr_text.split("\n"):
+                if line != "":
+                    subprocess_logger.error(line)
 
         if not p.returncode == 0:
             raise exc_type(
