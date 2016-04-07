@@ -20,7 +20,7 @@ from . import validation
 logger = logging.getLogger(__name__)
 
 def create_log_context_id():
-    return "repour-" + base64.b32encode(os.urandom(10)).decode("ascii").lower()
+    return "repour-" + base64.b32encode(os.urandom(20)).decode("ascii").lower()
 
 def create_callback_id():
     return base64.b32encode(os.urandom(30)).decode("ascii")
