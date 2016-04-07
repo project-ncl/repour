@@ -115,12 +115,18 @@ def adjust_subprocess(description, cmd):
 
         logger.info("Executing adjust subprocess")
         # TODO should pipe out stderr and stdout once PME has log-context support
-        yield from expect_ok(
-            cmd=filled_cmd,
-            desc="Alignment subprocess failed",
-            cwd=repo_dir,
-            env=env,
-        )
+        try:
+            yield from expect_ok(
+                cmd=filled_cmd,
+                desc="Alignment subprocess failed",
+                cwd=repo_dir,
+                env=env,
+            )
+        except exception.CommandError as e:
+            logger.error("Adjust subprocess failed, exited code {e.exit_code}".format(**locals()))
+            raise
+        else:
+            logger.info("Adjust subprocess exited ok")
         return description
     return adjust
 
