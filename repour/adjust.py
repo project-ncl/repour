@@ -104,9 +104,23 @@ def adjust_subprocess(description, cmd):
     @asyncio.coroutine
     def adjust(repo_dir):
         filled_cmd = [p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p for p in cmd]
+
+        log_context = getattr(asyncio.Task.current_task(), "log_context", "")
+        if log_context == "":
+            env = None
+        else:
+            env = {
+                "LOG_CONTEXT": asyncio.Task.current_task().log_context,
+            }
+
         logger.info("Executing adjust subprocess")
         # TODO should pipe out stderr and stdout once PME has log-context support
-        yield from expect_ok(filled_cmd, "Alignment subprocess failed", cwd=repo_dir)
+        yield from expect_ok(
+            cmd=filled_cmd,
+            desc="Alignment subprocess failed",
+            cwd=repo_dir,
+            env=env,
+        )
         return description
     return adjust
 
