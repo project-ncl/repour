@@ -84,7 +84,7 @@ def _convert_bytes(b, mode):
 
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
-    def expect_ok(cmd, desc="", env=None, stdout="capture", stderr="log_on_error", cwd=None):
+    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None):
         if env is None:
             sub_env = None
         else:
@@ -95,7 +95,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
         p = yield from asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE if "stdout" == "capture" else None,
+            stdout=None if stdout == "send" else asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT if stderr == "stdout" else asyncio.subprocess.PIPE,
             env=sub_env,
             cwd=cwd
@@ -119,6 +119,9 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 stderr=stderr_text,
             )
         else:
-            return _convert_bytes(stdout_data, stdout)
+            if stdout == "send":
+                return None
+            else:
+                return _convert_bytes(stdout_data, stdout)
 
     return expect_ok

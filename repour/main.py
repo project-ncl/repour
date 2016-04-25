@@ -144,7 +144,7 @@ def run_container_subcommand(args):
                     "-Dversion.incremental.suffix=redhat",
                     "-DstrictAlignment=true",
                 ],
-                "log_context_option_name": "--log-context",
+                "log_context_option": "--log-context",
                 "send_log": True,
             },
         },
