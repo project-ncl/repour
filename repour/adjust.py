@@ -98,29 +98,36 @@ def adjust_noop():
         return "NoOp"
     return adjust
 
-def adjust_subprocess(description, cmd):
+def adjust_subprocess(description, cmd, log_context_option=None, send_log=False):
     logger.info("Using subprocess adjust provider, Description: {description} CMD: {cmd}".format(**locals()))
     log_executable_info(cmd)
     @asyncio.coroutine
     def adjust(repo_dir):
         filled_cmd = [p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p for p in cmd]
 
-        log_context = getattr(asyncio.Task.current_task(), "log_context", "")
-        if log_context == "":
-            env = None
+        log_context = getattr(asyncio.Task.current_task(), "log_context", None)
+        if log_context_option is None:
+            if log_context is None:
+                env = None
+            else:
+                env = {
+                    "LOG_CONTEXT": asyncio.Task.current_task().log_context,
+                }
         else:
-            env = {
-                "LOG_CONTEXT": asyncio.Task.current_task().log_context,
-            }
+            env = None
+            if log_context is not None:
+                filled_cmd.append(log_context_option)
+                filled_cmd.append(log_context)
 
         logger.info("Executing adjust subprocess")
-        # TODO should pipe out stderr and stdout once PME has log-context support
         try:
             yield from expect_ok(
                 cmd=filled_cmd,
                 desc="Alignment subprocess failed",
                 cwd=repo_dir,
                 env=env,
+                stdout="send" if send_log else "capture",
+                stderr="stdout" if send_log else "log_on_error",
             )
         except exception.CommandError as e:
             logger.error("Adjust subprocess failed, exited code {e.exit_code}".format(**locals()))
