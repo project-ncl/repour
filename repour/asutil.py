@@ -103,7 +103,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
 
         stdout_data, stderr_data = yield from p.communicate()
 
-        stderr_text = stderr_data.decode("utf-8")
+        stderr_text = "" if stderr_data is None else stderr_data.decode("utf-8")
 
         if stderr_text != "" and (stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)):
             for line in stderr_text.split("\n"):
@@ -115,7 +115,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 desc=desc,
                 cmd=cmd,
                 exit_code=p.returncode,
-                stdout=stdout_data.decode("utf-8"),
+                stdout="" if stdout_data is None else stdout_data.decode("utf-8"),
                 stderr=stderr_text,
             )
         else:
