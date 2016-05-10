@@ -145,7 +145,7 @@ def run_container_subcommand(args):
                     "-DstrictAlignment=true",
                 ],
                 "log_context_option": "--log-context",
-                "send_log": True,
+                "send_log": False, # enable when PNC central logging is ready
             },
         },
     )
