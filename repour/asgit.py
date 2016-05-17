@@ -69,10 +69,21 @@ def annotated_tag(expect_ok, repo_dir, tag_name, message):
 
 @asyncio.coroutine
 def push_with_tags(expect_ok, repo_dir, branch_name):
-    yield from expect_ok(
-        cmd=["git", "-C", repo_dir, "push", "--atomic", "--follow-tags", "origin", branch_name],
-        desc="Could not push tag+branch with git",
-    )
+    try:
+        yield from expect_ok(
+            cmd=["git", "-C", repo_dir, "push", "--atomic", "--follow-tags", "origin", branch_name],
+            desc="Could not push tag+branch with git",
+            stderr=None,
+        )
+    except exception.CommandError as e:
+        if "support" in e.stderr:
+            logger.warn("The repository provider does not support atomic push. There is a risk of tag/branch inconsistency.")
+            yield from expect_ok(
+                cmd=["git", "-C", repo_dir, "push", "--follow-tags", "origin", branch_name],
+                desc="Could not push tag+branch with git",
+            )
+        else:
+            raise
 
 #
 # Higher-level operations
