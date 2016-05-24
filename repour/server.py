@@ -146,23 +146,33 @@ def _validated_json_endpoint(validator, coro):
 
                 @asyncio.coroutine
                 def send_result():
-                    resp = yield from client_session.request(
-                        callback_spec.get("method", "POST"),
-                        callback_spec["url"],
-                        data=json.dumps(
-                            obj=obj,
-                            ensure_ascii=False,
-                        ).encode("utf-8")
-                    )
+                    try:
+                        resp = yield from client_session.request(
+                            callback_spec.get("method", "POST"),
+                            callback_spec["url"],
+                            data=json.dumps(
+                                obj=obj,
+                                ensure_ascii=False,
+                            ).encode("utf-8")
+                        )
+                    except Exception as e:
+                        logger.info("Unable to send result of callback, exception {ename}, attempt {backoff}/{max_attempts}".format(
+                            ename=e.__class__.__name__,
+                            backoff=backoff,
+                            max_attempts=max_attempts,
+                        ))
+                        log_traceback_multi_line()
+                        resp = None
                     return resp
                 backoff = 0
                 max_attempts = 9
                 resp = yield from send_result()
-                while resp.status // 100 != 2:
+                while resp is None or resp.status // 100 != 2:
+                    if resp is not None:
+                        logger.info("Unable to send result of callback, status {resp.status}, attempt {backoff}/{max_attempts}".format(**locals()))
                     if backoff > max_attempts:
-                        logger.error("Giving up on callback")
+                        logger.error("Giving up on callback after {max_attempts} attempts".format(**locals()))
                         break
-                    logger.info("Unable to send result of callback, status {resp.status} attempt {backoff}/9".format(**locals()))
                     sleep_period = 2 ** backoff
                     logger.debug("Sleeping for {sleep_period}".format(**locals()))
                     yield from asyncio.sleep(sleep_period)
@@ -174,6 +184,7 @@ def _validated_json_endpoint(validator, coro):
             logger.info("Creating callback task {callback_id}, returning ID now".format(**locals()))
             callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
             callback_task.log_context = log_context
+
             status = 202
             obj = {
                 "callback": {
