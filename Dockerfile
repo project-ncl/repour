@@ -24,10 +24,12 @@ RUN cd / && \
     dnf clean all && \
     echo -ne '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /mnt/secrets/repour/repour\n\tControlMaster auto\n\tControlPath /tmp/%r@%h-%p\n\tControlPersist 300\n' >> /etc/ssh/ssh_config
 
-COPY ["venv/container.txt", "container/pid1.py", "container/au.py", "/home/repour/"]
+COPY ["venv/container.txt", "container/pid1.py", "container/au.py", "script/*", "/home/repour/"]
+
 RUN pip3 --no-cache-dir install -r container.txt && \
     chmod og+rx *.py && \
-    curl -Lo pom-manipulation-cli.jar 'http://ci.commonjava.org:8180/api/hosted/local-deployments/org/commonjava/maven/ext/pom-manipulation-cli/2.2-SNAPSHOT/pom-manipulation-cli-2.2-20160523.165610-5.jar'
+    chmod a+x *.sh && \
+    ./download-pme.sh snapshot
 
 USER 1001
 
