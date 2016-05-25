@@ -12,7 +12,7 @@ LABEL io.k8s.description="Archival code service" \
       io.openshift.min-memory="64Mi"
 
 WORKDIR /home/repour
-ENTRYPOINT ["./pid1.py", "./au.py", "python3", "-m", "repour"]
+ENTRYPOINT ["./setup.sh", "-", "./pid1.py", "./au.py", "python3", "-m", "repour"]
 CMD ["run-container"]
 
 RUN cd / && \
@@ -20,7 +20,7 @@ RUN cd / && \
     useradd -rm -u 1001 -g repour repour && \
     chmod og+rwx /home/repour/ && \
     echo "tsflags=nodocs" >> /etc/dnf/dnf.conf && \
-    dnf install -y bsdtar python3 java-headless git subversion mercurial nss_wrapper gettext ca-certificates && \
+    dnf install -y bsdtar python3 java-headless git subversion mercurial nss_wrapper gettext sudo ca-certificates && \
     dnf clean all && \
     echo -ne '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /mnt/secrets/repour/repour\n\tControlMaster auto\n\tControlPath /tmp/%r@%h-%p\n\tControlPersist 300\n' >> /etc/ssh/ssh_config
 
@@ -30,7 +30,5 @@ RUN pip3 --no-cache-dir install -r container.txt && \
     chmod og+rx *.py && \
     chmod a+x *.sh && \
     ./download-pme.sh snapshot
-
-USER 1001
 
 COPY ["repour/*.py", "/home/repour/repour/"]
