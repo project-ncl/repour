@@ -143,6 +143,7 @@ def run_container_subcommand(args):
                     "-DrestURL=" + da_url,
                     "-Dversion.incremental.suffix=redhat",
                     "-DstrictAlignment=true",
+                    "-DoverrideTransitive=false",
                 ],
                 "log_context_option": "--log-context",
                 "send_log": False, # enable when PNC central logging is ready
