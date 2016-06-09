@@ -144,6 +144,7 @@ def run_container_subcommand(args):
                     "-Dversion.incremental.suffix=redhat",
                     "-DstrictAlignment=true",
                     "-DoverrideTransitive=false",
+                    "-DallowConfigFilePrecendence=true",
                 ],
                 "log_context_option": "--log-context",
                 "send_log": False, # enable when PNC central logging is ready
