@@ -29,6 +29,6 @@ COPY ["venv/container.txt", "container/pid1.py", "container/au.py", "script/*", 
 RUN pip3 --no-cache-dir install -r container.txt && \
     chmod og+rx *.py && \
     chmod a+x *.sh && \
-    ./download-pme.sh snapshot
+    ./download-pme.sh ${DOWNLOAD_PME_ARG:-latest}
 
 COPY ["repour/*.py", "/home/repour/repour/"]
