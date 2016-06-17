@@ -1,32 +1,39 @@
-#!/bin/bash -e
+#!/bin/bash
 
 function help {
     echo "Args:"
-    echo -e "latest \t download latest release from Maven Central"
-    echo -e "snapshot [URL] \t download latest snapshot from Maven repository at [URL].\n\t\tBy default use repository at ci.commonjava.org"
+    echo -e "(version) \n\t download version (version) from Maven Central."
+    echo -e "latest \n\t Download latest version from Maven Central."
+    echo -e "snapshot [URL] \n\t download latest snapshot from Maven repository at [URL] (optional)."
+    echo -e "\t By default use the repository at oss.sonatype.org"
 }
 
-if [[ "$#" == 0 ]]; then
-    help
-fi
+MAVEN_CENTRAL_BASE_URL="http://repo1.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-cli"
 
-if [[ "$1" == "latest" ]]; then
-  BASE_URL="http://repo1.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-ext"
-  curl -sLo metadata.xml "$BASE_URL/maven-metadata.xml"
+function downloadVersionFromCentral {
+  curl -Is "$MAVEN_CENTRAL_BASE_URL/$1/" | grep -q "404 Not Found"
+  if [[ $? == 1 ]]; then
+    curl -Lo pom-manipulation-cli.jar "$MAVEN_CENTRAL_BASE_URL/$1/pom-manipulation-cli-$1.jar"
+    echo "Downloaded version $1 from Maven Central."
+  else
+    echo "Version $1 does not exist in Maven Central."
+    exit 1
+  fi
+}
+
+function downloadLatestVersionFromCentral {
+  curl -sLo metadata.xml "$MAVEN_CENTRAL_BASE_URL/maven-metadata.xml"
   LATEST_VERSION=$(sed -n 's/ *<latest>\(.*\)<\/latest>/\1/p' metadata.xml)
-
-  curl -Lo pom-manipulation-cli.jar "$BASE_URL/$LATEST_VERSION/pom-manipulation-ext-$LATEST_VERSION.jar"
+  downloadVersionFromCentral $LATEST_VERSION
   rm metadata.xml
+}
 
-  echo "Downloaded version $LATEST_VERSION from Maven Central."
-fi
-
-if [[ "$1" == "snapshot" ]]; then
-  DEFAULT_REPO_URL="http://ci.commonjava.org:8180/api/hosted/local-deployments"
-  if [[ -z "$2" ]]; then
+function downloadLatestSnapshot {
+  DEFAULT_REPO_URL="https://oss.sonatype.org/content/repositories/snapshots"
+  if [[ -z "$1" ]]; then
     REPO_URL="$DEFAULT_REPO_URL"
   else
-    REPO_URL="$2"
+    REPO_URL="$1"
   fi
 
   BASE_URL="$REPO_URL/org/commonjava/maven/ext/pom-manipulation-cli"
@@ -49,4 +56,14 @@ if [[ "$1" == "snapshot" ]]; then
   rm metadata.xml
 
   echo "Downloaded latest snapshot of $SNAPSHOT_VERSION from $URL"
+}
+
+if [[ "$#" == 0 ]]; then
+  help
+elif [[ "$1" == "snapshot" ]]; then
+  downloadLatestSnapshot $2
+elif [[ "$1" == "latest" ]]; then
+  downloadLatestVersionFromCentral
+else
+  downloadVersionFromCentral $1
 fi
