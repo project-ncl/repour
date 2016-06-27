@@ -51,7 +51,6 @@ Repour needs a git repository provider that grants it the following permissions:
 Also, the repository provider _must not_ grant the following permissions to Repour and all other users:
 
 - Delete repositories
-- Push non-fast-forward commits
 - Push existing tags (re-tagging)
 - Push non-fast-forward commits (force push)
 
