@@ -20,15 +20,20 @@ RUN cd / && \
     useradd -rm -u 1001 -g repour repour && \
     chmod og+rwx /home/repour/ && \
     echo "tsflags=nodocs" >> /etc/dnf/dnf.conf && \
-    dnf install -y bsdtar python3 java-headless git subversion mercurial nss_wrapper gettext sudo ca-certificates && \
+    dnf install -y bsdtar python3 java-headless git subversion mercurial nss_wrapper \
+        gettext sudo ca-certificates asciidoc && \
     dnf clean all && \
     echo -ne '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /mnt/secrets/repour/repour\n\tControlMaster auto\n\tControlPath /tmp/%r@%h-%p\n\tControlPersist 300\n' >> /etc/ssh/ssh_config
 
-COPY ["venv/container.txt", "container/pid1.py", "container/au.py", "script/*", "/home/repour/"]
+COPY [".git/", "/home/repour/.git"] # needed for make-readme.sh, deleted later
+
+COPY ["venv/container.txt", "container/pid1.py", "container/au.py", "script/*", "README.asciidoc", "/home/repour/"]
 
 RUN pip3 --no-cache-dir install -r container.txt && \
     chmod og+rx *.py && \
     chmod a+x *.sh && \
-    ./download-pme.sh latest
+    ./download-pme.sh latest && \
+    ./make-readme.sh && \
+    rm -rf .git
 
 COPY ["repour/*.py", "/home/repour/repour/"]
