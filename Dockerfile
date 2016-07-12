@@ -12,7 +12,7 @@ LABEL io.k8s.description="Archival code service" \
       io.openshift.min-memory="64Mi"
 
 WORKDIR /home/repour
-ENTRYPOINT ["./setup.sh", "-", "./pid1.py", "./au.py", "python3", "-m", "repour"]
+ENTRYPOINT ["sudo", "-E", "-u", "repour", "./pid1.py", "./au.py", "python3", "-m", "repour"]
 CMD ["run-container"]
 
 RUN cd / && \
