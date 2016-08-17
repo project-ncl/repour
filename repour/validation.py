@@ -108,6 +108,25 @@ pull_modeb = Schema(
 )
 
 #
+# Clone
+#
+
+clone_raw = {
+    #"name": name_str,
+    "type": "git", # only git supported for now
+    "ref": nonempty_str,
+    "originRepoUrl": Url(),
+    "targetRepoUrl": Url(),
+    Optional("callback"): callback_raw,
+}
+
+clone = Schema(
+    clone_raw,
+    required = True,
+    extra = False,
+)
+
+#
 # Returns
 #
 

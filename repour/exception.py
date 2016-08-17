@@ -40,7 +40,13 @@ class HttpClientError(DescribedError):
 class PullError(DescribedError):
     pass
 
+class CloneError(DescribedError):
+    pass
+
 class PullCommandError(PullError, CommandError):
+    pass
+
+class CloneCommandError(CloneError, CommandError):
     pass
 
 class RepoError(DescribedError):

@@ -12,10 +12,12 @@ from aiohttp import web
 import voluptuous
 
 from . import adjust
+from . import clone
 from . import exception
 from . import pull
 from . import repo
 from . import validation
+
 
 logger = logging.getLogger(__name__)
 
@@ -241,6 +243,7 @@ def init(loop, bind, repo_provider, adjust_provider):
     logger.debug("Setting up handlers")
     app.router.add_route("POST", "/pull", pull_source)
     app.router.add_route("POST", "/adjust", adjust_source)
+    app.router.add_route("POST", "/clone", _validated_json_endpoint(validation.clone, clone.clone))
 
     logger.debug("Creating asyncio server")
     srv = yield from loop.create_server(app.make_handler(), bind["address"], bind["port"])
