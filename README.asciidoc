@@ -436,6 +436,64 @@ Note that `--branch` is only usable with references (tags or branches), not comm
 !===
 |===
 
+
+
+=== Clone
+
+Checkout a git ref from the origin repo and force push it to the target repo.
+If ref is not a branch name, new branch named branch-{ref} pointing to the ref will be pushed instead.
+The response will contain the resulting ref name.
+
+[cols="h,6a"]
+|===
+|URL
+|/clone
+
+|Request
+|[cols="h,4a"]
+!===
+!Method
+!POST
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "type": "git", # only git supported for now
+    "ref": nonempty_str,
+    "originRepoUrl": Url(),
+    "targetRepoUrl": Url(),
+    Optional("callback"): {
+        "url": Url(),
+        Optional("method"): Any("PUT", "POST"),
+    }
+}
+
+!===
+
+|Response (Success)
+|[cols="h,4a"]
+!===
+!Status
+!200
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "type": "git", # only git supported for now
+    "ref": nonempty_str,
+    "originRepoUrl": Url(),
+    "targetRepoUrl": Url(),
+}
+
+!===
+|===
+
 === Callback mode
 
 All endpoints can operate in callback mode, which is activated by defining the optional `callback` parameter. In this mode an immediate response is given instead of waiting for the required processing to complete.
