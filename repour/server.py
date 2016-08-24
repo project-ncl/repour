@@ -14,6 +14,7 @@ import voluptuous
 from . import adjust
 from . import clone
 from . import exception
+from .info import InfoEndpoint
 from . import pull
 from . import repo
 from . import validation
@@ -241,6 +242,7 @@ def init(loop, bind, repo_provider, adjust_provider):
         adjust_source = _validated_json_endpoint(validation.adjust, adjust.adjust)
 
     logger.debug("Setting up handlers")
+    app.router.add_route("GET", "/", InfoEndpoint.handle)
     app.router.add_route("POST", "/pull", pull_source)
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/clone", _validated_json_endpoint(validation.clone, clone.clone))

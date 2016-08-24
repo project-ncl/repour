@@ -3,3 +3,5 @@
 !venv/container.txt
 !container
 !script
+!README.asciidoc
+!.git
