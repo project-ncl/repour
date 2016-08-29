@@ -1,5 +1,6 @@
 import asyncio
 import io
+import json
 import logging
 import os
 import zipfile
@@ -67,23 +68,23 @@ Adjust Type: {adjust_type}
 
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider, adjust_provider):
-    with asutil.TemporaryDirectory(suffix="git") as d:
+    with asutil.TemporaryDirectory(suffix="git") as work_dir:
         repo_url = yield from repo_provider(adjustspec, create=False)
 
         # Non-shallow, but branch-only clone of internal repo
         yield from expect_ok(
-            cmd=["git", "clone", "--branch", adjustspec["ref"], "--depth", "1", "--", repo_url.readwrite, d],
+            cmd=["git", "clone", "--branch", adjustspec["ref"], "--depth", "1", "--", repo_url.readwrite, work_dir],
             desc="Could not clone with git",
         )
-        yield from asgit.setup_commiter(expect_ok, d)
-
-        adjust_type = yield from adjust_provider(d)
+        yield from asgit.setup_commiter(expect_ok, work_dir)
+        adjust_result_data = yield from adjust_provider(work_dir)
         result = yield from commit_adjustments(
-            repo_dir=d,
+            repo_dir=work_dir,
             repo_url=repo_url,
             original_ref=adjustspec["ref"],
-            adjust_type=adjust_type,
+            adjust_type=adjust_result_data["adjustType"],
         )
+        result["adjustResultData"] = adjust_result_data["resultData"]
 
     return result or {}
 
@@ -95,12 +96,23 @@ def adjust_noop():
     logger.info("Using noop adjust provider")
     @asyncio.coroutine
     def adjust(repo_dir):
-        return "NoOp"
+        return {"adjustType": "NoOp", "resultData": "{}"}
     return adjust
 
 def adjust_subprocess(description, cmd, log_context_option=None, send_log=False):
     logger.info("Using subprocess adjust provider, Description: {description} CMD: {cmd}".format(**locals()))
     log_executable_info(cmd)
+
+    @asyncio.coroutine
+    def get_result_data(work_dir):
+        raw_result_data = "{}"
+        # This is PME specific. TODO Refactor adjust providers.
+        result_file_path = work_dir + "/target/pom-manip-ext-result.txt"
+        if os.path.isfile(result_file_path):
+            with open(result_file_path, "r") as file:
+                raw_result_data = file.read()
+        return json.loads(raw_result_data)
+
     @asyncio.coroutine
     def adjust(repo_dir):
         filled_cmd = [p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p for p in cmd]
@@ -132,9 +144,12 @@ def adjust_subprocess(description, cmd, log_context_option=None, send_log=False)
         except exception.CommandError as e:
             logger.error("Adjust subprocess failed, exited code {e.exit_code}".format(**locals()))
             raise
-        else:
-            logger.info("Adjust subprocess exited ok")
-        return description
+
+        logger.info("Adjust subprocess exited ok")
+        adjust_result_data = {}
+        adjust_result_data["adjustType"] = description
+        adjust_result_data["resultData"] = yield from get_result_data(repo_dir)
+        return adjust_result_data
     return adjust
 
 #
