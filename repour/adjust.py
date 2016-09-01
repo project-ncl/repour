@@ -107,7 +107,7 @@ def adjust_subprocess(description, cmd, log_context_option=None, send_log=False)
     def get_result_data(work_dir):
         raw_result_data = "{}"
         # This is PME specific. TODO Refactor adjust providers.
-        result_file_path = work_dir + "/target/pom-manip-ext-result.txt"
+        result_file_path = work_dir + "/target/pom-manip-ext-result.json"
         if os.path.isfile(result_file_path):
             with open(result_file_path, "r") as file:
                 raw_result_data = file.read()
