@@ -5,6 +5,7 @@ import logging
 import os
 import zipfile
 
+from .scm import git_provider
 from . import asgit
 from . import asutil
 from . import exception
@@ -66,16 +67,16 @@ Adjust Type: {adjust_type}
 # Adjust operation
 #
 
+git = git_provider.git_provider()
+
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
         repo_url = yield from repo_provider(adjustspec, create=False)
 
         # Non-shallow, but branch-only clone of internal repo
-        yield from expect_ok(
-            cmd=["git", "clone", "--branch", adjustspec["ref"], "--depth", "1", "--", repo_url.readwrite, work_dir],
-            desc="Could not clone with git",
-        )
+        yield from git["clone_checkout_branch_tag_deep"](work_dir, repo_url.readwrite, adjustspec["ref"])
+
         yield from asgit.setup_commiter(expect_ok, work_dir)
         adjust_result_data = yield from adjust_provider(work_dir)
         result = yield from commit_adjustments(
