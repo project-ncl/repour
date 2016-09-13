@@ -30,4 +30,4 @@ RUN pip3 --no-cache-dir install -r container.txt && \
     chmod og+rx *.py && \
     chmod a+x *.sh
 
-COPY ["repour/*.py", "/home/repour/repour/"]
+COPY ["repour/", "/home/repour/repour/"]
