@@ -1,15 +1,13 @@
 import asyncio
-import collections
-import datetime
 import logging
 import os
 import shutil
 import tempfile
-import urllib.parse
 
+from .scm import git_provider
+from . import adjust
 from . import asgit
 from . import asutil
-from . import adjust
 from . import exception
 
 logger = logging.getLogger(__name__)
@@ -146,67 +144,21 @@ pull_mercurial = _simple_scm_pull_function(
     cleanup=[".hg"],
 )
 
+git = git_provider.git_provider()
+
+
 @asyncio.coroutine
 def pull_git(pullspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="git") as clone_dir:
-        @asyncio.coroutine
-        def deep():
-            yield from expect_ok(
-                cmd=["git", "clone", "--", pullspec["url"], clone_dir],
-                desc="Could not clone with git",
-            )
-        @asyncio.coroutine
-        def deep_checkout():
-            yield from deep()
-            # Checkout tag or branch or commit-id
-            yield from expect_ok(
-                cmd=["git", "-C", clone_dir, "checkout", pullspec["ref"], "--"],
-                desc="Could not checkout ref {pullspec[ref]} from clone of {pullspec[url]} with git".format(**locals()),
-            )
-        @asyncio.coroutine
-        def shallow():
-            yield from expect_ok(
-                cmd=["git", "clone", "--branch", pullspec["ref"], "--depth", "1", "--", pullspec["url"], clone_dir],
-                desc="Could not clone with git",
-                stderr=None,
-            )
-        @asyncio.coroutine
-        def branchonly():
-            yield from expect_ok(
-                cmd=["git", "clone", "--branch", pullspec["ref"], "--", pullspec["url"], clone_dir],
-                desc="Could not clone with git",
-                stderr=None,
-            )
 
         if "ref" in pullspec:
-            # Distinguishing a reference from a commit-id is hard, so apply the
-            # "Easier to Ask for Forgiveness than Permission" pattern,
-            # delegating to git.
-            try:
-                # Shallow clone of the git ref (tag or branch)
-                yield from shallow()
-            except exception.CommandError as e:
-                if "does not support" in e.stderr:
-                    # Fallback to single branch (for dumb http transport)
-                    try:
-                        yield from branchonly()
-                    except exception.CommandError as e:
-                        # Fallback to deep+checkout (for commitid)
-                        if "not found" in e.stderr:
-                            yield from deep_checkout()
-                        else:
-                            raise
-                elif "not found" in e.stderr:
-                    # Fallback to deep+checkout (for commitid)
-                    yield from deep_checkout()
-                else:
-                    raise
+            yield from git["clone_checkout_ref_auto"](clone_dir, pullspec["url"], pullspec["ref"])
         else:
             # No ref, use HEAD/default
-            yield from deep()
+            yield from git["clone_deep"](clone_dir, pullspec["url"])
 
         # Clean up metadata
-        yield from asutil.rmtree(os.path.join(clone_dir, ".git"))
+        yield from git["cleanup"](clone_dir)
         _log_scm_success(pullspec)
 
         internal = yield from process_source_tree(
