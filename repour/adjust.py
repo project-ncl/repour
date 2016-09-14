@@ -74,8 +74,7 @@ def adjust(adjustspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
         repo_url = yield from repo_provider(adjustspec, create=False)
 
-        # Non-shallow, but branch-only clone of internal repo
-        yield from git["clone_checkout_branch_tag_deep"](work_dir, repo_url.readwrite, adjustspec["ref"])
+        yield from git["clone_checkout_branch_tag_shallow"](work_dir, repo_url.readwrite, adjustspec["ref"])
 
         yield from asgit.setup_commiter(expect_ok, work_dir)
         adjust_result_data = yield from adjust_provider(work_dir)
