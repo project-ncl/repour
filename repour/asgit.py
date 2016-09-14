@@ -118,7 +118,16 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     yield from replace_branch(expect_ok, repo_dir, temp_branch, branch_name)
 
     tag_name = "repour-{commit_id}".format(**locals())
-    yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description)
+
+    try:
+        yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description)
+    except exception.CommandError as e:
+        if no_change_ok and e.exit_code == 1:
+            # No changes were made
+            return None
+        else:
+            raise
+
     # The tag and reference names are set up to be the same for the same
     # file tree, so this is a deduplicated operation. If the branch/tag
     # already exist, git will return quickly with an 0 (success) status
