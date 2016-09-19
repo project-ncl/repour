@@ -27,7 +27,7 @@ def git_provider():
         # Checkout tag or branch or commit-id
         yield from expect_ok(
             cmd=["git", "-C", dir, "checkout", ref, "--"],
-            desc="Could not checkout ref {ref} from clone of {url} with git".format(**locals()),
+            desc="Could not checkout ref {ref} with git".format(**locals()),
         )
 
     @asyncio.coroutine
