@@ -16,7 +16,7 @@ def setup_commiter(expect_ok, repo_dir):
         desc="Could not set committer name with git",
     )
     yield from expect_ok(
-        cmd=["git", "-C", repo_dir, "config", "--local", "user.email", "<>"],
+        cmd=["git", "-C", repo_dir, "config", "--local", "user.email", "ncl-dev+user-pnc-gerrit@redhat.com"],
         desc="Could not set committer email with git",
     )
 
