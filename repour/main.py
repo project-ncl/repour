@@ -144,7 +144,7 @@ def run_container_subcommand(args):
                     "-Dversion.incremental.suffix=redhat",
                     "-DstrictAlignment=true",
                     "-DoverrideTransitive=false",
-                    "-DallowConfigFilePrecendence=true",
+                    "-DallowConfigFilePrecedence=true",
                     "-DrestProtocol=current"
                 ],
                 "log_context_option": "--log-context",
