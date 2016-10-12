@@ -137,7 +137,7 @@ def run_container_subcommand(args):
                 "description": "PME",
                 "cmd": [
                     "java", "-jar", os.path.join(os.getcwd(), "pom-manipulation-cli.jar"),
-                    "-s", "settings.xml",
+                    "-s", "/home/repour/settings.xml",
                     "-d",
                     "-DrestMaxSize=30",
                     "-DrestURL=" + da_url,
