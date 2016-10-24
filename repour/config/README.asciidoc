@@ -1,0 +1,33 @@
+= Repour - Configuration Options
+
+=== Where to put the configuration files?
+
+There are two options:
+
+ - Providing an absolute path to the configuration file in an environment variable. Name of the variable is listed
+   as a constant in `repor/config/config.py` file.
+   To use the variable inside Docker container, you can add it to the `sudo` command in the `script/repour-run.sh`.
+ - If the above file is not found, the default configuration file `repour/config/default-config.json` is used instead.
+   In the future the file from the first option may inherit defaults from this one, but currently it is just used instead.
+   You should prefer the first option instead of editing the default file.
+
+=== What is the file's structure?
+
+The file must be a valid JSON document, the extension does not matter.
+
+=== What are the options?
+
+To make it simple, let's define `x/y/../z` as a list x, y, .., z of keys in the sequence of nested JSON objects that have to be traversed in order to get to the required configuration value.
+
+*Authentication/Authorization:*
+
+ - `auth/provider` - name of the selected auth provider. All available providers are listed in `repour/auth/auth.py`. If empty or removed, no provider will be used.
+ - For provider `oauth2_jwt`:
+     * `auth/oauth2_jwt/public_key` - public key (including the `-----BEGIN PUBLIC KEY-----` and END) to verify token signature.
+     * `auth/oauth2_jwt/token_issuer` - this must match the content of `iss` field in the token.
+
+=== Additional notes
+
+Not all possible configuration options are yet migrated to use this system.
+You should also take a look at `repour/example-config.yaml`
+

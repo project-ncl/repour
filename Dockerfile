@@ -20,7 +20,7 @@ RUN cd / && \
     useradd -rm -u 1001 -g repour repour && \
     chmod og+rwx /home/repour/ && \
     echo "tsflags=nodocs" >> /etc/dnf/dnf.conf && \
-    dnf install -y bsdtar python3 java-headless git subversion mercurial nss_wrapper gettext sudo && \
+    dnf install -y bsdtar python3 java-headless git subversion mercurial nss_wrapper gettext sudo gcc python3-devel gmp-devel redhat-rpm-config && \
     dnf clean all && \
     echo -ne '\n\tStrictHostKeyChecking no\n\tPreferredAuthentications publickey\n\tIdentityFile /mnt/secrets/repour/repour\n\tControlMaster auto\n\tControlPath /tmp/%r@%h-%p\n\tControlPersist 300\n' >> /etc/ssh/ssh_config
 

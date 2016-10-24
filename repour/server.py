@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import collections
 import hashlib
 import json
 import logging
@@ -8,24 +7,28 @@ import os
 import traceback
 
 import aiohttp
-from aiohttp import web
 import voluptuous
+from aiohttp import web
 
 from . import adjust
+from .auth import auth
 from . import clone
+from .config import config
 from . import exception
 from . import pull
 from . import repo
 from . import validation
 
-
 logger = logging.getLogger(__name__)
+
 
 def create_log_context_id():
     return "repour-" + base64.b32encode(os.urandom(20)).decode("ascii").lower()
 
+
 def create_callback_id():
     return base64.b32encode(os.urandom(30)).decode("ascii")
+
 
 def create_traceback_id():
     tb = traceback.format_exc()
@@ -33,12 +36,14 @@ def create_traceback_id():
     h.update(tb.encode("utf-8"))
     return h.hexdigest()
 
+
 def described_error_to_obj(exception):
     traceback_id = create_traceback_id()
     error = {k: v for k, v in exception.__dict__.items() if not k.startswith("_")}
     error["error_type"] = exception.__class__.__name__
     error["error_traceback"] = traceback_id
     return (traceback_id, error)
+
 
 def exception_to_obj(exception):
     traceback_id = create_traceback_id()
@@ -48,20 +53,25 @@ def exception_to_obj(exception):
     }
     return (traceback_id, error)
 
+
 def log_traceback_multi_line():
     text = traceback.format_exc()
     for line in text.split("\n"):
         if line != "":
             logger.error(line)
 
+
 shutdown_callbacks = []
 
+
 def _validated_json_endpoint(validator, coro):
-    client_session = aiohttp.ClientSession() #pylint: disable=no-member
+    client_session = aiohttp.ClientSession()  # pylint: disable=no-member
     shutdown_callbacks.append(client_session.close)
 
     @asyncio.coroutine
     def handler(request):
+        c = yield from config.get_configuration()
+
         log_context = request.headers.get("LOG-CONTEXT", "").strip()
         if log_context == "":
             log_context = create_log_context_id()
@@ -126,7 +136,8 @@ def _validated_json_endpoint(validator, coro):
             except Exception as e:
                 status = 500
                 traceback_id, obj = exception_to_obj(e)
-                logger.error("Internal failure ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
+                logger.error(
+                    "Internal failure ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
                 log_traceback_multi_line()
             else:
                 status = 200
@@ -149,29 +160,42 @@ def _validated_json_endpoint(validator, coro):
                 @asyncio.coroutine
                 def send_result():
                     try:
+                        # TODO refactor this into auth.py, we cannot use middleware for callbacks
+                        headers = []
+                        auth_provider = c.get('auth', {}).get('provider', None)
+                        if auth_provider == 'oauth2_jwt' and request.headers.get('Authorization', None):
+                            auth_header = {request.headers['Authorization'], 'Authorization'}
+                            logger.debug('Authorization enabled, adding header to callback: ' + str(auth_header))
+                            headers.append(auth_header)
+
                         resp = yield from client_session.request(
                             callback_spec.get("method", "POST"),
                             callback_spec["url"],
+                            headers=headers,
                             data=json.dumps(
                                 obj=obj,
                                 ensure_ascii=False,
                             ).encode("utf-8")
                         )
                     except Exception as e:
-                        logger.info("Unable to send result of callback, exception {ename}, attempt {backoff}/{max_attempts}".format(
-                            ename=e.__class__.__name__,
-                            backoff=backoff,
-                            max_attempts=max_attempts,
-                        ))
+                        logger.info(
+                            "Unable to send result of callback, exception {ename}, attempt {backoff}/{max_attempts}".format(
+                                ename=e.__class__.__name__,
+                                backoff=backoff,
+                                max_attempts=max_attempts,
+                            ))
                         log_traceback_multi_line()
                         resp = None
                     return resp
+
                 backoff = 0
                 max_attempts = 9
                 resp = yield from send_result()
                 while resp is None or resp.status // 100 != 2:
                     if resp is not None:
-                        logger.info("Unable to send result of callback, status {resp.status}, attempt {backoff}/{max_attempts}".format(**locals()))
+                        logger.info(
+                            "Unable to send result of callback, status {resp.status}, attempt {backoff}/{max_attempts}".format(
+                                **locals()))
                     if backoff > max_attempts:
                         logger.error("Giving up on callback after {max_attempts} attempts".format(**locals()))
                         break
@@ -206,7 +230,9 @@ def _validated_json_endpoint(validator, coro):
             ),
         )
         return response
+
     return handler
+
 
 #
 # Handlers
@@ -219,6 +245,7 @@ def show_id(request):
         text="Repour",
     )
 
+
 #
 # Setup
 #
@@ -226,7 +253,10 @@ def show_id(request):
 @asyncio.coroutine
 def init(loop, bind, repo_provider, adjust_provider):
     logger.debug("Running init")
-    app = web.Application(loop=loop)
+    c = yield from config.get_configuration()
+
+    auth_provider = c.get('auth', {}).get('provider', None)
+    app = web.Application(loop=loop, middlewares=[auth.providers[auth_provider]] if auth_provider else {})
 
     logger.debug("Adding application resources")
     app["repo_provider"] = repo.provider_types[repo_provider["type"]](**repo_provider["params"])
@@ -249,6 +279,7 @@ def init(loop, bind, repo_provider, adjust_provider):
     srv = yield from loop.create_server(app.make_handler(), bind["address"], bind["port"])
     for socket in srv.sockets:
         logger.info("Server started on socket: {}".format(socket.getsockname()))
+
 
 def start_server(bind, repo_provider, adjust_provider):
     logger.debug("Starting server")
@@ -277,7 +308,8 @@ def start_server(bind, repo_provider, adjust_provider):
         results = loop.run_until_complete(asyncio.gather(*tasks, loop=loop, return_exceptions=True))
         for shutdown_callback in shutdown_callbacks:
             shutdown_callback()
-        exception_results = [r for r in results if isinstance(r, Exception) and not isinstance(r, asyncio.CancelledError)]
+        exception_results = [r for r in results if
+                             isinstance(r, Exception) and not isinstance(r, asyncio.CancelledError)]
         if len(exception_results) > 1:
             raise Exception(exception_results)
         elif len(exception_results) == 1:
