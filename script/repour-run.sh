@@ -6,6 +6,6 @@ cd "$WORK_DIR"
 USR_ID=1001
 USR=$(getent passwd "$USR_ID" | cut -d: -f1)
 
-./download-pme.sh "latest"
+./download-pme.sh "2.5"
 
 sudo -E -u "$USR" "./pid1.py" "./au.py" "python3" "-m" "repour" "run-container"
