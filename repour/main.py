@@ -31,7 +31,7 @@ def override(config, config_coords, args, arg_name):
 #
 
 def run_subcommand(args):
-    from . import server
+    from .server import server
 
     # Config
     config = load_config(args.config)
@@ -60,7 +60,7 @@ def run_subcommand(args):
     )
 
 def run_container_subcommand(args):
-    from . import server
+    from .server import server
 
     # Log to stdout/stderr only (no file)
     configure_logging(logging.INFO)
