@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 @asyncio.coroutine
 def verify_token(token):
     c = yield from config.get_configuration()
+    logger.info('Got token: ' + str(token))
 
     OPTIONS = {
         'verify_signature': True,
@@ -28,8 +29,8 @@ def verify_token(token):
     try:
         token = jwt.decode(token, c['auth']['oauth2_jwt']['public_key'], algorithms=['RS256'], options=OPTIONS,
                            issuer=c['auth']['oauth2_jwt']['token_issuer'])
-        logger.debug('Got valid token: ' + str(token))
+        logger.info('Got valid token: ' + str(token))
         return True
     except JWTError as e:
-        logger.debug('Got invalid token: ' + str(e))
+        logger.info('Got invalid token: ' + str(e))
         return False

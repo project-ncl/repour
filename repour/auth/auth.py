@@ -20,11 +20,13 @@ def get_oauth2_jwt_handler(app, next_handler):
     def handler(request):
         auth_header_value = request.headers.get('Authorization', None)
         prefix_length = len('Bearer ')
+
         if not auth_header_value or len(auth_header_value) <= prefix_length:
             return fail(request)
 
         token = auth_header_value[prefix_length:]
-        if not oauth2_jwt.verify_token(token):
+        token_verified = yield from oauth2_jwt.verify_token(token)
+        if not token_verified:
             return fail(request)
 
         response = yield from next_handler(request)

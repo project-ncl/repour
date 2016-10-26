@@ -165,7 +165,7 @@ def _validated_json_endpoint(validator, coro):
                         auth_provider = c.get('auth', {}).get('provider', None)
                         if auth_provider == 'oauth2_jwt' and request.headers.get('Authorization', None):
                             auth_header = {request.headers['Authorization'], 'Authorization'}
-                            logger.debug('Authorization enabled, adding header to callback: ' + str(auth_header))
+                            logger.info('Authorization enabled, adding header to callback: ' + str(auth_header))
                             headers.append(auth_header)
 
                         resp = yield from client_session.request(
@@ -256,7 +256,7 @@ def init(loop, bind, repo_provider, adjust_provider):
     c = yield from config.get_configuration()
 
     auth_provider = c.get('auth', {}).get('provider', None)
-    app = web.Application(loop=loop, middlewares=[auth.providers[auth_provider]] if auth_provider else {})
+    logger.info("Using auth provider '" + str(auth_provider) + "'.")
 
     logger.debug("Adding application resources")
     app["repo_provider"] = repo.provider_types[repo_provider["type"]](**repo_provider["params"])
