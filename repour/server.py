@@ -258,6 +258,8 @@ def init(loop, bind, repo_provider, adjust_provider):
     auth_provider = c.get('auth', {}).get('provider', None)
     logger.info("Using auth provider '" + str(auth_provider) + "'.")
 
+    app = web.Application(loop=loop, middlewares=[auth.providers[auth_provider]] if auth_provider else {})
+
     logger.debug("Adding application resources")
     app["repo_provider"] = repo.provider_types[repo_provider["type"]](**repo_provider["params"])
     app["adjust_provider"] = adjust.provider_types[adjust_provider["type"]](**adjust_provider["params"])
