@@ -5,11 +5,11 @@ from aiohttp import web
 
 from .endpoint import cancel
 from .endpoint import endpoint
-from .. import adjust
+from ..adjust import adjust
 from .. import clone
 from .. import pull
 from .. import repo
-from .. import validation
+from .endpoint import validation
 from ..auth import auth
 from ..config import config
 

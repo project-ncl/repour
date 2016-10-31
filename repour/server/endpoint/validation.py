@@ -2,9 +2,9 @@ import logging
 
 from voluptuous import *
 
-from . import adjust as adjustmodule
-from . import pull as pullmodule
-from . import repo
+from ...adjust import adjust as adjustmodule
+from ... import pull as pullmodule
+from ... import repo
 
 def mode_b_ify(raw):
     clone = raw.copy()
@@ -46,6 +46,7 @@ callback = Schema(
 adjust_raw = {
     "name": name_str,
     "ref": nonempty_str,
+    Optional("adjustParameters"): All(dict),
     Optional("callback"): callback_raw,
 }
 

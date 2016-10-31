@@ -11,7 +11,7 @@ import voluptuous
 from aiohttp import web
 
 from ... import exception
-from ... import validation
+from . import validation
 from ...config import config
 
 logger = logging.getLogger(__name__)

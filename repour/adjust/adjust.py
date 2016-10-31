@@ -5,10 +5,10 @@ import logging
 import os
 import zipfile
 
-from .scm import git_provider
-from . import asgit
-from . import asutil
-from . import exception
+from ..scm import git_provider
+from .. import asgit
+from .. import asutil
+from .. import exception
 
 logger = logging.getLogger(__name__)
 
