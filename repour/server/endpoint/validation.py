@@ -203,7 +203,7 @@ server_config_raw = {
         "port": port_num,
     },
     "adjust_provider": {
-        "type": Any(*adjustmodule.provider_types.keys()),
+        "type": Any(nonempty_str, None),
         "params": {Extra: object},
     },
     "repo_provider": {

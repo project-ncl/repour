@@ -77,11 +77,11 @@ def run_container_subcommand(args):
 
     # Mode B
     if args.mode_b:
-        ssh_user = required_env("REPOUR_SSH_USER", "The SSH username expected by the git server")
-        os.makedirs(".ssh", mode=0o700, exist_ok=True)
-        with open(".ssh/config", "w") as f:
-            f.write("Host *\n\tUser {ssh_user}\n".format(**locals()))
-        os.chmod(".ssh/config", 0o600)
+        # ssh_user = required_env("REPOUR_SSH_USER", "The SSH username expected by the git server")
+        # os.makedirs(".ssh", mode=0o700, exist_ok=True)
+        # with open(".ssh/config", "w") as f:
+        #     f.write("Host *\n\tUser {ssh_user}\n".format(**locals()))
+        # os.chmod(".ssh/config", 0o600)
         repo_provider = {
             "type": "modeb",
             "params": {},

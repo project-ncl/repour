@@ -26,6 +26,21 @@ To make it simple, let's define `x/y/../z` as a list x, y, .., z of keys in the 
      * `auth/oauth2_jwt/public_key` - public key (including the `-----BEGIN PUBLIC KEY-----` and END) to verify token signature.
      * `auth/oauth2_jwt/token_issuer` - this must match the content of `iss` field in the token.
 
+*Adjust:*
+
+ - `adjust/executions` - contains a list of adjust operation names. The names must be defined under `adjust/`
+ - For operation `"op"` the value of `adjust/op` is an object with the following keys:
+     * `adjust/op/provider` containing the id of the provider of the adjust operation. Adjust specific options are under `adjust/op/`. The currently supported providers are:
+         * `noop` - which, as the name suggests, does nothing
+         * `process` - executes a given command, provided as a list of executable name and options as would be separated by whitespace using `adjust/op/cmd` key. As an element of this list, you can use `{repo_dir}`, which will be replaced by an absolute path to the source directory. Another option is `adjust/op/outputToLogs`, which, if `true` will forward the stdout of the adjust process to the Repour logs. Default value is `false`.
+         * `pme` - uses POM Manipulation Extention CLI. The parameters are `adjust/op/cliJarPathAbsolute`, an absolute path to the PME CLI executable, `adjust/op/defaultParameters`, a list of arguments to the PME in the same format as `adjust/op/cmd`, and `adjust/op/outputToLogs`.
+
+*SCM:*
+
+ - `scm/git` - contains options for the operations involving git client
+     * `scm/git/user.name` - holds git commiter name
+     * `scm/git/user.email` - holds git commiter email
+
 === Additional notes
 
 Not all possible configuration options are yet migrated to use this system.

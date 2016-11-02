@@ -7,5 +7,26 @@
       "public_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
       "token_issuer": "..."
     }
+  },
+  "adjust": {
+    "executions": [
+      "noop"
+    ],
+    "noop": {
+      "provider": "noop"
+    },
+    "pme": {
+      "provider": "pme",
+      "cliJarPathAbsolute": "/home/repour/pom-manipulation-cli.jar",
+      "defaultParameters": [
+        "..."
+      ]
+    }
+  },
+  "scm": {
+    "git": {
+      "user.name": "Repour",
+      "user.email": "<>"
+    }
   }
 }

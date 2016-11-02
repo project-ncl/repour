@@ -34,7 +34,6 @@ def init(loop, bind, repo_provider, adjust_provider):
 
     logger.debug("Adding application resources")
     app["repo_provider"] = repo.provider_types[repo_provider["type"]](**repo_provider["params"])
-    app["adjust_provider"] = adjust.provider_types[adjust_provider["type"]](**adjust_provider["params"])
 
     if repo_provider["type"] == "modeb":
         logger.warn("Mode B selected, guarantees rescinded")

@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from . import exception
+from .config import config
 
 logger = logging.getLogger(__name__)
 
@@ -9,14 +10,19 @@ logger = logging.getLogger(__name__)
 # Common operations
 #
 
+c = config.get_configuration_sync()
+
+
 @asyncio.coroutine
 def setup_commiter(expect_ok, repo_dir):
     yield from expect_ok(
-        cmd=["git", "-C", repo_dir, "config", "--local", "user.name", "Repour"],
+        cmd=["git", "-C", repo_dir, "config", "--local", "user.name",
+             c.get("scm", {}).get("git", {}).get("user.name", "Repour")],
         desc="Could not set committer name with git",
     )
     yield from expect_ok(
-        cmd=["git", "-C", repo_dir, "config", "--local", "user.email", "ncl-dev+user-pnc-gerrit@redhat.com"],
+        cmd=["git", "-C", repo_dir, "config", "--local", "user.email",
+             c.get("scm", {}).get("git", {}).get("user.email", "<>")],
         desc="Could not set committer email with git",
     )
 
@@ -90,7 +96,8 @@ def push_with_tags(expect_ok, repo_dir, branch_name):
 #
 
 @asyncio.coroutine
-def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False, no_change_ok=False):
+def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False,
+                          no_change_ok=False):
     # There are a few priorities for reference names:
     #   - Amount of information in the name itself
     #   - Length
