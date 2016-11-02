@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 expect_ok = asutil.expect_ok_closure(exception.CommandError)
 
 @asyncio.coroutine
-def clone(clonespec, repo_provider, adjust_provider):
+def clone(clonespec, repo_provider):
     if clonespec["type"] in scm_types:
         internal = yield from scm_types[clonespec["type"]](clonespec)
     else:

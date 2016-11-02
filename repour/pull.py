@@ -84,7 +84,7 @@ def _log_scm_success(pullspec):
 #
 
 @asyncio.coroutine
-def pull(pullspec, repo_provider, adjust_provider):
+def pull(pullspec, repo_provider):
     if pullspec["type"] in scm_types:
         internal = yield from scm_types[pullspec["type"]](pullspec, repo_provider, adjust_provider)
     elif pullspec["type"] == archive_type:
