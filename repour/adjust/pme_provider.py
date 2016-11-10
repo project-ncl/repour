@@ -46,6 +46,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
                                                      get_result_data=get_result_data,
                                                      send_log=output_to_logs) \
             (repo_dir, extra_adjust_parameters, adjust_result)
+        adjust_result['resultData'] = yield from get_result_data(repo_dir)
         return res
 
     return adjust
