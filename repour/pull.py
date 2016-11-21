@@ -5,7 +5,7 @@ import shutil
 import tempfile
 
 from .scm import git_provider
-from . import adjust
+from .adjust import adjust
 from . import asgit
 from . import asutil
 from . import exception
@@ -18,18 +18,14 @@ logger = logging.getLogger(__name__)
 
 expect_ok = asutil.expect_ok_closure(exception.PullCommandError)
 
+git = git_provider.git_provider()
+
 @asyncio.coroutine
 def to_internal(internal_repo_url, dirname, origin_ref, origin_url, origin_type):
     # Prepare new repo
     # Note that for orphan branches, we don't need to clone the existing internal repo first
-    yield from expect_ok(
-        cmd=["git", "-C", dirname, "init"],
-        desc="Could not re-init with git",
-    )
-    yield from expect_ok(
-        cmd=["git", "-C", dirname, "remote", "add", "origin", internal_repo_url.readwrite],
-        desc="Could not add remote with git",
-    )
+    yield from git["init"](dirname)
+    yield from git["add_remote"](dirname, "origin", internal_repo_url.readwrite)
 
     yield from asgit.setup_commiter(expect_ok, dirname)
     d = yield from asgit.push_new_dedup_branch(
@@ -54,7 +50,7 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
 
     do_adjust = pullspec.get("adjust", False)
     if do_adjust:
-        adjust_type = yield from adjust_provider(repo_dir)
+        adjust_type = yield from adjust_provider(pullspec, repo_dir)
         adjust_internal = yield from adjust.commit_adjustments(
             repo_dir=repo_dir,
             repo_url=internal_repo_url,
@@ -86,9 +82,9 @@ def _log_scm_success(pullspec):
 @asyncio.coroutine
 def pull(pullspec, repo_provider):
     if pullspec["type"] in scm_types:
-        internal = yield from scm_types[pullspec["type"]](pullspec, repo_provider, adjust_provider)
+        internal = yield from scm_types[pullspec["type"]](pullspec, repo_provider, adjust.adjust)
     elif pullspec["type"] == archive_type:
-        internal = yield from pull_archive(pullspec, repo_provider, adjust_provider)
+        internal = yield from pull_archive(pullspec, repo_provider, adjust.adjust)
     else:
         raise exception.PullError("Type '{pullspec[type]}' not supported".format(**locals()))
     return internal
@@ -143,9 +139,6 @@ pull_mercurial = _simple_scm_pull_function(
     end=lambda p,d: [p["url"], d],
     cleanup=[".hg"],
 )
-
-git = git_provider.git_provider()
-
 
 @asyncio.coroutine
 def pull_git(pullspec, repo_provider, adjust_provider):
