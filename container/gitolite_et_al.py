@@ -150,11 +150,11 @@ R   = @all READERS
     print("  -> Making admin repository changes", flush=True)
     shutil.copy(repour_publickey_path, os.path.join(tempclone, "keydir/repour.pub"))
     for k,v in [("user.name", "admin"), ("user.email", "<>")]:
-        subprocess.check_call(["git", "-C", tempclone, "config", "--local", k, v])
-    subprocess.check_call(["git", "-C", tempclone, "add", "-A"])
-    subprocess.check_call(["git", "-C", tempclone, "commit", "-m", "Add repour"])
+        subprocess.check_call(["cd", tempclone, "&&", "git", "config", "--local", k, v])
+    subprocess.check_call(["cd", tempclone, "&&", "git", "add", "-A"])
+    subprocess.check_call(["cd", tempclone, "&&", "git", "commit", "-m", "Add repour"])
     print("  -> Pushing admin repository changes", flush=True)
-    subprocess.check_call(["git", "-C", tempclone, "push"])
+    subprocess.check_call(["cd", tempclone, "&&", "git", "push"])
     shutil.rmtree(tempclone)
 
     # Change admin key so we don't know the admin's private key
