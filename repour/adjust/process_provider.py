@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
+stdout_options = asutil.process_stdout_options
+stderr_options = asutil.process_stderr_options
 
 # This provider MAY be "extended" by other providers.
 def get_process_provider(execution_name, cmd, get_result_data=None, log_context_option=None, send_log=False):
@@ -41,14 +43,15 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
         #         filled_cmd.append(log_context_option)
         #         filled_cmd.append(log_context)
         env = None
+        stdout = None
         try:
-            yield from expect_ok(
+            stdout = yield from expect_ok(
                 cmd=filled_cmd,
                 desc="Adjust subprocess failed.",
                 cwd=repo_dir,
                 env=env,
-                stdout="send" if send_log else "capture",
-                stderr="stdout" if send_log else "log_on_error",
+                stdout=stdout_options["lines"] if send_log else stdout_options["ignore"],
+                stderr=stderr_options["stdout"] if send_log else stderr_options["log_on_error"],
             )
         except exception.CommandError as e:
             logger.error('Adjust subprocess failed, exited code "{e.exit_code}"'.format(**locals()))
@@ -57,6 +60,7 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
         logger.info("Adjust subprocess exited OK!")
 
         adjust_result_data = {}
+        # TODO adjust_result_data["stdout"] = stdout
         adjust_result_data["adjustType"] = execution_name
         adjust_result_data["resultData"] = yield from get_result_data(repo_dir)
         return adjust_result_data

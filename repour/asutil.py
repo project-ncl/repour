@@ -82,6 +82,22 @@ def _convert_bytes(b, mode):
     else:
         return None
 
+# TODO values are for backwards comp., replace with enum
+process_stdout_options = {
+    "ignore": "send",
+    "capture": "capture", # ???
+    "text":"text", # see _convert_bytes
+    "lines":"lines",
+    "single":"single",
+    "data":"data",
+}
+
+process_stderr_options = {
+    "log": "log",
+    "log_on_error": "log_on_error",
+    "stdout": "stdout"
+}
+
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
     def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None):
@@ -95,15 +111,15 @@ def expect_ok_closure(exc_type=exception.CommandError):
         p = yield from asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.DEVNULL,
-            stdout=None if stdout == "send" else asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT if stderr == "stdout" else asyncio.subprocess.PIPE,
+            stdout=None if stdout == process_stdout_options["ignore"] else asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT if stderr == process_stderr_options["stdout"] else asyncio.subprocess.PIPE,
             env=sub_env,
             cwd=cwd
         )
 
         stdout_data, stderr_data = yield from p.communicate()
-
-        stderr_text = "" if stderr_data is None else stderr_data.decode("utf-8")
+        stderr_text = "" if stderr_data is None else _convert_bytes(stderr_data, "text")
+        stdout_text = "" if stdout_data is None else _convert_bytes(stdout_data, "text")
 
         if stderr_text != "" and (stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)):
             for line in stderr_text.split("\n"):
@@ -115,7 +131,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 desc=desc,
                 cmd=cmd,
                 exit_code=p.returncode,
-                stdout="" if stdout_data is None else stdout_data.decode("utf-8"),
+                stdout=stdout_text,
                 stderr=stderr_text,
             )
         else:
