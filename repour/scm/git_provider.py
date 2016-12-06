@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 
 from .. import asutil
 from .. import exception
@@ -8,6 +9,7 @@ from .. import exception
 logger = logging.getLogger(__name__)
 
 expect_ok = asutil.expect_ok_closure(exception.CommandError)
+
 
 #
 # Collection of all required SCM commands in one place.
@@ -90,14 +92,38 @@ def git_provider():
             desc="Could not (force) push branch '{}' to remote '{}' with git".format(branch, remote),
         )
 
-    @asyncio.coroutine # TODO merge with above
-    def push_with_tags(dir, branch, remote="origin", atomic=True):
-        yield from expect_ok(
-            cmd=["git", "push"] + (["--atomic"] if atomic else []) + ["--follow-tags", remote, branch],
-            desc="Could not atomic push tag+branch with git",
-            stderr=None,
-            cwd=dir
-        )
+    @asyncio.coroutine  # TODO merge with above
+    def push_with_tags(dir, branch, remote="origin", tryAtomic=True):
+        """
+        Warning: Atomic push is supported since git version 2.4.
+        If the atomic push is not supported by git client OR repository provider,
+        this method re-tries without it and returns false.
+        If an exception is thrown, some other error occurred and push did not
+        succeed.
+        """
+
+        def do(atomic):
+            yield from expect_ok(
+                cmd=["git", "push"] + (["--atomic"] if atomic else []) + ["--follow-tags", remote, branch],
+                desc="Could not atomic push tag+branch with git",
+                stderr=None,
+                cwd=dir
+            )
+
+        ver = yield from version()
+        doAtomic = tryAtomic if versionGreaterEqualsThan(ver, [2, 4]) else False
+        if tryAtomic and not doAtomic:
+            logger.warn("Cannot perform atomic push. It is not supported in this git version " + '.'.join(ver))
+
+        try:
+            yield from do(doAtomic)
+        except exception.CommandError as e:
+            if "support" in e.stderr:
+                logger.warn("The repository provider does not support atomic push. "
+                            "There is a risk of tag/branch inconsistency.")
+                yield from do(False)
+            else:
+                raise
 
     @asyncio.coroutine
     def init(dir):
@@ -207,7 +233,42 @@ def git_provider():
     def cleanup(dir):
         yield from asutil.rmtree(os.path.join(dir, ".git"))
 
+    @asyncio.coroutine
+    def version():  # TODO cache?
+        """
+        Return an array with components of the current git version (as numbers, ordered from most significant)
+        """
+        out = yield from expect_ok(
+            cmd=["git", "--version"],
+            desc="Could not find out git version.",
+            stdout=asutil.process_stdout_options["text"]
+        )
+        regex = r"git\ version\ (?P<res>([0-9]+\.)*[0-9]+)"
+        match = re.search(regex, out)
+        if (match):
+            return match.group("res").split(".")
+        else:
+            raise Exception("Unexpected output of 'git --version': " + str(out))
+
+    def versionGreaterEqualsThan(first, second):
+        """
+        Versions MUST be non-empty arrays of numbers ordered from most significant part.
+        """
+        lower = min(len(first), len(second))
+        higher = max(len(first), len(second))
+        if lower == 0:
+            raise Exception("Versions must not be empty.")
+        for i in range(0, higher):
+            f = first[i] if i < len(first) else 0
+            s = second[i] if i < len(second) else 0
+            if f > s:
+                return True
+            if f < s:
+                return False
+        return True  # equals
+
     return {
+        "version": version,
         "init": init,
         "add_remote": add_remote,
         "add_branch": add_branch,
