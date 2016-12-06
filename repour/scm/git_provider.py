@@ -113,7 +113,7 @@ def git_provider():
         ver = yield from version()
         doAtomic = tryAtomic if versionGreaterEqualsThan(ver, [2, 4]) else False
         if tryAtomic and not doAtomic:
-            logger.warn("Cannot perform atomic push. It is not supported in this git version " + '.'.join(ver))
+            logger.warn("Cannot perform atomic push. It is not supported in this git version " + '.'.join([str(e) for e in ver]))
 
         try:
             yield from do(doAtomic)
