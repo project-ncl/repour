@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 c = config.get_configuration_sync()
 git = git_provider.git_provider()
 
+
 @asyncio.coroutine
 def setup_commiter(expect_ok, repo_dir):
     yield from git["set_user_name"](repo_dir, c.get("scm", {}).get("git", {}).get("user.name", "Repour"))
@@ -27,30 +28,28 @@ def fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date="1970-01-
     head_commitid = yield from git["rev_parse"](repo_dir)
     return head_commitid
 
+
 @asyncio.coroutine
 def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
     yield from git["create_branch_checkout"](repo_dir, branch_name, orphan)
     yield from git["add_all"](repo_dir)
+
 
 @asyncio.coroutine
 def replace_branch(expect_ok, repo_dir, current_branch_name, new_name):
     yield from git["create_branch_checkout"](repo_dir, new_name)
     yield from git["delete_branch"](repo_dir, current_branch_name)
 
+
 @asyncio.coroutine
 def annotated_tag(expect_ok, repo_dir, tag_name, message):
     yield from git["tag_annotated"](repo_dir, tag_name, message)
 
+
 @asyncio.coroutine
 def push_with_tags(expect_ok, repo_dir, branch_name):
-    try:
-        yield from git["push_with_tags"](repo_dir, branch_name, atomic=True)
-    except exception.CommandError as e:
-        if "support" in e.stderr:
-            logger.warn("The repository provider does not support atomic push. There is a risk of tag/branch inconsistency.")
-            yield from git["push_with_tags"](repo_dir, branch_name, atomic=False)
-        else:
-            raise
+    yield from git["push_with_tags"](repo_dir, branch_name, tryAtomic=True)
+
 
 #
 # Higher-level operations
