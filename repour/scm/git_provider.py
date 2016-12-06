@@ -246,7 +246,7 @@ def git_provider():
         regex = r"git\ version\ (?P<res>([0-9]+\.)*[0-9]+)"
         match = re.search(regex, out)
         if (match):
-            return match.group("res").split(".")
+            return [int(e) for e in match.group("res").split(".")]
         else:
             raise Exception("Unexpected output of 'git --version': " + str(out))
 
