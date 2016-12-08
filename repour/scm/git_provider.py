@@ -105,7 +105,7 @@ def git_provider():
         def do(atomic):
             yield from expect_ok(
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + ["--follow-tags", remote, branch],
-                desc="Could not atomic push tag+branch with git",
+                desc="Could not" + (" atomic" if atomic else "") + " push tag+branch with git",
                 stderr=None,
                 cwd=dir
             )
@@ -113,7 +113,8 @@ def git_provider():
         ver = yield from version()
         doAtomic = tryAtomic if versionGreaterEqualsThan(ver, [2, 4]) else False
         if tryAtomic and not doAtomic:
-            logger.warn("Cannot perform atomic push. It is not supported in this git version " + '.'.join([str(e) for e in ver]))
+            logger.warn("Cannot perform atomic push. It is not supported in this git version " + '.'.join(
+                [str(e) for e in ver]))
 
         try:
             yield from do(doAtomic)
