@@ -4,11 +4,11 @@ import os
 import shutil
 import tempfile
 
-from .scm import git_provider
-from .adjust import adjust
 from . import asgit
 from . import asutil
 from . import exception
+from .adjust import adjust
+from .scm import git_provider
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 expect_ok = asutil.expect_ok_closure(exception.PullCommandError)
 
 git = git_provider.git_provider()
+
 
 @asyncio.coroutine
 def to_internal(internal_repo_url, dirname, origin_ref, origin_url, origin_type):
@@ -40,6 +41,7 @@ Type: {origin_type}
         orphan=True,
     )
     return d
+
 
 @asyncio.coroutine
 def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, origin_type, origin_ref):
@@ -69,11 +71,13 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
         adjust_internal["pull"] = pull_internal
         return adjust_internal
 
+
 def _log_scm_success(pullspec):
     msg = "Got {pullspec[type]} tree from {pullspec[url]}".format(**locals())
     if "ref" in pullspec:
         msg += " at ref {pullspec[ref]}".format(**locals())
     logger.info(msg)
+
 
 #
 # Pull operations
@@ -88,6 +92,7 @@ def pull(pullspec, repo_provider):
     else:
         raise exception.PullError("Type '{pullspec[type]}' not supported".format(**locals()))
     return internal
+
 
 def _simple_scm_pull_function(start, if_ref, end, cleanup=[]):
     @asyncio.coroutine
@@ -127,6 +132,7 @@ def _simple_scm_pull_function(start, if_ref, end, cleanup=[]):
 
     return pull
 
+
 pull_subversion = _simple_scm_pull_function(
     start=lambda p,d: ["svn", "export", "--force"],
     if_ref=lambda p,d: ["--revision", p["ref"]],
@@ -139,6 +145,7 @@ pull_mercurial = _simple_scm_pull_function(
     end=lambda p,d: [p["url"], d],
     cleanup=[".hg"],
 )
+
 
 @asyncio.coroutine
 def pull_git(pullspec, repo_provider, adjust_provider):
@@ -165,6 +172,38 @@ def pull_git(pullspec, repo_provider, adjust_provider):
 
     return internal
 
+
+@asyncio.coroutine
+def extract(filePath, targetDirPath):
+    fileType = yield from expect_ok(
+        cmd=["file", filePath],
+        desc="Could not get file type with 'file'.",
+    )
+
+    # Supported: zip, tar, and tar.gz
+    if "Zip" in fileType:
+        yield from expect_ok(
+            cmd=["unzip", filePath, "-d", targetDirPath],
+            desc="Could not extract zip (?) archive with 'unzip'. "
+                 + "Type of file '" + filePath + "' was detected as '" + fileType + "'.",
+        )
+    elif "gzip" in fileType:  # expect tar.gz, not just gz
+        yield from expect_ok(
+            cmd=["tar", "-xzf", filePath, "-C", targetDirPath],
+            desc="Could not extract tar.gz (?) archive with 'tar'. "
+                 + "Type of file '" + filePath + "' was detected as '" + fileType + "'.",
+        )
+    elif "tar" in fileType:  # tar
+        yield from expect_ok(
+            cmd=["tar", "-xf", filePath, "-C", targetDirPath],
+            desc="Could not extract tar (?) archive with 'tar'. "
+                 + "Type of file '" + filePath + "' was detected as '" + fileType + "'.",
+        )
+    else:
+        raise Exception("Unable to extract the archive. Supported are: zip, tar and tar+gz."
+                        + "Type of file '" + filePath + "' was detected as '" + fileType + "'.")
+
+
 @asyncio.coroutine
 def pull_archive(pullspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="extract") as extract_dir:
@@ -173,11 +212,7 @@ def pull_archive(pullspec, repo_provider, adjust_provider):
             archive_filename = yield from asutil.download(pullspec["url"], archive_file)
             logger.info("Got archive tree from {pullspec[url]} named {archive_filename}".format(**locals()))
 
-            # Use libarchive/bsdtar to extract into temp dir
-            yield from expect_ok(
-                cmd=["bsdtar", "-xf", archive_file.name, "-C", extract_dir],
-                desc="Could not extract archive with bsdtar",
-            )
+            yield from extract(archive_file.name, extract_dir)
 
         # Determine if there is a single inner root dir, as is common with archive files
         entry_count = 0
@@ -213,6 +248,7 @@ def pull_archive(pullspec, repo_provider, adjust_provider):
                     shutil.move(os.path.join(shuck, entry), repo_dir)
                 internal = yield from process(repo_dir)
                 return internal
+
 
 #
 # Supported
