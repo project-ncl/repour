@@ -28,7 +28,7 @@ def git_provider():
     def checkout(dir, ref):
         # Checkout tag or branch or commit-id
         yield from expect_ok(
-            cmd=["git", "checkout", ref, "--"],
+            cmd=["git", "checkout", ref],
             cwd=dir,
             desc="Could not checkout ref {ref} with git".format(**locals()),
         )
