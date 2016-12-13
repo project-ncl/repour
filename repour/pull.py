@@ -178,6 +178,7 @@ def extract(filePath, targetDirPath):
     fileType = yield from expect_ok(
         cmd=["file", filePath],
         desc="Could not get file type with 'file'.",
+        stdout=asutil.process_stdout_options["text"]
     )
 
     # Supported: zip, tar, and tar.gz
