@@ -81,15 +81,20 @@ def adjust(adjustspec, repo_provider):
             repo_url=repo_url,
             original_ref=adjustspec["ref"],
             adjust_type=", ".join(adjust_result["adjustType"]),
+            force_continue_on_no_changes=True
         )
 
         result = result if result is not None else {}
+
         result["adjustResultData"] = adjust_result["resultData"]
     return result
 
 
 @asyncio.coroutine
-def commit_adjustments(repo_dir, repo_url, original_ref, adjust_type):
+def commit_adjustments(repo_dir, repo_url, original_ref, adjust_type, force_continue_on_no_changes=False):
+    """
+    Careful: Returns None if no changes were made, unless force_continue_on_no_changes is True
+    """
     d = yield from asgit.push_new_dedup_branch(
         expect_ok=expect_ok,
         repo_dir=repo_dir,
@@ -99,5 +104,6 @@ def commit_adjustments(repo_dir, repo_url, original_ref, adjust_type):
 Adjust Type: {adjust_type}
 """.format(**locals()),
         no_change_ok=True,
+        force_continue_on_no_changes=force_continue_on_no_changes
     )
     return d
