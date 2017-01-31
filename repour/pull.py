@@ -53,6 +53,7 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
     do_adjust = pullspec.get("adjust", False)
     if do_adjust:
         adjust_type = yield from adjust_provider(pullspec, repo_dir)
+        # TODO This does not look good, use code in adjust to commit adjustments
         adjust_internal = yield from adjust.commit_adjustments(
             repo_dir=repo_dir,
             repo_url=internal_repo_url,

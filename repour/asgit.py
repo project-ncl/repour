@@ -42,8 +42,8 @@ def replace_branch(expect_ok, repo_dir, current_branch_name, new_name):
 
 
 @asyncio.coroutine
-def annotated_tag(expect_ok, repo_dir, tag_name, message):
-    yield from git["tag_annotated"](repo_dir, tag_name, message)
+def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=False):
+    yield from git["tag_annotated"](repo_dir, tag_name, message, ok_if_exists)
 
 
 @asyncio.coroutine
@@ -53,11 +53,14 @@ def push_with_tags(expect_ok, repo_dir, branch_name):
 
 #
 # Higher-level operations
+# Returns None if no changes were made and no_change_ok=True, else raises an exception
+# If no_change_ok=True you may set force_continue_on_no_changes to create the branch and tag anyway,
+# on the current ref, without making the new commit
 #
 
 @asyncio.coroutine
 def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False,
-                          no_change_ok=False):
+                          no_change_ok=False, force_continue_on_no_changes=False):
     # There are a few priorities for reference names:
     #   - Amount of information in the name itself
     #   - Length
@@ -75,7 +78,11 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
             # No changes were made
-            return None
+            if force_continue_on_no_changes:
+                # Use the current commit to continue
+                commit_id = yield from git["rev_parse"](repo_dir)
+            else:
+                return None
         else:
             raise
 
@@ -87,11 +94,12 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     tag_name = "repour-{commit_id}".format(**locals())
 
     try:
-        yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description)
+        yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description, ok_if_exists=force_continue_on_no_changes)
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
             # No changes were made
-            return None
+            if force_continue_on_no_changes:
+                return None
         else:
             raise
 

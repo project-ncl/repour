@@ -197,12 +197,19 @@ def git_provider():
         )
 
     @asyncio.coroutine
-    def tag_annotated(dir, tag_name, message):
-        yield from expect_ok(
-            cmd=["git", "tag", "-a", "-m", message, tag_name],
-            desc="Could not add tag with git",
-            cwd=dir
-        )
+    def tag_annotated(dir, tag_name, message, ok_if_exists=False):
+        try:
+            yield from expect_ok(
+                cmd=["git", "tag", "-a", "-m", message, tag_name],
+                desc="Could not add tag with git",
+                cwd=dir
+            )
+        except exception.CommandError as e:
+            if ("already exists" in e.stderr) and ok_if_exists:
+                pass # ok
+            else:
+                raise e
+
 
     @asyncio.coroutine
     def clone_checkout_ref_auto(dir, url, ref):
@@ -268,6 +275,7 @@ def git_provider():
                 return False
         return True  # equals
 
+    # TODO make this a class
     return {
         "version": version,
         "init": init,
