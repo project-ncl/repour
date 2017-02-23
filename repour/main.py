@@ -208,7 +208,7 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
 
 def load_config(config_path):
     import yaml
-    from . import validation
+    from .server.endpoint import validation
 
     config_dir = os.path.dirname(config_path)
     def config_relative(loader, node):

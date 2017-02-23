@@ -128,6 +128,20 @@ clone = Schema(
 )
 
 #
+# Is branch?
+#
+is_branch_raw = {
+    "ref": nonempty_str,
+    "url": Url()
+}
+
+is_branch = Schema(
+    is_branch_raw,
+    required = True,
+    extra = False
+)
+
+#
 # Returns
 #
 

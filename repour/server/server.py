@@ -4,6 +4,7 @@ import logging
 from aiohttp import web
 
 from .endpoint import cancel
+from .endpoint import is_branch
 from .endpoint import endpoint
 from ..adjust import adjust
 from .. import clone
@@ -48,6 +49,7 @@ def init(loop, bind, repo_provider, adjust_provider):
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/clone", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone, clone.clone))
     app.router.add_route("POST", "/cancel", cancel.handle_cancel)
+    app.router.add_route("POST", "/is-branch", is_branch.is_branch)
 
     logger.debug("Creating asyncio server")
     srv = yield from loop.create_server(app.make_handler(), bind["address"], bind["port"])
