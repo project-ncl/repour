@@ -107,7 +107,13 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # file tree, so this is a deduplicated operation. If the branch/tag
     # already exist, git will return quickly with an 0 (success) status
     # instead of uploading the objects.
-    yield from push_with_tags(expect_ok, repo_dir, branch_name)
+    try:
+        yield from push_with_tags(expect_ok, repo_dir, branch_name)
+    except exception.CommandError as e:
+        # Modify the exit code to 10. This tells Maitai to not treat this as
+        # a SYSTEM_ERROR (NCL-2871)
+        e.exit_code = 10
+        raise
 
     logger.info("Pushed to repo: branch {branch_name}, tag {tag_name}".format(**locals()))
 

@@ -105,7 +105,7 @@ def git_provider():
         def do(atomic):
             yield from expect_ok(
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + ["--follow-tags", remote, branch],
-                desc="Could not" + (" atomic" if atomic else "") + " push tag+branch with git",
+                desc="Could not" + (" atomic" if atomic else "") + " push tag+branch with git. Make sure you have the right permissions!",
                 stderr=None,
                 cwd=dir
             )
