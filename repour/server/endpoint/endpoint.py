@@ -170,13 +170,13 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro):
                             ).encode("utf-8")
                         )
                     except Exception as e:
-                        logger.info(
+                        logger.error(
                             "Unable to send result of callback, exception {ename}, attempt {backoff}/{max_attempts}".format(
                                 ename=e.__class__.__name__,
                                 backoff=backoff,
                                 max_attempts=max_attempts,
                             ))
-                        log_traceback_multi_line()
+                        logger.error(e)
                         resp = None
                     return resp
 
