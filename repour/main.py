@@ -187,7 +187,7 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
     logging.setLogRecordFactory(ContextLogRecord)
 
     formatter = logging.Formatter(
-        fmt="{asctime} [{log_context}] {levelname} {name}:{lineno} {message}",
+        fmt="{asctime} [{levelname}] [{log_context}] {name}:{lineno} {message}",
         style="{",
     )
 
