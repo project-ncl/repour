@@ -100,12 +100,21 @@ def git_provider():
         this method re-tries without it and returns false.
         If an exception is thrown, some other error occurred and push did not
         succeed.
+
+        If branch is None, it is assumed that you only want to push the tags
         """
 
         def do(atomic):
+            if branch is None:
+                options = ["--tags"]
+                failure_push_msg = "tag"
+            else:
+                options = ["--follow-tags", remote, branch]
+                failure_push_msg = "tag+branch"
+
             yield from expect_ok(
-                cmd=["git", "push"] + (["--atomic"] if atomic else []) + ["--follow-tags", remote, branch],
-                desc="Could not" + (" atomic" if atomic else "") + " push tag+branch with git. Make sure user 'pnc-user' has push permissions to this repository",
+                cmd=["git", "push"] + (["--atomic"] if atomic else []) + options,
+                desc="Could not" + (" atomic" if atomic else "") + " push " + failure_push_msg + " with git. Make sure user 'pnc-user' has push permissions to this repository",
                 stderr=None,
                 cwd=dir
             )
