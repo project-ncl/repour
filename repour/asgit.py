@@ -88,8 +88,6 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
 
     # Apply the actual branch name now we know the commit ID
     operation_name_lower = operation_name.lower()
-    branch_name = "branch-{operation_name_lower}-{commit_id}".format(**locals())
-    yield from replace_branch(expect_ok, repo_dir, temp_branch, branch_name)
 
     tag_name = "repour-{commit_id}".format(**locals())
 
@@ -104,11 +102,11 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
             raise
 
     # The tag and reference names are set up to be the same for the same
-    # file tree, so this is a deduplicated operation. If the branch/tag
+    # file tree, so this is a deduplicated operation. If the tag
     # already exist, git will return quickly with an 0 (success) status
     # instead of uploading the objects.
     try:
-        yield from push_with_tags(expect_ok, repo_dir, branch_name)
+        yield from push_with_tags(expect_ok, repo_dir, None)
     except exception.CommandError as e:
         # Modify the exit code to 10. This tells Maitai to not treat this as
         # a SYSTEM_ERROR (NCL-2871)
