@@ -113,10 +113,9 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
         e.exit_code = 10
         raise
 
-    logger.info("Pushed to repo: branch {branch_name}, tag {tag_name}".format(**locals()))
+    logger.info("Pushed to repo: tag {tag_name}".format(**locals()))
 
     return {
-        "branch": branch_name,
         "tag": tag_name,
         "url": {
             "readwrite": repo_url.readwrite,
