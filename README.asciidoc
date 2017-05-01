@@ -561,6 +561,11 @@ The body of the usual "Success" or "Processing error" response will then be sent
 }
 |===
 
+=== Callback websocket for live logs
+
+All endpoints that operate in callback mode can be eligible for live logs via websockets. Once the callback id is obtained, you can establish a websocket connection to `/callback/{callback_id}`. The server will then push any logs back to the client. The logs are in string format.
+
+
 == Docker Images and Open Shift
 
 There are two docker images defined in this repository:
