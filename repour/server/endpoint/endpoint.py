@@ -57,7 +57,7 @@ def log_traceback_multi_line():
             logger.error(line)
 
 
-def validated_json_endpoint(shutdown_callbacks, validator, coro):
+def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
     client_session = aiohttp.ClientSession()  # pylint: disable=no-member
     shutdown_callbacks.append(client_session.close)
 
@@ -220,6 +220,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro):
             obj = {
                 "callback": {
                     "id": callback_id,
+                    "websocket": "ws://" + repour_url + "/callback/" + callback_id
                 }
             }
 
