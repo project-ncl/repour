@@ -77,6 +77,7 @@ def run_container_subcommand(args):
             missing_envs.append((name, desc))
         return val
     da_url = required_env("REPOUR_PME_DA_URL", "The REST endpoint required by PME to look up GAVs")
+    repour_url = required_env("REPOUR_URL", "Repour's URL")
 
     # Mode B
     if args.mode_b:
@@ -134,6 +135,7 @@ def run_container_subcommand(args):
             "port": 7331,
         },
         repo_provider = repo_provider,
+        repour_url = repour_url,
         adjust_provider = {
             "type": "subprocess",
             "params": {

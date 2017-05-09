@@ -25,7 +25,7 @@ shutdown_callbacks = []
 
 
 @asyncio.coroutine
-def init(loop, bind, repo_provider, adjust_provider):
+def init(loop, bind, repo_provider, repour_url, adjust_provider):
     logger.debug("Running init")
     c = yield from config.get_configuration()
 
@@ -39,16 +39,16 @@ def init(loop, bind, repo_provider, adjust_provider):
 
     if repo_provider["type"] == "modeb":
         logger.warn("Mode B selected, guarantees rescinded")
-        pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull_modeb, pull.pull)
-        adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust_modeb, adjust.adjust)
+        pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull_modeb, pull.pull, repour_url)
+        adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust_modeb, adjust.adjust, repour_url)
     else:
-        pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull, pull.pull)
-        adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust, adjust.adjust)
+        pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull, pull.pull, repour_url)
+        adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust, adjust.adjust, repour_url)
 
     logger.debug("Setting up handlers")
     app.router.add_route("POST", "/pull", pull_source)
     app.router.add_route("POST", "/adjust", adjust_source)
-    app.router.add_route("POST", "/clone", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone, clone.clone))
+    app.router.add_route("POST", "/clone", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone, clone.clone, repour_url))
     app.router.add_route("POST", "/cancel", cancel.handle_cancel)
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
 
@@ -58,7 +58,7 @@ def init(loop, bind, repo_provider, adjust_provider):
         logger.info("Server started on socket: {}".format(socket.getsockname()))
 
 
-def start_server(bind, repo_provider, adjust_provider):
+def start_server(bind, repo_provider, repour_url, adjust_provider):
     logger.debug("Starting server")
     loop = asyncio.get_event_loop()
 
@@ -71,6 +71,7 @@ def start_server(bind, repo_provider, adjust_provider):
         loop=loop,
         bind=bind,
         repo_provider=repo_provider,
+        repour_url=repour_url,
         adjust_provider=adjust_provider,
     ))
 
