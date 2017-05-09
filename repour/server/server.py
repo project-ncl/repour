@@ -5,10 +5,12 @@ from aiohttp import web
 
 from .endpoint import cancel
 from .endpoint import endpoint
+from .endpoint import ws
 from ..adjust import adjust
 from .. import clone
 from .. import pull
 from .. import repo
+from .. import websockets
 from .endpoint import validation
 from ..auth import auth
 from ..config import config
@@ -48,6 +50,7 @@ def init(loop, bind, repo_provider, adjust_provider):
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/clone", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone, clone.clone))
     app.router.add_route("POST", "/cancel", cancel.handle_cancel)
+    app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
 
     logger.debug("Creating asyncio server")
     srv = yield from loop.create_server(app.make_handler(), bind["address"], bind["port"])
@@ -63,12 +66,15 @@ def start_server(bind, repo_provider, adjust_provider):
     if not hasattr(loop, "create_task"):
         loop.create_task = lambda c: asyncio.async(c, loop=loop)
 
+
     loop.run_until_complete(init(
         loop=loop,
         bind=bind,
         repo_provider=repo_provider,
         adjust_provider=adjust_provider,
     ))
+
+    loop.create_task(websockets.periodic_cleanup())
 
     try:
         loop.run_forever()

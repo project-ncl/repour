@@ -67,7 +67,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro):
         log_context = request.headers.get("LOG-CONTEXT", "").strip()
         if log_context == "":
             log_context = create_log_context_id()
+
+        callback_id = create_callback_id()
+
         asyncio.Task.current_task().log_context = log_context
+        asyncio.Task.current_task().callback_id = callback_id
 
         try:
             spec = yield from request.json()
@@ -138,7 +142,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro):
             return status, obj
 
         if callback_mode:
-            callback_id = create_callback_id()
 
             @asyncio.coroutine
             def do_callback(callback_spec):
@@ -202,6 +205,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro):
             logger.info("Creating callback task {callback_id}, returning ID now".format(**locals()))
             callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
             callback_task.log_context = log_context
+            callback_task.callback_id = callback_id
 
             status = 202
             obj = {
