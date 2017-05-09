@@ -13,6 +13,7 @@ from aiohttp import web
 from ... import exception
 from . import validation
 from ...config import config
+from ...logs import file_callback_log
 
 logger = logging.getLogger(__name__)
 
@@ -139,6 +140,14 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro):
                 status = 200
                 obj = ret
                 logger.info("Completed ok")
+
+            log_file = file_callback_log.get_callback_log_path(callback_id)
+            logs = ""
+            if os.path.isfile(log_file):
+                with open(log_file, "r") as f:
+                    logs = f.read()
+
+            obj["log"] = logs
             return status, obj
 
         if callback_mode:
