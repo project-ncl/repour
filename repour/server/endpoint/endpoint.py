@@ -165,12 +165,12 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 def send_result():
                     try:
                         # TODO refactor this into auth.py, we cannot use middleware for callbacks
-                        headers = []
+                        headers = {}
                         auth_provider = c.get('auth', {}).get('provider', None)
                         if auth_provider == 'oauth2_jwt' and request.headers.get('Authorization', None):
                             auth_header = {request.headers['Authorization'], 'Authorization'}
                             logger.info('Authorization enabled, adding header to callback: ' + str(auth_header))
-                            headers.append(auth_header)
+                            headers.update(auth_header)
 
                         resp = yield from client_session.request(
                             callback_spec.get("method", "POST"),
