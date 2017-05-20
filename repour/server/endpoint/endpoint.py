@@ -168,7 +168,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         headers = {}
                         auth_provider = c.get('auth', {}).get('provider', None)
                         if auth_provider == 'oauth2_jwt' and request.headers.get('Authorization', None):
-                            auth_header = {request.headers['Authorization'], 'Authorization'}
+                            auth_header = {'Authorization': request.headers['Authorization']}
                             logger.info('Authorization enabled, adding header to callback: ' + str(auth_header))
                             headers.update(auth_header)
 
