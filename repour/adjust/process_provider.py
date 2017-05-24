@@ -61,8 +61,12 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
 
         adjust_result_data = {}
         # TODO adjust_result_data["stdout"] = stdout
-        logger.info("PME output:")
-        logger.info(stdout)
+        if stdout:
+            logger.info("Output:")
+            logger.info('\n'.join(stdout))
+        else:
+            logger.info("No Output")
+
         adjust_result_data["adjustType"] = execution_name
         adjust_result_data["resultData"] = yield from get_result_data(repo_dir)
         return adjust_result_data
