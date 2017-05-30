@@ -100,7 +100,30 @@ process_stderr_options = {
 
 def expect_ok_closure(exc_type=exception.CommandError):
     @asyncio.coroutine
-    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None):
+    def print_live_log(process):
+        """
+        Known issues: it doesn't really process stderr, it assumes stderr is redirected
+                      to stdout
+        """
+        stdout_data_ary = []
+        stderr_text = ""
+
+        while True:
+            data = yield from p.stdout.readline()
+            decoded = data.decode()
+            if decoded == '':
+                # that means we reached EOF and process stopped
+                break
+            else:
+                decoded_stripped = decoded.strip()
+                logger.info(decoded_stripped)
+                stdout_data_ary.append(decoded_stripped)
+
+        stdout_text = '\n'.join(stdout_data_ary)
+        return stdout_text, stderr_text
+
+    @asyncio.coroutine
+    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None, live_log=False):
         if env is None:
             sub_env = None
         else:
@@ -117,9 +140,12 @@ def expect_ok_closure(exc_type=exception.CommandError):
             cwd=cwd
         )
 
-        stdout_data, stderr_data = yield from p.communicate()
-        stderr_text = "" if stderr_data is None else _convert_bytes(stderr_data, "text")
-        stdout_text = "" if stdout_data is None else _convert_bytes(stdout_data, "text")
+        if live_log:
+            stdout_text, stderr_text = yield from print_live_log(p)
+        else:
+            stdout_data, stderr_data = yield from p.communicate()
+            stderr_text = "" if stderr_data is None else _convert_bytes(stderr_data, "text")
+            stdout_text = "" if stdout_data is None else _convert_bytes(stdout_data, "text")
 
         if stderr_text != "" and (stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)):
             for line in stderr_text.split("\n"):
@@ -138,6 +164,9 @@ def expect_ok_closure(exc_type=exception.CommandError):
             if stdout == "send":
                 return None
             else:
-                return _convert_bytes(stdout_data, stdout)
+                if live_log:
+                    return stdout_text.split('\n')
+                else:
+                    return _convert_bytes(stdout_data, stdout)
 
     return expect_ok
