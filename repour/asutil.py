@@ -142,6 +142,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
 
         if live_log:
             stdout_text, stderr_text = yield from print_live_log(p)
+            yield from p.wait()
         else:
             stdout_data, stderr_data = yield from p.communicate()
             stderr_text = "" if stderr_data is None else _convert_bytes(stderr_data, "text")
