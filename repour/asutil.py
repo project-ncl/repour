@@ -109,7 +109,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
         stderr_text = ""
 
         while True:
-            data = yield from p.stdout.readline()
+            data = yield from process.stdout.readline()
             decoded = data.decode()
             if decoded == '':
                 # that means we reached EOF and process stopped
