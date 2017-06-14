@@ -40,7 +40,7 @@ function downloadLatestSnapshot {
 
   URL="$BASE_URL/maven-metadata.xml"
   curl -sLo metadata.xml "$URL"
-  SNAPSHOT_VERSION=$(sed -n 's/ *<version>\(.*\)<\/version>/\1/p' metadata.xml | sort -r | head -n 1)
+  SNAPSHOT_VERSION=$(sed -n 's/ *<latest>\(.*\)<\/latest>/\1/p' metadata.xml)
 
   if [[ -z "$SNAPSHOT_VERSION" ]]; then
     echo "Failed to download PME from repository at $REPO_URL"
