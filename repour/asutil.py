@@ -172,3 +172,22 @@ def expect_ok_closure(exc_type=exception.CommandError):
                     return _convert_bytes(stdout_data, stdout)
 
     return expect_ok
+
+
+def add_username_url(url, username):
+    """ Given a url, add username to the url if not already in url
+
+    returns: :str: url with username
+    """
+    parsed = urllib.parse.urlsplit(url)
+
+    if parsed.username:
+        # username info already in url, all good!
+        return url
+    else:
+        parsed_list = list(parsed)
+        # first item is the protocol, second is the url name
+        url_part = parsed_list[1]
+        parsed_list[1] = username + '@' + url_part
+
+        return urllib.parse.urlunsplit(parsed_list)
