@@ -37,7 +37,7 @@ def download(url, stream):
                 break
             yield from loop.run_in_executor(None, stream.write, chunk)
     except:
-        resp.close(True)
+        resp.close()
         raise
     else:
         resp.close()
