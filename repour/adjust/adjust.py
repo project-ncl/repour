@@ -41,8 +41,7 @@ def adjust(adjustspec, repo_provider):
 
         repo_url = yield from repo_provider(adjustspec, create=False)
 
-        yield from git["clone"](work_dir, repo_url.readwrite)  # Clone origin
-        yield from git["checkout"](work_dir, adjustspec["ref"])  # Checkout ref
+        yield from git["clone_checkout_ref_auto"](work_dir, repo_url.readwrite, adjustspec["ref"])
 
         yield from asgit.setup_commiter(expect_ok, work_dir)
 
