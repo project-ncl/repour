@@ -211,7 +211,7 @@ def pull_archive(pullspec, repo_provider, adjust_provider):
     with asutil.TemporaryDirectory(suffix="extract") as extract_dir:
         with tempfile.NamedTemporaryFile(suffix="archive") as archive_file:
             # Download archive into stream
-            logger.info("Downloading {pullspec[url]}...")
+            logger.info("Downloading {pullspec[url]}...".format(**locals()))
             archive_filename = yield from asutil.download(pullspec["url"], archive_file)
             logger.info("Got archive tree from {pullspec[url]} named {archive_filename}".format(**locals()))
 
