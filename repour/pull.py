@@ -8,6 +8,7 @@ from . import asgit
 from . import asutil
 from . import exception
 from .adjust import adjust
+from .config import config
 from .scm import git_provider
 
 logger = logging.getLogger(__name__)
@@ -25,8 +26,11 @@ git = git_provider.git_provider()
 def to_internal(internal_repo_url, dirname, origin_ref, origin_url, origin_type):
     # Prepare new repo
     # Note that for orphan branches, we don't need to clone the existing internal repo first
+
+    c = yield from config.get_configuration()
+    git_user = c.get("git_username")
     yield from git["init"](dirname)
-    yield from git["add_remote"](dirname, "origin", internal_repo_url.readwrite)
+    yield from git["add_remote"](dirname, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))
 
     yield from asgit.setup_commiter(expect_ok, dirname)
     d = yield from asgit.push_new_dedup_branch(
