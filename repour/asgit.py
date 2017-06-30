@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 
 from . import exception
 from .config import config
@@ -70,7 +71,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
 
     # As many things as possible are controlled for the commit, so the commitid
     # can be used for deduplication.
-    temp_branch = "repour_commitid_search_temp_branch"
+    temp_branch = "repour_commitid_search_temp_branch_" + str(uuid.uuid1())
     yield from prepare_new_branch(expect_ok, repo_dir, temp_branch, orphan=orphan)
 
     try:
