@@ -67,7 +67,7 @@ class TestProcessSourceTree(unittest.TestCase):
                     f.write("Hello")
 
                 @asyncio.coroutine
-                def adjust(d):
+                def adjust(d, e):
                     with open(os.path.join(repo, "asd.txt"), "w") as f:
                         f.write("Hello Hello")
                     return "test"
@@ -110,7 +110,7 @@ class TestProcessSourceTree(unittest.TestCase):
                     f.write("Hello")
 
                 @asyncio.coroutine
-                def adjust(d):
+                def adjust(d, e):
                     return "test"
 
                 @asyncio.coroutine
@@ -151,7 +151,7 @@ class TestPull(unittest.TestCase):
 
         # Dummy archive origin
         tar_buf = io.BytesIO()
-        with tarfile.open(fileobj=tar_buf, mode="w:xz") as t:
+        with tarfile.open(fileobj=tar_buf, mode="w:gz") as t:
             i = tarfile.TarInfo("asd.txt")
 
             b = io.BytesIO(b"Hello\n")
@@ -163,7 +163,7 @@ class TestPull(unittest.TestCase):
 
         # Dummy archive origin (with single root dir)
         srd_tar_buf = io.BytesIO()
-        with tarfile.open(fileobj=srd_tar_buf, mode="w:xz") as t:
+        with tarfile.open(fileobj=srd_tar_buf, mode="w:gz") as t:
             i = tarfile.TarInfo("srd/asd.txt")
 
             b = io.BytesIO(b"Hello\n")
@@ -177,8 +177,8 @@ class TestPull(unittest.TestCase):
             cls=cls,
             loop=loop,
             routes=[
-                ("GET", "/test.tar.xz", util.http_write_handler(tar_buf)),
-                ("GET", "/srd_test.tar.xz", util.http_write_handler(srd_tar_buf)),
+                ("GET", "/test.tar.gz", util.http_write_handler(tar_buf)),
+                ("GET", "/srd_test.tar.gz", util.http_write_handler(srd_tar_buf)),
             ],
         )
 
@@ -205,8 +205,7 @@ class TestPull(unittest.TestCase):
                         "ref": "master",
                         "url": self.origin_git,
                     },
-                    repo_provider=repo_provider,
-                    adjust_provider=adjust,
+                    repo_provider=repo_provider
                 ))
                 self.assertIsInstance(d_shallow, dict)
 
@@ -220,8 +219,7 @@ class TestPull(unittest.TestCase):
                         "ref": "HEAD",
                         "url": self.origin_git,
                     },
-                    repo_provider=repo_provider,
-                    adjust_provider=adjust,
+                    repo_provider=repo_provider
                 ))
                 # Deduplication should be activated
                 self.assertEqual(d_deep, d_shallow)
@@ -265,10 +263,9 @@ class TestPull(unittest.TestCase):
                     pullspec={
                         "name": "test",
                         "type": "archive",
-                        "url": self.url + "/test.tar.xz",
+                        "url": self.url + "/test.tar.gz",
                     },
-                    repo_provider=repo_provider,
-                    adjust_provider=adjust,
+                    repo_provider=repo_provider
                 ))
                 self.assertIsInstance(d, dict)
 
@@ -276,10 +273,9 @@ class TestPull(unittest.TestCase):
                     pullspec={
                         "name": "test",
                         "type": "archive",
-                        "url": self.url + "/srd_test.tar.xz",
+                        "url": self.url + "/srd_test.tar.gz",
                     },
-                    repo_provider=repo_provider,
-                    adjust_provider=adjust,
+                    repo_provider=repo_provider
                 ))
                 # Single root directory should be shucked, resulting in deduplication
                 self.assertEqual(d, new_d)
