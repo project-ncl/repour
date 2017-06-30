@@ -20,7 +20,7 @@ try:
 except ImportError:
     deps_available=False
 
-import repour.validation
+import repour.server.endpoint.validation as validation
 
 # Only run integration tests if able and requested
 run_integration_tests = deps_available and "REPOUR_RUN_IT" in os.environ
@@ -204,7 +204,7 @@ if run_integration_tests:
             try:
                 if expect == "ok_pull":
                     self.assertEqual(resp.status_code, 200)
-                    repour.validation.success_pull(ret)
+                    validation.success_pull(ret)
                     self.assertRegex(ret["branch"], "^branch-pull-[0-9a-f]+$")
                     self.assertRegex(ret["tag"], "^repour-[0-9a-f]+$")
                     self.check_clone(
@@ -214,7 +214,7 @@ if run_integration_tests:
                     )
                 elif expect == "ok_adjust":
                     self.assertEqual(resp.status_code, 200)
-                    repour.validation.success_pull_adjust(ret)
+                    validation.success_pull_adjust(ret)
                     self.assertRegex(ret["branch"], "^branch-adjust-[0-9a-f]+$")
                     self.assertRegex(ret["tag"], "^repour-[0-9a-f]+$")
                     self.check_clone(
@@ -229,13 +229,13 @@ if run_integration_tests:
                     )
                 elif expect == "validation_error":
                     self.assertEqual(resp.status_code, 400)
-                    repour.validation.error_validation(ret)
+                    validation.error_validation(ret)
                 elif expect == "described_error":
                     self.assertEqual(resp.status_code, 400)
-                    repour.validation.error_described(ret)
+                    validation.error_described(ret)
                 elif expect == "other_error":
                     self.assertEqual(resp.status_code, 500)
-                    repour.validation.error_other(ret)
+                    validation.error_other(ret)
                 else:
                     raise Exception("Don't know how to expect {}".format(expect))
             except Exception:

@@ -2,69 +2,69 @@ import unittest
 
 import voluptuous
 
-import repour.validation
+import repour.server.endpoint.validation as validation
 
 class TestPrimitives(unittest.TestCase):
     def test_nonempty_str(self):
-        self.assertEqual("asd", repour.validation.nonempty_str("asd"))
-        self.assertEqual("asd qwe", repour.validation.nonempty_str("asd qwe"))
-        self.assertEqual(" ", repour.validation.nonempty_str(" "))
+        self.assertEqual("asd", validation.nonempty_str("asd"))
+        self.assertEqual("asd qwe", validation.nonempty_str("asd qwe"))
+        self.assertEqual(" ", validation.nonempty_str(" "))
 
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_str("")
+            validation.nonempty_str("")
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_str(0)
+            validation.nonempty_str(0)
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_str(False)
+            validation.nonempty_str(False)
 
     def test_nonempty_noblank_str(self):
-        self.assertEqual("asd", repour.validation.nonempty_noblank_str("asd"))
+        self.assertEqual("asd", validation.nonempty_noblank_str("asd"))
 
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_noblank_str("")
+            validation.nonempty_noblank_str("")
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_noblank_str("\n")
+            validation.nonempty_noblank_str("\n")
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_noblank_str("asd qwe")
+            validation.nonempty_noblank_str("asd qwe")
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_noblank_str(1)
+            validation.nonempty_noblank_str(1)
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.nonempty_noblank_str(True)
+            validation.nonempty_noblank_str(True)
 
     def test_port_num(self):
-        self.assertEqual(65535, repour.validation.port_num(65535))
+        self.assertEqual(65535, validation.port_num(65535))
 
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.port_num(0)
+            validation.port_num(0)
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.port_num(65536)
+            validation.port_num(65536)
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.port_num("1000")
+            validation.port_num("1000")
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.port_num(False)
+            validation.port_num(False)
 
     def test_name_str(self):
-        self.assertEqual("asd", repour.validation.name_str("asd"))
-        self.assertEqual("ASD", repour.validation.name_str("ASD"))
-        self.assertEqual("123", repour.validation.name_str("123"))
-        self.assertEqual("_", repour.validation.name_str("_"))
-        self.assertEqual("asd-1.5.0", repour.validation.name_str("asd-1.5.0"))
-        self.assertEqual("_ASD-", repour.validation.name_str("_ASD-"))
+        self.assertEqual("asd", validation.name_str("asd"))
+        self.assertEqual("ASD", validation.name_str("ASD"))
+        self.assertEqual("123", validation.name_str("123"))
+        self.assertEqual("_", validation.name_str("_"))
+        self.assertEqual("asd-1.5.0", validation.name_str("asd-1.5.0"))
+        self.assertEqual("_ASD-", validation.name_str("_ASD-"))
 
         with self.assertRaises(voluptuous.MatchInvalid):
-            repour.validation.name_str("")
+            validation.name_str("")
         with self.assertRaises(voluptuous.MatchInvalid):
-            repour.validation.name_str(" ")
+            validation.name_str(" ")
         with self.assertRaises(voluptuous.MatchInvalid):
-            repour.validation.name_str("-asd-1.5.0")
+            validation.name_str("-asd-1.5.0")
         with self.assertRaises(voluptuous.MatchInvalid):
-            repour.validation.name_str("asd!1.5.0")
+            validation.name_str("asd!1.5.0")
         with self.assertRaises(voluptuous.MatchInvalid):
-            repour.validation.name_str("%")
+            validation.name_str("%")
         with self.assertRaises(voluptuous.MatchInvalid):
-            repour.validation.name_str(0)
+            validation.name_str(0)
         with self.assertRaises(voluptuous.MatchInvalid):
-            repour.validation.name_str(False)
+            validation.name_str(False)
 
 class TestAdjust(unittest.TestCase):
     def test_adjust(self):
@@ -72,30 +72,30 @@ class TestAdjust(unittest.TestCase):
             "name": "someproject",
             "ref": "2.2.11.Final",
         }
-        self.assertEqual(valid, repour.validation.adjust(valid))
+        self.assertEqual(valid, validation.adjust(valid))
 
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.adjust({})
+            validation.adjust({})
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.adjust({
+            validation.adjust({
                 "name": "someproject",
             })
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.adjust({
+            validation.adjust({
                 "ref": "2.2.11.Final",
             })
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.adjust({
+            validation.adjust({
                 "name": "someproject",
                 "ref": "",
             })
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.adjust({
+            validation.adjust({
                 "name": "",
                 "ref": "2.2.11.Final",
             })
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.adjust({
+            validation.adjust({
                 "name": "someproject",
                 "ref": "2.2.11.Final",
                 "asd": "123",
@@ -109,7 +109,7 @@ class TestAdjust(unittest.TestCase):
                 "url": "http://localhost/asd"
             },
         }
-        self.assertEqual(valid, repour.validation.adjust(valid))
+        self.assertEqual(valid, validation.adjust(valid))
         valid = {
             "name": "someproject",
             "ref": "2.2.11.Final",
@@ -118,7 +118,7 @@ class TestAdjust(unittest.TestCase):
                 "method": "POST",
             },
         }
-        self.assertEqual(valid, repour.validation.adjust(valid))
+        self.assertEqual(valid, validation.adjust(valid))
         valid = {
             "name": "someproject",
             "ref": "2.2.11.Final",
@@ -127,9 +127,9 @@ class TestAdjust(unittest.TestCase):
                 "method": "PUT",
             },
         }
-        self.assertEqual(valid, repour.validation.adjust(valid))
+        self.assertEqual(valid, validation.adjust(valid))
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.adjust({
+            validation.adjust({
                 "name": "someproject",
                 "ref": "2.2.11.Final",
                 "callback": {
@@ -142,9 +142,9 @@ class TestPull(unittest.TestCase):
     def test_pull(self):
         def check_adjust(d):
             d["adjust"] = True
-            self.assertEqual(d, repour.validation.pull(d))
+            self.assertEqual(d, validation.pull(d))
             d["adjust"] = False
-            self.assertEqual(d, repour.validation.pull(d))
+            self.assertEqual(d, validation.pull(d))
 
         valid_scm = {
             "name": "someproject",
@@ -152,15 +152,15 @@ class TestPull(unittest.TestCase):
             "ref": "2.2.11.Final",
             "url": "git://example.com/someproject.git",
         }
-        self.assertEqual(valid_scm, repour.validation.pull(valid_scm))
+        self.assertEqual(valid_scm, validation.pull(valid_scm))
         check_adjust(valid_scm)
 
         valid_scm["type"] = "hg"
-        self.assertEqual(valid_scm, repour.validation.pull(valid_scm))
+        self.assertEqual(valid_scm, validation.pull(valid_scm))
         check_adjust(valid_scm)
 
         del valid_scm["ref"]
-        self.assertEqual(valid_scm, repour.validation.pull(valid_scm))
+        self.assertEqual(valid_scm, validation.pull(valid_scm))
         check_adjust(valid_scm)
 
         valid_archive = {
@@ -168,26 +168,26 @@ class TestPull(unittest.TestCase):
             "type": "archive",
             "url": "http://example.com/someproject.tar.gz",
         }
-        self.assertEqual(valid_archive, repour.validation.pull(valid_archive))
+        self.assertEqual(valid_archive, validation.pull(valid_archive))
         check_adjust(valid_archive)
 
         with self.assertRaises(voluptuous.MultipleInvalid):
             valid_archive["name"] = ""
-            repour.validation.pull(valid_archive)
+            validation.pull(valid_archive)
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.pull({})
+            validation.pull({})
         with self.assertRaises(voluptuous.MultipleInvalid):
-            repour.validation.pull({
+            validation.pull({
                 "name": "someproject",
             })
         with self.assertRaises(voluptuous.MultipleInvalid):
             invalid = valid_scm.copy()
             invalid["asd"] = "asd"
-            repour.validation.pull(invalid)
+            validation.pull(invalid)
         with self.assertRaises(voluptuous.MultipleInvalid):
             invalid = valid_scm.copy()
             invalid["url"] = 123
-            repour.validation.pull(invalid)
+            validation.pull(invalid)
 
     def test_callback(self):
         valid = {
@@ -198,7 +198,7 @@ class TestPull(unittest.TestCase):
                 "url": "http://localhost/asd",
             },
         }
-        self.assertEqual(valid, repour.validation.pull(valid))
+        self.assertEqual(valid, validation.pull(valid))
 
 class TestServerConfig(unittest.TestCase):
     def test_server_config(self):
@@ -226,4 +226,4 @@ class TestServerConfig(unittest.TestCase):
                 },
             },
         }
-        self.assertEqual(valid, repour.validation.server_config(valid))
+        self.assertEqual(valid, validation.server_config(valid))

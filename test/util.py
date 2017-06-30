@@ -77,7 +77,7 @@ def http_write_handler(stream):
     @asyncio.coroutine
     def handler(request):
         resp = aiohttp.web.StreamResponse()
-        resp.start(request)
+        yield from resp.prepare(request)
 
         stream.seek(0)
         while True:

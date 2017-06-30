@@ -88,7 +88,6 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 self.assertEqual(
                     first=p,
                     second={
-                        "branch": "branch-pull-0fe965e93b0cf7c91b9d44c14d9847e459c465c2",
                         "tag": "repour-0fe965e93b0cf7c91b9d44c14d9847e459c465c2",
                         "url": {
                             "readwrite": remote.readwrite,
@@ -124,8 +123,6 @@ class TestPushNewDedupBranch(unittest.TestCase):
                     no_change_ok=True,
                 ))
                 self.assertIsNotNone(c)
-                self.assertIn("branch", c)
-                self.assertIn("adjust", c["branch"])
                 self.assertIn("tag", c)
                 self.assertIn("repour", c["tag"])
                 self.assertIn("url", c)
@@ -149,18 +146,3 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 ))
                 self.assertIsNotNone(ce)
                 self.assertEqual(ce, c)
-
-            with util.TemporaryGitDirectory(
-                origin=remote.readwrite,
-                ref="branch-adjust-121fe90b54a7701c314a16bf2a1ede63243e1fa7",
-            ) as repo:
-                # No changes
-                nca = loop.run_until_complete(repour.asgit.push_new_dedup_branch(
-                    expect_ok=expect_ok,
-                    repo_dir=repo,
-                    repo_url=remote,
-                    operation_name="Adjust",
-                    operation_description="Bleh",
-                    no_change_ok=True,
-                ))
-                self.assertIsNone(nca)
