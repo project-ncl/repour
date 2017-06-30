@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 import repour.asgit
-import repour.adjust
+import repour.adjust.adjust
 from test import util
 
 loop = asyncio.get_event_loop()
@@ -47,13 +47,11 @@ class TestAdjust(unittest.TestCase):
         def repo_provider(p, create):
             return self.origin_git
 
-        d = loop.run_until_complete(repour.adjust.adjust(
+        d = loop.run_until_complete(repour.adjust.adjust.adjust(
             adjustspec={
                 "name": "test",
                 "ref": "master",
             },
-            repo_provider=repo_provider,
-            adjust_provider=adjust,
+            repo_provider=repo_provider
         ))
-        self.assertRegex(d["branch"], r'^branch-adjust-[0-9a-f]+$')
         self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')

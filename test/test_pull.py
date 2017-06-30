@@ -58,7 +58,6 @@ class TestProcessSourceTree(unittest.TestCase):
                     origin_ref="v1.0",
                 ))
 
-                self.assertRegex(d["branch"], r'^branch-pull-[0-9a-f]+$')
                 self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
 
     def test_with_adjust(self):
@@ -92,9 +91,7 @@ class TestProcessSourceTree(unittest.TestCase):
                     origin_ref="v1.0",
                 ))
 
-                self.assertRegex(d["branch"], r'^branch-adjust-[0-9a-f]+$')
                 self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
-                self.assertRegex(d["pull"]["branch"], r'^branch-pull-[0-9a-f]+$')
                 self.assertRegex(d["pull"]["tag"], r'^repour-[0-9a-f]+$')
 
                 # Verify adjust commit is child of pull commit
@@ -135,7 +132,6 @@ class TestProcessSourceTree(unittest.TestCase):
                     origin_ref="v1.0",
                 ))
 
-                self.assertRegex(d["branch"], r'^branch-pull-[0-9a-f]+$')
                 self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
 
 class TestPull(unittest.TestCase):
