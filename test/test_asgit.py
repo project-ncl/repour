@@ -15,7 +15,7 @@ class TestCommon(unittest.TestCase):
     def test_setup_commiter(self):
         with util.TemporaryGitDirectory() as repo:
             loop.run_until_complete(repour.asgit.setup_commiter(expect_ok, repo))
-            out = subprocess.check_output(["git", "-C", repo, "config", "--local", "-l"])
+            out = subprocess.check_output(["git", "config", "--local", "-l"], cwd=repo)
 
         self.assertIn(b"user.name=", out)
         self.assertIn(b"user.email=", out)
@@ -24,9 +24,9 @@ class TestCommon(unittest.TestCase):
         with util.TemporaryGitDirectory() as repo:
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
-            util.quiet_check_call(["git", "-C", repo, "add", "-A"])
+            util.quiet_check_call(["git", "add", "-A"], cwd=repo)
             loop.run_until_complete(repour.asgit.fixed_date_commit(expect_ok, repo, "Test"))
-            out = subprocess.check_output(["git", "-C", repo, "log", "-1", "--pretty=fuller"])
+            out = subprocess.check_output(["git", "log", "-1", "--pretty=fuller"], cwd=repo)
 
         self.assertIn(b"AuthorDate: Thu Jan 1 00:00:00 1970 +0000", out)
         self.assertIn(b"CommitDate: Thu Jan 1 00:00:00 1970 +0000", out)
@@ -36,21 +36,21 @@ class TestCommon(unittest.TestCase):
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
             loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, repo, "pull-1234567890", orphan=True))
-            util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
+            util.quiet_check_call(["git", "commit", "-m", "Test"], cwd=repo)
 
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello Hello")
             loop.run_until_complete(repour.asgit.prepare_new_branch(expect_ok, repo, "adjust-1234567890"))
-            util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
+            util.quiet_check_call(["git", "commit", "-m", "Test"], cwd=repo)
 
     def test_annotated_tag(self):
         with util.TemporaryGitDirectory() as repo:
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
-            util.quiet_check_call(["git", "-C", repo, "add", "-A"])
-            util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test"])
+            util.quiet_check_call(["git", "add", "-A"], cwd=repo)
+            util.quiet_check_call(["git", "commit", "-m", "Test"], cwd=repo)
             loop.run_until_complete(repour.asgit.annotated_tag(expect_ok, repo, "pull-1234567890-root", "Annotation"))
-            out = subprocess.check_output(["git", "-C", repo, "tag", "-l", "-n"])
+            out = subprocess.check_output(["git", "tag", "-l", "-n"], cwd=repo)
 
         self.assertIn(b"pull-1234567890-root Annotation", out)
 
@@ -59,13 +59,13 @@ class TestCommon(unittest.TestCase):
             with util.TemporaryGitDirectory(origin=remote) as repo:
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Goodbye")
-                util.quiet_check_call(["git", "-C", repo, "add", "-A"])
-                util.quiet_check_call(["git", "-C", repo, "commit", "-m", "Test Commit"])
-                util.quiet_check_call(["git", "-C", repo, "tag", "test-tag"])
+                util.quiet_check_call(["git", "add", "-A"], cwd=repo)
+                util.quiet_check_call(["git", "commit", "-m", "Test Commit"], cwd=repo)
+                util.quiet_check_call(["git", "tag", "test-tag"], cwd=repo)
 
                 loop.run_until_complete(repour.asgit.push_with_tags(expect_ok, repo, "master"))
 
-                remote_tags = subprocess.check_output(["git", "-C", repo, "tag", "-l", "-n"])
+                remote_tags = subprocess.check_output(["git", "tag", "-l", "-n"], cwd=repo)
 
         self.assertIn(b"test-tag        Test Commit", remote_tags)
 

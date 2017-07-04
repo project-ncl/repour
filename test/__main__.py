@@ -9,4 +9,7 @@ if __name__ == "__main__":
     )
 
     runner = unittest.TextTestRunner()
-    sys.exit(runner.run(tests).failures != 0)
+    results = runner.run(tests)
+
+    # results.failures and results.errors return a list
+    sys.exit(len(results.failures) + len(results.errors))

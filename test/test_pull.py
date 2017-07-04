@@ -27,7 +27,7 @@ class TestToInternal(unittest.TestCase):
                     origin_type="git",
                 ))
                 self.assertIsInstance(d, dict)
-            out = subprocess.check_output(["git", "-C", remote.readwrite, "tag", "-l", "-n5"])
+            out = subprocess.check_output(["git", "tag", "-l", "-n5"], cwd=remote.readwrite)
             self.assertIn(b"""Origin: git://example.com/repo
     Reference: v1.0
     Type: git""", out)
@@ -95,9 +95,9 @@ class TestProcessSourceTree(unittest.TestCase):
                 self.assertRegex(d["pull"]["tag"], r'^repour-[0-9a-f]+$')
 
                 # Verify adjust commit is child of pull commit
-                out = subprocess.check_output(["git", "-C", remote.readwrite, "rev-list", "--parents", "-n1", d["tag"]])
+                out = subprocess.check_output(["git", "rev-list", "--parents", "-n1", d["tag"]], cwd=remote.readwrite)
                 adjust_commit, adjust_parent = out.decode("utf-8").strip().split(" ")
-                out = subprocess.check_output(["git", "-C", remote.readwrite, "rev-list", "-n1", d["pull"]["tag"]])
+                out = subprocess.check_output(["git", "rev-list", "-n1", d["pull"]["tag"]], cwd=remote.readwrite)
                 pull_commit = out.decode("utf-8").strip()
 
                 self.assertEqual(adjust_parent, pull_commit)
@@ -144,8 +144,8 @@ class TestPull(unittest.TestCase):
         with open(os.path.join(cls.origin_git, "asd.txt"), "w") as f:
             f.write("Origin")
 
-        util.quiet_check_call(["git", "-C", cls.origin_git, "add", "-A"])
-        util.quiet_check_call(["git", "-C", cls.origin_git, "commit", "-m", "Some origin commit"])
+        util.quiet_check_call(["git", "add", "-A"], cwd=cls.origin_git)
+        util.quiet_check_call(["git", "commit", "-m", "Some origin commit"], cwd=cls.origin_git)
 
         cls.origin_git = "file://" + cls.origin_git
 
