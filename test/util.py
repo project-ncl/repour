@@ -24,12 +24,12 @@ class TemporaryGitDirectory(tempfile.TemporaryDirectory):
             quiet_check_call(cmd)
 
             if self.origin is not None:
-                quiet_check_call(["git", "-C", self.name, "remote", "add", "origin", "file://" + self.origin])
+                quiet_check_call(["git", "remote", "add", "origin", "file://" + self.origin], cwd=self.name)
         else:
             quiet_check_call(["git", "clone", "--branch", self.ref, "--depth", "1", "--", "file://" + self.origin, self.name])
 
-        quiet_check_call(["git", "-C", self.name, "config", "--local", "user.name", "Repour"])
-        quiet_check_call(["git", "-C", self.name, "config", "--local", "user.email", "<>"])
+        quiet_check_call(["git", "config", "--local", "user.name", "Repour"], cwd=self.name)
+        quiet_check_call(["git", "config", "--local", "user.email", "<>"], cwd=self.name)
 
         if self.ro_url is not None:
             return repour.repo.RepoUrls(readonly=self.ro_url, readwrite=self.name)
@@ -53,8 +53,11 @@ class TemporaryHgDirectory(tempfile.TemporaryDirectory):
 
         return self.name
 
-def quiet_check_call(cmd):
-    return subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def quiet_check_call(cmd, cwd=None):
+    if cwd is None:
+        return subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        return subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=cwd)
 
 def setup_http(cls, loop, routes):
     app = aiohttp.web.Application(loop=loop)

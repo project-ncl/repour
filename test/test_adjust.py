@@ -21,8 +21,8 @@ class TestAdjust(unittest.TestCase):
         with open(os.path.join(cls.origin_git.readwrite, "asd.txt"), "w") as f:
             f.write("Hello")
 
-        util.quiet_check_call(["git", "-C", cls.origin_git.readwrite, "add", "-A"])
-        util.quiet_check_call(["git", "-C", cls.origin_git.readwrite, "commit", "-m", "Pull"])
+        util.quiet_check_call(["git", "add", "-A"], cwd=cls.origin_git.readwrite)
+        util.quiet_check_call(["git", "commit", "-m", "Pull"], cwd=cls.origin_git.readwrite)
 
         # Convert to bare
         os.remove(os.path.join(cls.origin_git.readwrite, "asd.txt"))
@@ -30,7 +30,7 @@ class TestAdjust(unittest.TestCase):
         for fn in os.listdir(git_dir):
             shutil.move(os.path.join(git_dir, fn), cls.origin_git.readwrite)
         os.rmdir(git_dir)
-        util.quiet_check_call(["git", "-C", cls.origin_git.readwrite, "config", "--bool", "core.bare", "true"])
+        util.quiet_check_call(["git", "config", "--bool", "core.bare", "true"], cwd=cls.origin_git.readwrite)
 
     @classmethod
     def tearDownClass(cls):
