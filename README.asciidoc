@@ -490,7 +490,82 @@ The response will contain the resulting ref name.
     "originRepoUrl": Url(),
     "targetRepoUrl": Url(),
 }
+!===
+|===
 
+=== Clone Adjust
+
+Checkout a git ref from the origin repo and push it to the target repo.
+If the ref is a branch, the branch will be pushed to the target repo. If the ref is a tag, the tag will be pushed to the target repo. If the ref is a SHA, then a branch will be created with name 'branch-<ref>' and pushed as a branch to the target repo. The latter is required to get a particular commit to the target repo.
+
+You can specify an 'adjust' option to set if you want to run PME or not on it. You can also specify the 'adjustParameters'. The result of the PME run, together with the tag information is found in the response, under key 'adjust_result'. The value of 'adjust_result' is the same as for '/adjust'.
+
+The response will contain the exact ref name as what was sent
+
+[cols="h,6a"]
+|===
+|URL
+|/cloneadjust
+
+|Request
+|[cols="h,4a"]
+!===
+!Method
+!POST
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "type": "git", # only git supported for now
+    "ref": nonempty_str,
+    "originRepoUrl": Url(),
+    "internal_url": {
+        "readwrite": Url(),
+        "readonly": Url()
+    },
+    Optional("adjust"): bool,
+    Optional("adjustParameters"): All(dict),
+    Optional("callback"): {
+        "url": Url(),
+        Optional("method"): Any("PUT", "POST"),
+    }
+}
+
+!===
+
+|Response (Success)
+|[cols="h,4a"]
+!===
+!Status
+!200
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "type": "git", # only git supported for now
+    "ref": nonempty_str,
+    "originRepoUrl": Url(),
+    "internal_url": {
+        "readwrite": Url(),
+        "readonly": Url()
+    },
+    Optional("adjust"): bool,
+    Optional("adjustParameters"): All(dict),
+    "adjust_result": {
+        "tag": str,
+        "url": {
+            "readwrite": Url(),
+            "readonly": Url(),
+        },
+        "adjustResultData": str
+    }
+}
 !===
 |===
 

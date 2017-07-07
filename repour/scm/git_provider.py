@@ -77,6 +77,18 @@ def git_provider():
             return False
 
     @asyncio.coroutine
+    def is_tag(dir, ref):
+        try:  # TODO improve, its ugly
+            yield from expect_ok(
+                cmd=["git", "show-ref", "--quiet", "--tags", ref, "--"],
+                cwd=dir,
+                desc="Ignore this.",
+            )
+            return True
+        except Exception as e:
+            return False
+
+    @asyncio.coroutine
     def add_branch(dir, name):
         yield from expect_ok(
             cmd=["git", "branch", name, "--"],
@@ -86,10 +98,22 @@ def git_provider():
 
     @asyncio.coroutine
     def push_force(dir, remote, branch):  # Warning! --force
+        yield from push(dir, remote, branch, force=True)
+
+    @asyncio.coroutine
+    def push(dir, remote, branch, force=False):
+
+        cmd = ["git", "push"]
+
+        if force:
+            cmd.append("--force")
+
+        cmd.extend([remote, branch, "--"])
+
         yield from expect_ok(
-            cmd=["git", "push", "--force", remote, branch, "--"],
+            cmd=cmd,
             cwd=dir,
-            desc="Could not (force) push branch '{}' to remote '{}' with git".format(branch, remote),
+            desc="Could not push branch '{}' to remote '{}' with git".format(branch, remote),
         )
 
     @asyncio.coroutine  # TODO merge with above
@@ -294,8 +318,10 @@ def git_provider():
         "add_branch": add_branch,
         "delete_branch": delete_branch,
         "push_force": push_force,
+        "push": push,
         "push_with_tags": push_with_tags,
         "is_branch": is_branch,
+        "is_tag": is_tag,
         "clone": clone,
         "clone_deep": clone_deep,
         "checkout": checkout,
