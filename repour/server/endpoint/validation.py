@@ -129,25 +129,6 @@ clone = Schema(
     extra = False,
 )
 
-#
-# Clone Adjust
-#
-
-clone_adjust_raw = {
-    "name": name_str,
-    "type": "git", # only git supported for now
-    "ref": nonempty_str,
-    "originRepoUrl": Url(),
-    Optional("adjust"): bool,
-    Optional("adjustParameters"): All(dict),
-    Optional("callback"): callback_raw,
-}
-
-clone_adjust = Schema(
-    mode_b_ify(clone_adjust_raw),
-    required = True,
-    extra = False,
-)
 
 #
 # Returns
