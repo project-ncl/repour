@@ -6,6 +6,7 @@ from . import pme_provider
 from . import process_provider
 from .. import asgit
 from .. import asutil
+from .. import clone
 from .. import exception
 from ..config import config
 from ..scm import git_provider
@@ -56,22 +57,7 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
 
     ref = adjustspec["ref"]
-
-    isRefBranch = yield from git["is_branch"](work_dir, ref)  # if ref is a branch, we don't have to create one
-    isRefTag = yield from git["is_tag"](work_dir, ref)
-
-    if isRefBranch:
-        yield from git["push"](work_dir, "origin", ref)  # push it to the remote
-    elif isRefTag:
-        yield from git["push_with_tags"](work_dir, ref, remote="origin")
-    else:
-        # Case if ref is a particular SHA
-        # We can't really push a particular hash to the target repository
-        # unless it is in a branch. We have to create the branch to be able
-        # to push the SHA
-        branch = "branch-" + ref
-        yield from git["add_branch"](work_dir, branch)
-        yield from git["push"](work_dir, "origin", branch)  # push it to the remote
+    yield from clone.push_sync_changes(work_dir, ref, "origin")
 
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider):
