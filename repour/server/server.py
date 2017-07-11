@@ -8,7 +8,6 @@ from .endpoint import endpoint
 from .endpoint import ws
 from ..adjust import adjust
 from .. import clone
-from .. import cloneadjust
 from .. import pull
 from .. import repo
 from .. import websockets
@@ -49,7 +48,6 @@ def init(loop, bind, repo_provider, repour_url, adjust_provider):
     logger.debug("Setting up handlers")
     app.router.add_route("POST", "/pull", pull_source)
     app.router.add_route("POST", "/adjust", adjust_source)
-    app.router.add_route("POST", "/cloneadjust", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone_adjust, cloneadjust.cloneadjust, repour_url))
     app.router.add_route("POST", "/clone", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone, clone.clone, repour_url))
     app.router.add_route("POST", "/cancel", cancel.handle_cancel)
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
