@@ -20,6 +20,58 @@ logger = logging.getLogger(__name__)
 git = git_provider.git_provider()
 expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
+@asyncio.coroutine
+def is_sync_on(adjustspec):
+    """ For sync to be active, we need to both have the originRepoUrl information
+        and the 'sync' key to be set to on.
+
+        return: :bool: whether sync feature enabled or disabled
+    """
+    if ('originRepoUrl' in adjustspec) and adjustspec['originRepoUrl'] and ('sync' in adjustspec) and (adjustspec['sync'] is True):
+        logger.info('Auto-Sync feature activated')
+        return True
+    elif ('originRepoUrl' not in adjustspec):
+        logger.info("'originRepoUrl' key not specified: Auto-Sync feature disabled")
+        return False
+    elif not adjustspec['originRepoUrl']:
+        logger.info("'originRepoUrl' value is empty: Auto-Sync feature disabled")
+        return False
+    elif ('sync' not in adjustspec):
+        logger.info("'sync' key not specified: Auto-Sync feature disabled")
+        return False
+    else: # sync key set to False
+        logger.info("'sync' key set to False: Auto-Sync feature disabled")
+        return False
+
+@asyncio.coroutine
+def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
+    """ Get external repository and its ref into the internal repository
+    """
+    internal_repo_url = yield from repo_provider(adjustspec, create=False)
+    git_user = configuration.get("git_username")
+
+    yield from git["clone"](work_dir, adjustspec["originRepoUrl"])  # Clone origin
+    yield from git["checkout"](work_dir, adjustspec["ref"])  # Checkout ref
+    yield from git["remove_remote"](work_dir, "origin")  # Remove origin remote
+    yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
+
+    ref = adjustspec["ref"]
+
+    isRefBranch = yield from git["is_branch"](work_dir, ref)  # if ref is a branch, we don't have to create one
+    isRefTag = yield from git["is_tag"](work_dir, ref)
+
+    if isRefBranch:
+        yield from git["push"](work_dir, "origin", ref)  # push it to the remote
+    elif isRefTag:
+        yield from git["push_with_tags"](work_dir, ref, remote="origin")
+    else:
+        # Case if ref is a particular SHA
+        # We can't really push a particular hash to the target repository
+        # unless it is in a branch. We have to create the branch to be able
+        # to push the SHA
+        branch = "branch-" + ref
+        yield from git["add_branch"](work_dir, branch)
+        yield from git["push"](work_dir, "origin", branch)  # push it to the remote
 
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider):
@@ -40,10 +92,17 @@ def adjust(adjustspec, repo_provider):
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
         repo_url = yield from repo_provider(adjustspec, create=False)
-        git_user = c.get("git_username")
-        yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
-        yield from git["checkout"](work_dir, adjustspec["ref"])  # Checkout ref
 
+        sync_enabled = yield from is_sync_on(adjustspec)
+        if sync_enabled:
+            yield from sync_external_repo(adjustspec, repo_provider, work_dir, c)
+        else:
+            git_user = c.get("git_username")
+
+            yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
+            yield from git["checkout"](work_dir, adjustspec["ref"])  # Checkout ref
+
+        ### Adjust Phase ###
         yield from asgit.setup_commiter(expect_ok, work_dir)
 
         for execution_name in executions:
