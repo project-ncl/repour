@@ -57,6 +57,14 @@ def git_provider():
         )
 
     @asyncio.coroutine
+    def remove_remote(dir, name):
+        yield from expect_ok(
+            cmd=["git", "remote", "remove", name],
+            cwd=dir,
+            desc="Could not remove remote {} with git.".format(name),
+        )
+
+    @asyncio.coroutine
     def add_remote(dir, name, url):
         yield from expect_ok(
             cmd=["git", "remote", "add", name, url, "--"],
@@ -314,6 +322,7 @@ def git_provider():
     return {
         "version": version,
         "init": init,
+        "remove_remote": remove_remote,
         "add_remote": add_remote,
         "add_branch": add_branch,
         "delete_branch": delete_branch,
