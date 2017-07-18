@@ -18,6 +18,37 @@ expect_ok = asutil.expect_ok_closure(exception.CommandError)
 git = git_provider.git_provider()
 
 @asyncio.coroutine
+def push_sync_changes(work_dir, ref, remote="origin"):
+    """ This function is used when we want to sync a repository with another one
+        It assumes that you have already set the remote to be the 'other' repository
+
+        If the ref is a tag, the tag is pushed to the remote
+        If the ref is a branch, the branch, and its changes, are pushed to the remote
+        If the ref is a SHA, the SHA is pushed to the remote indirectly via the creation of a tag
+
+        Parameters:
+        - work_dir: :str: location of git repository
+        - ref: Git ref to sync
+        - remote: remote to push the ref to
+    """
+
+    isRefBranch = yield from git["is_branch"](work_dir, ref)  # if ref is a branch, we don't have to create one
+    isRefTag = yield from git["is_tag"](work_dir, ref)
+
+    if isRefBranch:
+        yield from git["push"](work_dir, remote, ref)  # push it to the remote
+    elif isRefTag:
+        yield from git["push_with_tags"](work_dir, ref, remote=remote)
+    else:
+        # Case if ref is a particular SHA
+        # We can't really push a particular hash to the target repository
+        # unless it is a tag. We have to create the tag to be able
+        # to push the SHA
+        tag_name = "repour-sync-" + ref
+        yield from git["add_tag"](work_dir, tag_name)
+        yield from git["push"](work_dir, remote, tag_name)
+
+@asyncio.coroutine
 def clone(clonespec, repo_provider):
     if clonespec["type"] in scm_types:
         internal = yield from scm_types[clonespec["type"]](clonespec)
@@ -36,13 +67,10 @@ def clone_git(clonespec):
         yield from git["clone"](clone_dir, asutil.add_username_url(clonespec["originRepoUrl"], git_user))  # Clone origin
         yield from git["checkout"](clone_dir, clonespec["ref"])  # Checkout ref
         yield from git["add_remote"](clone_dir, "target", clonespec["targetRepoUrl"])  # Add target remote
-        branch = clonespec["ref"]
-        isRefBranch = yield from git["is_branch"](clone_dir, branch)  # if ref is a branch, we don't have to create one
-        if not isRefBranch:
-            branch = "branch-" + branch
-            yield from git["add_branch"](clone_dir, branch)
-        yield from git["push_force"](clone_dir, "target", branch)  # push it to the remote
-        clonespec["ref"] = branch
+
+        ref = clonespec["ref"]
+        yield from push_sync_changes(clone_dir, ref, "target")
+
         return clonespec
 
 scm_types = {

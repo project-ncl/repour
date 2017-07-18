@@ -57,6 +57,14 @@ def git_provider():
         )
 
     @asyncio.coroutine
+    def add_tag(dir, name):
+        yield from expect_ok(
+            cmd=["git", "tag", name],
+            cwd=dir,
+            desc="Could not add tag {} with git.".format(name),
+        )
+
+    @asyncio.coroutine
     def remove_remote(dir, name):
         yield from expect_ok(
             cmd=["git", "remote", "remove", name],
@@ -105,23 +113,23 @@ def git_provider():
         )
 
     @asyncio.coroutine
-    def push_force(dir, remote, branch):  # Warning! --force
-        yield from push(dir, remote, branch, force=True)
+    def push_force(dir, remote, branch_or_tag):  # Warning! --force
+        yield from push(dir, remote, branch_or_tag, force=True)
 
     @asyncio.coroutine
-    def push(dir, remote, branch, force=False):
+    def push(dir, remote, branch_or_tag, force=False):
 
         cmd = ["git", "push"]
 
         if force:
             cmd.append("--force")
 
-        cmd.extend([remote, branch, "--"])
+        cmd.extend([remote, branch_or_tag, "--"])
 
         yield from expect_ok(
             cmd=cmd,
             cwd=dir,
-            desc="Could not push branch '{}' to remote '{}' with git".format(branch, remote),
+            desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
         )
 
     @asyncio.coroutine  # TODO merge with above
@@ -322,6 +330,7 @@ def git_provider():
     return {
         "version": version,
         "init": init,
+        "add_tag": add_tag,
         "remove_remote": remove_remote,
         "add_remote": add_remote,
         "add_branch": add_branch,
