@@ -57,6 +57,13 @@ def git_provider():
         )
 
     @asyncio.coroutine
+    def clone_mirror(dir, url):
+        yield from expect_ok(
+            cmd=["git", "clone", "--mirror", "--", url, dir],
+            desc="Could not clone mirror {} with git.".format(url),
+        )
+
+    @asyncio.coroutine
     def add_tag(dir, name):
         yield from expect_ok(
             cmd=["git", "tag", name],
@@ -130,6 +137,19 @@ def git_provider():
             cmd=cmd,
             cwd=dir,
             desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
+        )
+
+    @asyncio.coroutine
+    def push_mirror(dir, remote):
+
+        cmd = ["git", "push", "--mirror"]
+
+        cmd.extend([remote, "--"])
+
+        yield from expect_ok(
+            cmd=cmd,
+            cwd=dir,
+            desc="Could not push mirror to remote '{}' with git".format(remote),
         )
 
     @asyncio.coroutine  # TODO merge with above
@@ -337,10 +357,12 @@ def git_provider():
         "delete_branch": delete_branch,
         "push_force": push_force,
         "push": push,
+        "push_mirror": push_mirror,
         "push_with_tags": push_with_tags,
         "is_branch": is_branch,
         "is_tag": is_tag,
         "clone": clone,
+        "clone_mirror": clone_mirror,
         "clone_deep": clone_deep,
         "checkout": checkout,
         "clone_checkout_branch_tag_shallow": clone_checkout_branch_tag_shallow,
