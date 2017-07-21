@@ -64,16 +64,21 @@ def clone_git(clonespec):
         c = yield from config.get_configuration()
         git_user = c.get("git_username")
 
-        yield from git["clone"](clone_dir, asutil.add_username_url(clonespec["originRepoUrl"], git_user))  # Clone origin
-        yield from git["checkout"](clone_dir, clonespec["ref"])  # Checkout ref
-        yield from git["add_remote"](clone_dir, "target", clonespec["targetRepoUrl"])  # Add target remote
+        if "ref" in clonespec:
+            yield from git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
+            yield from git["checkout"](clone_dir, clonespec["ref"])  # Checkout ref
+            yield from git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
 
-        ref = clonespec["ref"]
-        yield from push_sync_changes(clone_dir, ref, "target")
+            ref = clonespec["ref"]
+            yield from push_sync_changes(clone_dir, ref, "target")
+        else:
+            # Sync everything if ref not specified
+            yield from git["clone_mirror"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
+            yield from git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
+            yield from git["push_mirror"](clone_dir, "target")
 
         return clonespec
 
 scm_types = {
     "git": clone_git,
 }
-
