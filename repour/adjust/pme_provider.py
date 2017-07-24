@@ -3,9 +3,10 @@ import json
 import logging
 import os
 import shlex
-import xml.etree.ElementTree as etree
+import re
 
 from . import process_provider
+from xml.dom import minidom
 
 logger = logging.getLogger(__name__)
 
