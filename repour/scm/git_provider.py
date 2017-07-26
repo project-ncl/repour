@@ -18,6 +18,22 @@ expect_ok = asutil.expect_ok_closure(exception.CommandError)
 
 def git_provider():
     @asyncio.coroutine
+    def disable_bare_repository(dir):
+        yield from expect_ok(
+            cmd=["git", "config", "--bool", "core.bare", "false"],
+            cwd=dir,
+            desc="Could not disable bare repository"
+        )
+
+    @asyncio.coroutine
+    def reset_hard(dir):
+        yield from expect_ok(
+            cmd=["git", "reset", "--hard"],
+            cwd=dir,
+            desc="Could not reset hard"
+        )
+
+    @asyncio.coroutine
     def clone_deep(dir, url):
         yield from expect_ok(
             cmd=["git", "clone", "--", url, dir],
@@ -54,6 +70,13 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "clone", "--", url, dir],
             desc="Could not clone {} with git.".format(url),
+        )
+
+    @asyncio.coroutine
+    def clone_mirror(dir, url):
+        yield from expect_ok(
+            cmd=["git", "clone", "--mirror", "--", url, dir],
+            desc="Could not clone mirror {} with git.".format(url),
         )
 
     @asyncio.coroutine
@@ -131,6 +154,28 @@ def git_provider():
             cwd=dir,
             desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
         )
+
+    @asyncio.coroutine
+    def push_all(dir, remote, tags_also=False):
+
+        cmd = ["git", "push", "--all"]
+
+
+        cmd.extend([remote, "--"])
+
+        yield from expect_ok(
+            cmd=cmd,
+            cwd=dir,
+            desc="Could not push all to remote '{}' with git".format(remote),
+        )
+
+        if tags_also:
+            cmd_tag = ["git", "push", "--tags", remote, "--"]
+            yield from expect_ok(
+                cmd=cmd_tag,
+                cwd=dir,
+                desc="Could not push all tags to remote '{}' with git".format(remote),
+            )
 
     @asyncio.coroutine  # TODO merge with above
     def push_with_tags(dir, branch, remote="origin", tryAtomic=True):
@@ -337,10 +382,12 @@ def git_provider():
         "delete_branch": delete_branch,
         "push_force": push_force,
         "push": push,
+        "push_all": push_all,
         "push_with_tags": push_with_tags,
         "is_branch": is_branch,
         "is_tag": is_tag,
         "clone": clone,
+        "clone_mirror": clone_mirror,
         "clone_deep": clone_deep,
         "checkout": checkout,
         "clone_checkout_branch_tag_shallow": clone_checkout_branch_tag_shallow,
@@ -353,5 +400,7 @@ def git_provider():
         "rev_parse": rev_parse,
         "create_branch_checkout": create_branch_checkout,
         "add_all": add_all,
-        "tag_annotated": tag_annotated
+        "tag_annotated": tag_annotated,
+        "disable_bare_repository": disable_bare_repository,
+        "reset_hard": reset_hard
     }
