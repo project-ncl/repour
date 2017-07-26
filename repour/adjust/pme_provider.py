@@ -3,8 +3,10 @@ import json
 import logging
 import os
 import shlex
+import re
 
 from . import process_provider
+from xml.dom import minidom
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,37 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             with open(result_file_path, "r") as file:
                 raw_result_data = file.read()
         logger.info('Got PME result data "{raw_result_data}".'.format(**locals()))
-        return json.loads(raw_result_data)
+        pme_result = json.loads(raw_result_data)
+        pme_result["RemovedRepositories"] = get_removed_repos(work_dir, pme_parameters)
+        return pme_result
+
+    def get_removed_repos(work_dir, parameters):
+        """
+        Parses the filename of the removed repos backup file from the parameters list and if there
+        is one, it reads the list of repos and returns it.
+        """
+        result = []
+
+        pattern = re.compile("-Drepo-removal-backup[ =](.+)")
+        for parameter in parameters:
+            m = pattern.match(parameter)
+            if m is not None:
+                filepath = os.path.join(work_dir, m.group(1))
+
+                tree = minidom.parse(filepath)
+                for repo_elem in tree.getElementsByTagName("repository"):
+                    repo = {"releases": True, "snapshots": True, "name": "", "id": "", "url": ""}
+                    for enabled_elem in repo_elem.getElementsByTagName("enabled"):
+                        if enabled_elem.parentNode.localName in ["releases", "snapshots"]:
+                            bool_value = enabled_elem.childNodes[0].data == "true"
+                            repo[enabled_elem.parentNode.localName] = bool_value
+                    for tag in ["id", "name", "url"]:
+                        for elem in repo_elem.getElementsByTagName(tag):
+                            repo[tag] = elem.childNodes[0].data
+                    result.append(repo)
+                break
+
+        return result
 
     @asyncio.coroutine
     def get_extra_parameters(extra_adjust_parameters):
