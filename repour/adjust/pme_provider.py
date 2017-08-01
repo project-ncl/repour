@@ -21,7 +21,11 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
                 raw_result_data = file.read()
         logger.info('Got PME result data "{raw_result_data}".'.format(**locals()))
         pme_result = json.loads(raw_result_data)
-        pme_result["RemovedRepositories"] = get_removed_repos(work_dir, pme_parameters)
+        try:
+            pme_result["RemovedRepositories"] = get_removed_repos(work_dir, pme_parameters)
+        except FileNotFoundError as e:
+            logger.error('File for removed repositories could not be found')
+            logger.error(str(e))
         return pme_result
 
     def get_removed_repos(work_dir, parameters):
@@ -36,6 +40,8 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             m = pattern.match(parameter)
             if m is not None:
                 filepath = os.path.join(work_dir, m.group(1))
+                logger.info('Files and folders in the work directory:')
+                logger.info(os.listdir(work_dir))
 
                 tree = minidom.parse(filepath)
                 for repo_elem in tree.getElementsByTagName("repository"):
