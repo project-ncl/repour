@@ -137,7 +137,8 @@ def expect_ok_closure(exc_type=exception.CommandError):
             stdout=None if stdout == process_stdout_options["ignore"] else asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT if stderr == process_stderr_options["stdout"] else asyncio.subprocess.PIPE,
             env=sub_env,
-            cwd=cwd
+            cwd=cwd,
+            limit=100*1024*1024
         )
 
         if live_log:
