@@ -64,7 +64,7 @@ def clone_git(clonespec):
         c = yield from config.get_configuration()
         git_user = c.get("git_username")
 
-        if "ref" in clonespec:
+        if "ref" in clonespec and clonespec["ref"]:
             yield from git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
             yield from git["checkout"](clone_dir, clonespec["ref"])  # Checkout ref
             yield from git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
@@ -74,6 +74,7 @@ def clone_git(clonespec):
         else:
             # Sync everything if ref not specified
             # From: https://stackoverflow.com/a/7216269/2907906
+            logger.info("Syncing everything")
             yield from git["clone_mirror"](clone_dir + "/.git", clonespec["originRepoUrl"])  # Clone origin
             yield from git["disable_bare_repository"](clone_dir)
             yield from git["reset_hard"](clone_dir)
