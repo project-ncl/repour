@@ -31,6 +31,12 @@ def fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date="1970-01-
 
 
 @asyncio.coroutine
+def normal_date_commit(expect_ok, repo_dir, commit_message):
+    commit_id = yield from fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date=None)
+    return commit_id
+
+
+@asyncio.coroutine
 def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
     yield from git["create_branch_checkout"](repo_dir, branch_name, orphan)
     yield from git["add_all"](repo_dir)
@@ -44,7 +50,7 @@ def replace_branch(expect_ok, repo_dir, current_branch_name, new_name):
 
 @asyncio.coroutine
 def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=False):
-    yield from git["tag_annotated"](repo_dir, tag_name, message, ok_if_exists)
+    yield from git["tag_annotated"](repo_dir, tag_name, message, ok_if_exists=ok_if_exists)
 
 
 @asyncio.coroutine
@@ -54,36 +60,75 @@ def push_with_tags(expect_ok, repo_dir, branch_name):
 
 #
 # Higher-level operations
-# Returns None if no changes were made and no_change_ok=True, else raises an exception
+# Returns tag information
 # If no_change_ok=True you may set force_continue_on_no_changes to create the branch and tag anyway,
 # on the current ref, without making the new commit
 #
 
 @asyncio.coroutine
 def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False,
-                          no_change_ok=False, force_continue_on_no_changes=False):
+                          no_change_ok=False, force_continue_on_no_changes=False, real_commit_time=False):
     # There are a few priorities for reference names:
     #   - Amount of information in the name itself
     #   - Length
     #   - Parsability
     # The following scheme does not include the origin_ref, although it is good
     # information, because it comprimises length and parsability too much.
+    tag_name = None
 
     # As many things as possible are controlled for the commit, so the commitid
     # can be used for deduplication.
     temp_branch = "repour_commitid_search_temp_branch_" + str(uuid.uuid1())
     yield from prepare_new_branch(expect_ok, repo_dir, temp_branch, orphan=orphan)
 
+    if real_commit_time:
+        # prepare_new_branch does a git add all, so calling git write-tree
+        # should give the current tree SHA of the directory
+        tree_sha = yield from git["write_tree"](repo_dir)
+
+        # Find if there's already a tag for the tree sha above
+        tag_name = yield from git["get_tag_from_tree_sha"](repo_dir, tree_sha)
+
+        # Find if tree sha already exists in a tag
+        # - yes -> return existing tag, if no_change_ok = true
+        #       -> raise exception if no_change_ok = false
+        # - no  -> create new commit with regular date, create tag and push
+        if tag_name and not no_change_ok:
+            raise
+
+    # we are here either if we are not using real_commit_time or if we couldn't
+    # find the tag using the tree SHA
+    if tag_name is None:
+        tag_name = yield from commit_push_tag(expect_ok, repo_dir,
+                                              operation_name, operation_description,
+                                              no_change_ok, force_continue_on_no_changes,
+                                              real_commit_time)
+
+    if tag_name is None:
+        return None
+    else:
+        return {
+            "tag": tag_name,
+            "url": {
+                "readwrite": repo_url.readwrite,
+                "readonly": repo_url.readonly,
+            },
+        }
+
+@asyncio.coroutine
+def commit_push_tag(expect_ok, repo_dir,
+                    operation_name, operation_description,
+                    no_change_ok, force_continue_on_no_changes,
+                    real_commit_time):
     try:
-        commit_id = yield from fixed_date_commit(expect_ok, repo_dir, "Repour")
+        if real_commit_time:
+            commit_id = yield from normal_date_commit(expect_ok, repo_dir, "Repour")
+        else:
+            commit_id = yield from fixed_date_commit(expect_ok, repo_dir, "Repour")
+
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
-            # No changes were made
-            if force_continue_on_no_changes:
-                # Use the current commit to continue
-                commit_id = yield from git["rev_parse"](repo_dir)
-            else:
-                return None
+            commit_id = yield from git["rev_parse"](repo_dir)
         else:
             raise
 
@@ -115,11 +160,4 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
         raise
 
     logger.info("Pushed to repo: tag {tag_name}".format(**locals()))
-
-    return {
-        "tag": tag_name,
-        "url": {
-            "readwrite": repo_url.readwrite,
-            "readonly": repo_url.readonly,
-        },
-    }
+    return tag_name
