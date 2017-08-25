@@ -40,21 +40,24 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             m = pattern.match(parameter)
             if m is not None:
                 filepath = os.path.join(work_dir, m.group(1))
-                logger.info('Files and folders in the work directory:')
-                logger.info(os.listdir(work_dir))
+                logger.debug('Files and folders in the work directory:\n  %s', os.listdir(work_dir))
 
-                tree = minidom.parse(filepath)
-                for repo_elem in tree.getElementsByTagName("repository"):
-                    repo = {"releases": True, "snapshots": True, "name": "", "id": "", "url": ""}
-                    for enabled_elem in repo_elem.getElementsByTagName("enabled"):
-                        if enabled_elem.parentNode.localName in ["releases", "snapshots"]:
-                            bool_value = enabled_elem.childNodes[0].data == "true"
-                            repo[enabled_elem.parentNode.localName] = bool_value
-                    for tag in ["id", "name", "url"]:
-                        for elem in repo_elem.getElementsByTagName(tag):
-                            repo[tag] = elem.childNodes[0].data
-                    result.append(repo)
-                break
+                if os.path.exists(filepath):
+                    tree = minidom.parse(filepath)
+                    for repo_elem in tree.getElementsByTagName("repository"):
+                        repo = {"releases": True, "snapshots": True, "name": "", "id": "", "url": ""}
+                        for enabled_elem in repo_elem.getElementsByTagName("enabled"):
+                            if enabled_elem.parentNode.localName in ["releases", "snapshots"]:
+                                bool_value = enabled_elem.childNodes[0].data == "true"
+                                repo[enabled_elem.parentNode.localName] = bool_value
+                        for tag in ["id", "name", "url"]:
+                            for elem in repo_elem.getElementsByTagName(tag):
+                                repo[tag] = elem.childNodes[0].data
+                        result.append(repo)
+                    break
+                else:
+                    logger.info('File %s does not exist. It seems no repositories were removed '
+                                'by PME.', filepath)
 
         return result
 
