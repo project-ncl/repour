@@ -35,7 +35,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         """
         result = []
 
-        pattern = re.compile("-Drepo-removal-backup[ =](.+)")
+        pattern = re.compile("-DrepoRemovalBackup[ =](.+)")
         for parameter in parameters:
             m = pattern.match(parameter)
             if m is not None:
