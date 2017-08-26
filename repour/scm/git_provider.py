@@ -330,10 +330,20 @@ def git_provider():
         """
         def get_tag_name(temp_tags):
             """
-            temp_tags is in format: 'tag: <tag1>, <tag2>, <tag3> ...'
+            temp_tags is in format: '(tag: <tag1>, <tag2>, <tag3> ...)'
             return first tag (aka tag1)
+
+            We use '%d' to get the refname since there are no support for %D in
+            git 1.8.3, the version we use in RHEL 7
             """
             if 'tag:' in temp_tags:
+                temp_tags = temp_tags.strip()
+                # Remove beginning and ending '(' ')'
+                if temp_tags.startswith('('):
+                    temp_tags = temp_tags[1:]
+                if temp_tags.endswith(')'):
+                    temp_tags = temp_tags[:-1]
+
                 comma_delimited_tags = re.sub(r"^.*tag:", "", temp_tags.strip()).strip()
                 return comma_delimited_tags.split(",")[0]
             else:
@@ -342,8 +352,8 @@ def git_provider():
         try:
             data = yield from expect_ok(
                 # separate the tree SHA and the tag information with '::'
-                # output is <tree_sha>::tag: <tag1>, <tag2>, ...
-                cmd=["git", "--no-pager", "log", "--tags", "--no-walk", '--pretty="%T::%D"'],
+                # output is <tree_sha>:: (tag: <tag1>, <tag2>, ...)
+                cmd=["git", "--no-pager", "log", "--tags", "--no-walk", '--pretty="%T::%d"'],
                 desc="Couldn't get the tree hash / tag relationship via git log",
                 stdout="lines",
                 cwd=dir
@@ -355,7 +365,7 @@ def git_provider():
 
                 temp_tree_sha, temp_tags = item.split('::')
 
-                if temp_tree_sha == tree_sha:
+                if temp_tree_sha.strip() == tree_sha.strip():
                     return get_tag_name(temp_tags)
             else:
                 return None
