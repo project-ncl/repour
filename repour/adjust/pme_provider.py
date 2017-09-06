@@ -73,7 +73,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
                 if p[0] != "-":
                     desc = ('Parameters that do not start with dash "-" are not allowed. '
                             + 'Found "{p}" in "{params}".'.format(**locals()))
-                    raise exception.AdjustCommandError(desc, "", 10, stderr=desc)
+                    raise exception.AdjustCommandError(desc, [], 10, stderr=desc)
             return params
 
     @asyncio.coroutine
