@@ -6,6 +6,7 @@ import shlex
 import re
 
 from . import process_provider
+from .. import exception
 from xml.dom import minidom
 
 logger = logging.getLogger(__name__)
@@ -70,8 +71,9 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             params = shlex.split(paramsString)
             for p in params:
                 if p[0] != "-":
-                    raise Exception('Parameters that do not start with dash "-" are not allowed. '
-                                    + 'Found "{p}" in "{params}".'.format(**locals()))
+                    desc = ('Parameters that do not start with dash "-" are not allowed. '
+                            + 'Found "{p}" in "{params}".'.format(**locals()))
+                    raise exception.AdjustCommandError(desc, "", 10, stderr=desc)
             return params
 
     @asyncio.coroutine
