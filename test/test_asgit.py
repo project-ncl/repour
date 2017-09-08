@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import os
 import subprocess
+import time
 import unittest
 
 import repour.asutil
@@ -73,6 +74,9 @@ class TestCommon(unittest.TestCase):
 class TestPushNewDedupBranch(unittest.TestCase):
     def test_normal(self):
         with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
+
+            tag = None
+
             with util.TemporaryGitDirectory(origin=remote.readwrite) as repo:
                 # Simulated pull
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
@@ -84,17 +88,14 @@ class TestPushNewDedupBranch(unittest.TestCase):
                     operation_name="Pull",
                     operation_description="Blah",
                     orphan=True,
+                    real_commit_time=True,
                 ))
-                self.assertEqual(
-                    first=p,
-                    second={
-                        "tag": "repour-0fe965e93b0cf7c91b9d44c14d9847e459c465c2",
-                        "url": {
-                            "readwrite": remote.readwrite,
-                            "readonly": "fake-ro-url",
-                        },
-                    },
-                )
+                self.assertEqual(p["url"]["readwrite"], remote.readwrite)
+                self.assertEqual(p["url"]["readonly"], "fake-ro-url")
+
+                tag = p["tag"]
+
+                time.sleep(2)
 
                 # No changes
                 nc = loop.run_until_complete(repour.asgit.push_new_dedup_branch(
@@ -104,12 +105,13 @@ class TestPushNewDedupBranch(unittest.TestCase):
                     operation_name="Adjust",
                     operation_description="Bleh",
                     no_change_ok=True,
+                    force_continue_on_no_changes=True,
+                    real_commit_time=True,
                 ))
-                self.assertIsNone(nc)
 
             with util.TemporaryGitDirectory(
                 origin=remote.readwrite,
-                ref="repour-0fe965e93b0cf7c91b9d44c14d9847e459c465c2",
+                ref=tag,
             ) as repo:
                 # Changes
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
@@ -121,6 +123,8 @@ class TestPushNewDedupBranch(unittest.TestCase):
                     operation_name="Adjust",
                     operation_description="Bleh",
                     no_change_ok=True,
+                    force_continue_on_no_changes=True,
+                    real_commit_time=True,
                 ))
                 self.assertIsNotNone(c)
                 self.assertIn("tag", c)
@@ -131,9 +135,11 @@ class TestPushNewDedupBranch(unittest.TestCase):
 
             with util.TemporaryGitDirectory(
                 origin=remote.readwrite,
-                ref="repour-0fe965e93b0cf7c91b9d44c14d9847e459c465c2",
+                ref=tag,
             ) as repo:
                 # Changes, already existing
+                # Sleep to make sure commit date are different, if duplicate commit generated
+                time.sleep(5)
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello Hello")
                 ce = loop.run_until_complete(repour.asgit.push_new_dedup_branch(
@@ -143,6 +149,8 @@ class TestPushNewDedupBranch(unittest.TestCase):
                     operation_name="Adjust",
                     operation_description="Bleh",
                     no_change_ok=True,
+                    force_continue_on_no_changes=True,
+                    real_commit_time=True,
                 ))
                 self.assertIsNotNone(ce)
                 self.assertEqual(ce, c)

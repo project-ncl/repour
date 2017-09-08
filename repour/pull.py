@@ -63,6 +63,7 @@ def process_source_tree(pullspec, repo_provider, adjust_provider, repo_dir, orig
             repo_url=internal_repo_url,
             original_ref=pull_internal["tag"],
             adjust_type=adjust_type,
+            force_continue_on_no_changes=True,
         )
     else:
         adjust_internal = None

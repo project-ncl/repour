@@ -131,7 +131,6 @@ class TestProcessSourceTree(unittest.TestCase):
                     origin_type="git",
                     origin_ref="v1.0",
                 ))
-
                 self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
 
 class TestPull(unittest.TestCase):

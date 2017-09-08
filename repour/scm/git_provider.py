@@ -247,14 +247,17 @@ def git_provider():
         )
 
     @asyncio.coroutine
-    def commit(dir, commit_message, commit_date):
+    def commit(dir, commit_message, commit_date=None):
+
+        if commit_date:
+            env = {"GIT_AUTHOR_DATE": commit_date, "GIT_COMMITTER_DATE": commit_date}
+        else:
+            env = {}
+
         yield from expect_ok(
             cmd=["git", "commit", "-m", commit_message],
             desc="Could not commit files with git",
-            env={
-                "GIT_AUTHOR_DATE": commit_date,
-                "GIT_COMMITTER_DATE": commit_date,
-            },
+            env=env,
             cwd=dir
         )
 
@@ -305,6 +308,72 @@ def git_provider():
                 pass # ok
             else:
                 raise e
+
+    @asyncio.coroutine
+    def write_tree(dir):
+        """
+        Get the tree SHA from current index
+        """
+        tree_sha = yield from expect_ok(
+                cmd=["git", "write-tree"],
+                desc="Couldn't get the commit tree with git",
+                stdout="text",
+                cwd=dir
+        )
+        return tree_sha.strip()
+
+    @asyncio.coroutine
+    def get_tag_from_tree_sha(dir, tree_sha):
+        """
+        Return the tag for a particular tree SHA
+        Return None if no such tag exists
+        """
+        def get_tag_name(temp_tags):
+            """
+            temp_tags is in format: '(tag: <tag1>, <tag2>, <tag3> ...)'
+            return first tag (aka tag1)
+
+            We use '%d' to get the refname since there are no support for %D in
+            git 1.8.3, the version we use in RHEL 7
+            """
+            if 'tag:' in temp_tags:
+                temp_tags = temp_tags.strip()
+                # Remove beginning and ending '(' ')'
+                if temp_tags.startswith('('):
+                    temp_tags = temp_tags[1:]
+                if temp_tags.endswith(')'):
+                    temp_tags = temp_tags[:-1]
+
+                comma_delimited_tags = re.sub(r"^.*tag:", "", temp_tags.strip()).strip()
+                return comma_delimited_tags.split(",")[0]
+            else:
+                return None
+
+        try:
+            data = yield from expect_ok(
+                # separate the tree SHA and the tag information with '::'
+                # output is <tree_sha>:: (tag: <tag1>, <tag2>, ...)
+                cmd=["git", "--no-pager", "log", "--tags", "--no-walk", '--pretty="%T::%d"'],
+                desc="Couldn't get the tree hash / tag relationship via git log",
+                stdout="lines",
+                cwd=dir
+            )
+            # Each line contains information about a tree sha, and the tag(s) pointing to it indirectly
+            for item in data:
+                # For some reason the text from 'expect_ok' are in quotes. Remove it
+                item = item.replace('"', '')
+
+                temp_tree_sha, temp_tags = item.split('::')
+
+                if temp_tree_sha.strip() == tree_sha.strip():
+                    return get_tag_name(temp_tags)
+            else:
+                return None
+
+        except exception.CommandError as e:
+            # No commits yet in the tag
+            if "does not have any commits yet" in e.stderr:
+                return None
 
 
     @asyncio.coroutine
@@ -401,6 +470,8 @@ def git_provider():
         "create_branch_checkout": create_branch_checkout,
         "add_all": add_all,
         "tag_annotated": tag_annotated,
+        "write_tree": write_tree,
+        "get_tag_from_tree_sha": get_tag_from_tree_sha,
         "disable_bare_repository": disable_bare_repository,
         "reset_hard": reset_hard
     }

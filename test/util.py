@@ -26,7 +26,7 @@ class TemporaryGitDirectory(tempfile.TemporaryDirectory):
             if self.origin is not None:
                 quiet_check_call(["git", "remote", "add", "origin", "file://" + self.origin], cwd=self.name)
         else:
-            quiet_check_call(["git", "clone", "--branch", self.ref, "--depth", "1", "--", "file://" + self.origin, self.name])
+            quiet_check_call(["git", "clone", "--branch", self.ref, "--", "file://" + self.origin, self.name])
 
         quiet_check_call(["git", "config", "--local", "user.name", "Repour"], cwd=self.name)
         quiet_check_call(["git", "config", "--local", "user.email", "<>"], cwd=self.name)

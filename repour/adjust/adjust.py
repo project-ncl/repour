@@ -150,6 +150,7 @@ def commit_adjustments(repo_dir, repo_url, original_ref, adjust_type, force_cont
 Adjust Type: {adjust_type}
 """.format(**locals()),
         no_change_ok=True,
-        force_continue_on_no_changes=force_continue_on_no_changes
+        force_continue_on_no_changes=force_continue_on_no_changes,
+        real_commit_time=True,
     )
     return d
