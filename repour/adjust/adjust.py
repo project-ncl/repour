@@ -65,6 +65,8 @@ def adjust(adjustspec, repo_provider):
     This method executes adjust providers as specified in configuration.
     Returns a dictionary corresponding to the HTTP response content.
     """
+    specific_tag_name = None
+
     c = yield from config.get_configuration()
     executions = c.get("adjust", {}).get("executions", [])
 
@@ -117,6 +119,10 @@ def adjust(adjustspec, repo_provider):
                                                          adjust_provider_config.get("outputToLogs", False)) \
                     (work_dir, extra_adjust_parameters, adjust_result)
 
+                version = yield from pme_provider.get_version_from_pme_result(adjust_result['resultData'])
+                if version:
+                    specific_tag_name = version
+
             else:
                 raise Exception("Unknown adjust provider \"{adjust_provider_name}\".".format(**locals()))
 
@@ -127,7 +133,8 @@ def adjust(adjustspec, repo_provider):
             repo_url=repo_url,
             original_ref=adjustspec["ref"],
             adjust_type=", ".join(adjust_result["adjustType"]),
-            force_continue_on_no_changes=True
+            force_continue_on_no_changes=True,
+            specific_tag_name=specific_tag_name
         )
 
         result = result if result is not None else {}
@@ -135,9 +142,11 @@ def adjust(adjustspec, repo_provider):
         result["adjustResultData"] = adjust_result["resultData"]
     return result
 
-
 @asyncio.coroutine
-def commit_adjustments(repo_dir, repo_url, original_ref, adjust_type, force_continue_on_no_changes=False):
+def commit_adjustments(repo_dir, repo_url,
+                       original_ref, adjust_type,
+                       force_continue_on_no_changes=False,
+                       specific_tag_name=None):
     """
     Careful: Returns None if no changes were made, unless force_continue_on_no_changes is True
     """
@@ -146,11 +155,13 @@ def commit_adjustments(repo_dir, repo_url, original_ref, adjust_type, force_cont
         repo_dir=repo_dir,
         repo_url=repo_url,
         operation_name="Adjust",
-        operation_description="""Original Reference: {original_ref}
+        operation_description="""Tag automatically generated from Repour
+Original Reference: {original_ref}
 Adjust Type: {adjust_type}
 """.format(**locals()),
         no_change_ok=True,
         force_continue_on_no_changes=force_continue_on_no_changes,
         real_commit_time=True,
+        specific_tag_name=specific_tag_name,
     )
     return d
