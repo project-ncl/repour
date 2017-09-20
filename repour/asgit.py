@@ -67,7 +67,8 @@ def push_with_tags(expect_ok, repo_dir, branch_name):
 
 @asyncio.coroutine
 def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False,
-                          no_change_ok=False, force_continue_on_no_changes=False, real_commit_time=False):
+                          no_change_ok=False, force_continue_on_no_changes=False, real_commit_time=False,
+                          specific_tag_name=None):
     # There are a few priorities for reference names:
     #   - Amount of information in the name itself
     #   - Length
@@ -102,7 +103,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
         tag_name = yield from commit_push_tag(expect_ok, repo_dir,
                                               operation_name, operation_description,
                                               no_change_ok, force_continue_on_no_changes,
-                                              real_commit_time)
+                                              real_commit_time, specific_tag_name)
 
     if tag_name is None:
         return None
@@ -119,7 +120,8 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
 def commit_push_tag(expect_ok, repo_dir,
                     operation_name, operation_description,
                     no_change_ok, force_continue_on_no_changes,
-                    real_commit_time):
+                    real_commit_time,
+                    specific_tag_name=None):
     try:
         if real_commit_time:
             commit_id = yield from normal_date_commit(expect_ok, repo_dir, "Repour")
@@ -135,7 +137,10 @@ def commit_push_tag(expect_ok, repo_dir,
     # Apply the actual branch name now we know the commit ID
     operation_name_lower = operation_name.lower()
 
-    tag_name = "repour-{commit_id}".format(**locals())
+    if specific_tag_name:
+        tag_name = specific_tag_name
+    else:
+        tag_name = "repour-{commit_id}".format(**locals())
 
     try:
         yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description, ok_if_exists=force_continue_on_no_changes)

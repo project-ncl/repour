@@ -54,4 +54,4 @@ class TestAdjust(unittest.TestCase):
             },
             repo_provider=repo_provider
         ))
-        self.assertRegex(d["tag"], r'^repour-[0-9a-f]+$')
+        self.assertRegex(d["tag"], r'^[0-9a-zA-Z-]+$')
