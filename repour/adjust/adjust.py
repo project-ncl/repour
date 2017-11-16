@@ -45,6 +45,55 @@ def is_sync_on(adjustspec):
         return False
 
 @asyncio.coroutine
+def is_temp_build(adjustspec):
+    """ For temp build to be active, we need to both provide a 'is_temp_build' key
+        in our request and its value must be true
+
+        return: :bool: whether temp build feature enabled or not
+    """
+    key = 'tempBuild'
+    if (key in adjustspec) and adjustspec[key] is True:
+        logger.info('Build is temporary')
+        return True
+    else:
+        logger.info('Build is not temporary')
+        return False
+
+@asyncio.coroutine
+def get_specific_indy_group(adjustspec, adjust_provider_config):
+    temp_build_enabled = yield from is_temp_build(adjustspec)
+
+    if temp_build_enabled:
+        return adjust_provider_config.get("temp_build_indy_group", None)
+    else:
+        return None
+
+@asyncio.coroutine
+def get_temp_build_timestamp(adjustspec):
+    """ Find the timestamp to provide to PME from the adjust request.
+
+        If the timestamp is set *AND* the temp_build key is set to true, then
+        this function returns the value of the timestamp.
+
+        Otherwise it will return None
+    """
+    temp_build_timestamp_key = 'tempBuildTimestamp'
+
+    temp_build_enabled = yield from is_temp_build(adjustspec)
+
+    # See if key is sent in the request
+    temp_build_timestamp = None
+
+    if temp_build_timestamp_key in adjustspec:
+        temp_build_timestamp = adjustspec[temp_build_timestamp_key]
+
+    if temp_build_enabled:
+        logger.info("Temp build timestamp set to: " + str(temp_build_timestamp))
+        return temp_build_timestamp
+    else:
+        return None
+
+@asyncio.coroutine
 def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     """ Get external repository and its ref into the internal repository
     """
@@ -113,10 +162,13 @@ def adjust(adjustspec, repo_provider):
                     (work_dir, extra_adjust_parameters, adjust_result)
 
             elif adjust_provider_name == "pme":
+                specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
+                timestamp = yield from get_temp_build_timestamp(adjustspec)
                 yield from pme_provider.get_pme_provider(execution_name,
                                                          adjust_provider_config["cliJarPathAbsolute"],
                                                          adjust_provider_config.get("defaultParameters", []),
-                                                         adjust_provider_config.get("outputToLogs", False)) \
+                                                         adjust_provider_config.get("outputToLogs", False),
+                                                         specific_indy_group, timestamp) \
                     (work_dir, extra_adjust_parameters, adjust_result)
 
                 version = yield from pme_provider.get_version_from_pme_result(adjust_result['resultData'])

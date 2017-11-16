@@ -29,5 +29,6 @@
       "user.email": "<>"
     }
   },
-  "git_username": ""
+  "git_username": "",
+  "temp_build_indy_group": ""
 }
