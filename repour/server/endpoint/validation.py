@@ -52,6 +52,8 @@ adjust_raw = {
     Optional("originRepoUrl"): nonempty_str,
     Optional("sync"): bool,
     Optional("callback"): callback_raw,
+    Optional("tempBuild"): bool,
+    Optional("tempBuildTimestamp"): nonempty_str,
 }
 
 adjust = Schema(

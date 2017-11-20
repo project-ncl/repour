@@ -12,7 +12,8 @@ from xml.dom import minidom
 logger = logging.getLogger(__name__)
 
 
-def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_logs=False):
+# TODO: NCL-3503: Finish implementation once the other components are figured out
+def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_logs=False, specific_indy_group=None, timestamp=None):
     @asyncio.coroutine
     def get_result_data(work_dir):
         raw_result_data = "{}"
