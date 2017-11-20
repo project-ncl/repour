@@ -143,14 +143,13 @@ def run_container_subcommand(args):
                 "cmd": [
                     "java", "-jar", os.path.join(os.getcwd(), "pom-manipulation-cli.jar"),
                     "-s", "/home/repour/settings.xml",
-                    "-d",
                     "-DrestMaxSize=30",
                     "-DrestURL=" + da_url,
-                    "-Dversion.incremental.suffix=redhat",
-                    "-DstrictAlignment=true",
-                    "-DoverrideTransitive=false",
+                    "-DversionIncrementalSuffix=redhat",
                     "-DallowConfigFilePrecedence=true",
-                    "-DrestProtocol=current"
+                    "-DrepoReportingRemoval=true",
+                    "-DdependencySource=REST",
+                    "-DrepoRemovalBackup=repositories-backup.xml",
                 ],
                 "log_context_option": "--log-context",
                 "send_log": False, # enable when PNC central logging is ready
