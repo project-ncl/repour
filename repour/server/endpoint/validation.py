@@ -53,7 +53,7 @@ adjust_raw = {
     Optional("sync"): bool,
     Optional("callback"): callback_raw,
     Optional("tempBuild"): bool,
-    Optional("tempBuildTimestamp"): str,
+    Optional("tempBuildTimestamp"): null_or_str,
 }
 
 adjust = Schema(
