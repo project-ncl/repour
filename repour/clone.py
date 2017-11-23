@@ -33,9 +33,9 @@ def clone_git(clonespec):
         c = yield from config.get_configuration()
         git_user = c.get("git_username")
 
-        yield from git["clone"](clone_dir, asutil.add_username_url(clonespec["originRepoUrl"], git_user))  # Clone origin
+        yield from git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
         yield from git["checkout"](clone_dir, clonespec["ref"])  # Checkout ref
-        yield from git["add_remote"](clone_dir, "target", clonespec["targetRepoUrl"])  # Add target remote
+        yield from git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
         branch = clonespec["ref"]
         isRefBranch = yield from git["is_branch"](clone_dir, branch)  # if ref is a branch, we don't have to create one
         if not isRefBranch:
@@ -43,7 +43,7 @@ def clone_git(clonespec):
             yield from git["add_branch"](clone_dir, branch)
         yield from git["push_force"](clone_dir, "target", branch)  # push it to the remote
         clonespec["ref"] = branch
-        clonespec["originRepoUrl"] = asutil.add_username_url(clonespec["originRepoUrl"], git_user)
+        clonespec["targetRepoUrl"] = asutil.add_username_url(clonespec["targetRepoUrl"], git_user)
         return clonespec
 
 scm_types = {
