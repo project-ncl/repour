@@ -43,6 +43,7 @@ def clone_git(clonespec):
             yield from git["add_branch"](clone_dir, branch)
         yield from git["push_force"](clone_dir, "target", branch)  # push it to the remote
         clonespec["ref"] = branch
+        clonespec["originRepoUrl"] = asutil.add_username_url(clonespec["originRepoUrl"], git_user)
         return clonespec
 
 scm_types = {
