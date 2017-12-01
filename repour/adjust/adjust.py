@@ -81,11 +81,10 @@ def get_temp_build_timestamp(adjustspec):
 
     temp_build_enabled = yield from is_temp_build(adjustspec)
 
-    # See if key is sent in the request
-    temp_build_timestamp = None
-
     if temp_build_timestamp_key in adjustspec:
         temp_build_timestamp = adjustspec[temp_build_timestamp_key]
+    else:
+        temp_build_timestamp = "temporary"
 
     if temp_build_enabled:
         logger.info("Temp build timestamp set to: " + str(temp_build_timestamp))
