@@ -80,8 +80,17 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
     @asyncio.coroutine
     def adjust(repo_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
+
+        temp_build_parameters = []
+        if timestamp:
+            temp_build_parameters.append("-DversionIncrementalSuffix=" + timestamp + "-redhat")
+
+        if specific_indy_group:
+            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
+
         cmd = ["java", "-jar", pme_jar_path] \
               + pme_parameters \
+              + temp_build_parameters \
               + (yield from get_extra_parameters(extra_adjust_parameters))
         logger.info('Executing "' + execution_name + '" using "pme" adjust provider '
                     + '(delegating to "process" provider). Command is "{cmd}".'.format(**locals()))
