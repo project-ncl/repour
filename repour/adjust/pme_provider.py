@@ -85,6 +85,9 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         if timestamp:
             temp_build_parameters.append("-DversionIncrementalSuffix=" + timestamp + "-redhat")
 
+        if specific_indy_group:
+            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
+
         cmd = ["java", "-jar", pme_jar_path] \
               + pme_parameters \
               + temp_build_parameters \
