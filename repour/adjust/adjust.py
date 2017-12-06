@@ -53,10 +53,8 @@ def is_temp_build(adjustspec):
     """
     key = 'tempBuild'
     if (key in adjustspec) and adjustspec[key] is True:
-        logger.info('Build is temporary')
         return True
     else:
-        logger.info('Build is not temporary')
         return False
 
 @asyncio.coroutine
@@ -78,12 +76,14 @@ def get_temp_build_timestamp(adjustspec):
         Otherwise it will return None
     """
     temp_build_timestamp_key = 'tempBuildTimestamp'
+    temp_build_timestamp = None
 
     temp_build_enabled = yield from is_temp_build(adjustspec)
 
     if temp_build_timestamp_key in adjustspec:
         temp_build_timestamp = adjustspec[temp_build_timestamp_key]
-    else:
+
+    if temp_build_timestamp is None:
         temp_build_timestamp = "temporary"
 
     if temp_build_enabled:
@@ -161,6 +161,10 @@ def adjust(adjustspec, repo_provider):
                     (work_dir, extra_adjust_parameters, adjust_result)
 
             elif adjust_provider_name == "pme":
+
+                temp_build_enabled = yield from is_temp_build(adjustspec)
+                logger.info("Temp build status: " + temp_build_enabled)
+
                 specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
                 timestamp = yield from get_temp_build_timestamp(adjustspec)
                 yield from pme_provider.get_pme_provider(execution_name,
