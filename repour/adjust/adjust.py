@@ -163,7 +163,7 @@ def adjust(adjustspec, repo_provider):
             elif adjust_provider_name == "pme":
 
                 temp_build_enabled = yield from is_temp_build(adjustspec)
-                logger.info("Temp build status: " + temp_build_enabled)
+                logger.info("Temp build status: " + str(temp_build_enabled))
 
                 specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
                 timestamp = yield from get_temp_build_timestamp(adjustspec)
