@@ -100,10 +100,14 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # we are here either if we are not using real_commit_time or if we couldn't
     # find the tag using the tree SHA
     if tag_name is None:
+        logger.info("No existing commit/tag with changes to commit ispresent. Creating new commit/tag")
         tag_name = yield from commit_push_tag(expect_ok, repo_dir,
                                               operation_name, operation_description,
                                               no_change_ok, force_continue_on_no_changes,
                                               real_commit_time, specific_tag_name)
+    else:
+        logger.info("Existing tag containing changes to commit is present. Using it")
+        logger.info("Tag name is: {0}".format(tag_name))
 
     if tag_name is None:
         return None
@@ -141,6 +145,14 @@ def commit_push_tag(expect_ok, repo_dir,
         tag_name = specific_tag_name
     else:
         tag_name = "repour-{commit_id}".format(**locals())
+
+    # Check if tag name already exists, if so, modify tag name to <tag>-{commitid}
+    does_tag_exist = yield from git["is_tag"](repo_dir, tag_name)
+
+    if does_tag_exist:
+        shorthand_commit_id = commit_id[:8] # only show first 8 chars of commit id
+        logger.info("Tag {0} already exists! Changing it to {0}-{1}".format(tag_name, shorthand_commit_id))
+        tag_name = "{0}-{1}".format(tag_name, shorthand_commit_id)
 
     try:
         yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description, ok_if_exists=force_continue_on_no_changes)
