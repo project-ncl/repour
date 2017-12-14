@@ -49,7 +49,7 @@ def init(loop, bind, repo_provider, repour_url, adjust_provider):
     app.router.add_route("POST", "/pull", pull_source)
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/clone", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone, clone.clone, repour_url))
-    app.router.add_route("POST", "/cancel", cancel.handle_cancel)
+    app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
 
     logger.debug("Creating asyncio server")
