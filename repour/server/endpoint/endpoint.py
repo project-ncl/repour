@@ -226,6 +226,10 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
             callback_task.log_context = log_context
             callback_task.callback_id = callback_id
+            # Set the task_id if provided in the request
+            task_id = spec.get('taskId', None)
+            if task_id:
+                asyncio.Task.current_task().task_id = task_id
 
             status = 202
             obj = {

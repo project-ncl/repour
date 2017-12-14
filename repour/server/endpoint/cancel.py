@@ -18,13 +18,17 @@ def handle_cancel(request):
 
     all_tasks = asyncio.Task.all_tasks()
 
+    cancelled_tasks = False
     for task in all_tasks:
         task_id_of_task = getattr(task, "task_id", None)
 
         if task_id_of_task == task_id_to_cancel:
             task.cancel()
-            response = yield from success_response("Task cancelled: " + str(task_id_to_cancel))
-            return response
+            cancelled_tasks = True
+
+    if cancelled_tasks:
+        response = yield from success_response("Tasks with task_id: " + str(task_id_to_cancel) + " cancelled")
+        return response
     else:
         # if we are here, the task id wasn't found
         response = yield from bad_response("task id " + str(task_id_to_cancel) + " not found!")
