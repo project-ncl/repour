@@ -8,6 +8,7 @@ import traceback
 
 import aiohttp
 import voluptuous
+import concurrent.futures as cfutures
 from aiohttp import web
 
 from ... import exception
@@ -130,6 +131,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         def do_call():
             try:
                 ret = yield from coro(spec, **request.app)
+            except cfutures.CancelledError as e:
+                # do nothing else
+                logger.info("Cancellation request received")
+                raise e
+
             except exception.DescribedError as e:
                 status = 400
                 traceback_id, obj = described_error_to_obj(e)
@@ -229,7 +235,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             # Set the task_id if provided in the request
             task_id = spec.get('taskId', None)
             if task_id:
-                asyncio.Task.current_task().task_id = task_id
+                callback_task.task_id = task_id
 
             status = 202
             obj = {
