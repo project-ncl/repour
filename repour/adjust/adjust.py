@@ -93,6 +93,20 @@ def get_temp_build_timestamp(adjustspec):
         return None
 
 @asyncio.coroutine
+def checkout_helper(work_dir, ref):
+    """ Simple helper to set the proper exit code when we can't checkout a
+    ref. The exit code = 10 will make Maitai set the error as USER_ERROR
+    and not as SYSTEM_ERROR
+    """
+    try:
+        yield from git["checkout"](work_dir, ref)  # Checkout ref
+    except exception.CommandError as e:
+        # Modify the exit code to 10. This tells Maitai to not treat this as
+        # a SYSTEM_ERROR (NCL-2871)
+        e.exit_code = 10
+        raise
+
+@asyncio.coroutine
 def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     """ Get external repository and its ref into the internal repository
     """
@@ -100,7 +114,7 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     git_user = configuration.get("git_username")
 
     yield from git["clone"](work_dir, adjustspec["originRepoUrl"])  # Clone origin
-    yield from git["checkout"](work_dir, adjustspec["ref"])  # Checkout ref
+    yield from checkout_helper(work_dir, adjustspec["ref"]) # checkout ref
     yield from git["remove_remote"](work_dir, "origin")  # Remove origin remote
     yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
 
@@ -136,7 +150,7 @@ def adjust(adjustspec, repo_provider):
             git_user = c.get("git_username")
 
             yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
-            yield from git["checkout"](work_dir, adjustspec["ref"])  # Checkout ref
+            yield from checkout_helper(work_dir, adjustspec["ref"])  # Checkout ref
 
         ### Adjust Phase ###
         yield from asgit.setup_commiter(expect_ok, work_dir)

@@ -172,6 +172,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                     "id": callback_id,
                 }
 
+                logger.info("Callback data: {}".format(obj))
+
                 @asyncio.coroutine
                 def send_result():
                     try:
