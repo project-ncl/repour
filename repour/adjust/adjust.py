@@ -19,6 +19,17 @@ logger = logging.getLogger(__name__)
 # Each factory function takes various parameters that SHOULD be all derived from configuration.
 
 git = git_provider.git_provider()
+
+# NCL-3454: change from CommandError toAdjustCommandError
+# for PNC 1.2.x
+#
+# This is done because Maitai interprets AdjustCommandError with exit code
+# less than 100 as user error, and any other error object / exit code as system error
+# in PNC 1.2.x
+#
+# We want to consider exit code >= 100 as system error, irrespective of the type of the error.
+# So as a hack we now set the error object to AdjustCommandError so that Maitai
+# considers its exit code
 expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
 @asyncio.coroutine

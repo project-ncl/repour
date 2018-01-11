@@ -151,13 +151,7 @@ def commit_push_tag(expect_ok, repo_dir,
     # file tree, so this is a deduplicated operation. If the tag
     # already exist, git will return quickly with an 0 (success) status
     # instead of uploading the objects.
-    try:
-        yield from push_with_tags(expect_ok, repo_dir, None)
-    except exception.CommandError as e:
-        # Modify the exit code to 10. This tells Maitai to not treat this as
-        # a SYSTEM_ERROR (NCL-2871)
-        e.exit_code = 10
-        raise
+    yield from push_with_tags(expect_ok, repo_dir, None)
 
     logger.info("Pushed to repo: tag {tag_name}".format(**locals()))
     return tag_name
