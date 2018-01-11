@@ -8,7 +8,7 @@ from .. import exception
 
 logger = logging.getLogger(__name__)
 
-expect_ok = asutil.expect_ok_closure(exception.CommandError)
+expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
 
 #
