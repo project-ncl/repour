@@ -4,7 +4,6 @@ import os
 
 from . import asutil
 from . import exception
-from .config import config
 from .scm import git_provider
 
 logger = logging.getLogger(__name__)
@@ -30,10 +29,7 @@ def clone(clonespec, repo_provider):
 def clone_git(clonespec):
     with asutil.TemporaryDirectory(suffix="git") as clone_dir:
 
-        c = yield from config.get_configuration()
-        git_user = c.get("git_username")
-
-        yield from git["clone"](clone_dir, asutil.add_username_url(clonespec["originRepoUrl"], git_user))  # Clone origin
+        yield from git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
         yield from git["checkout"](clone_dir, clonespec["ref"])  # Checkout ref
         yield from git["add_remote"](clone_dir, "target", clonespec["targetRepoUrl"])  # Add target remote
         branch = clonespec["ref"]

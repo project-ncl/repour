@@ -40,8 +40,8 @@ def adjust(adjustspec, repo_provider):
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
         repo_url = yield from repo_provider(adjustspec, create=False)
-        git_user = c.get("git_username")
-        yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
+
+        yield from git["clone"](work_dir, repo_url.readwrite)  # Clone origin
         yield from git["checkout"](work_dir, adjustspec["ref"])  # Checkout ref
 
         yield from asgit.setup_commiter(expect_ok, work_dir)
