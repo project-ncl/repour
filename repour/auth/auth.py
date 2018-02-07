@@ -35,6 +35,11 @@ def get_oauth2_jwt_handler(app, next_handler):
             response = yield from next_handler(request)
             return response
 
+        if request.path == "/":
+            # we don't authenticate for request to '/'. We'll show relevant repour information there
+            response = yield from next_handler(request)
+            return response
+
         auth_header_value = request.headers.get('Authorization', None)
         prefix_length = len('Bearer ')
 
