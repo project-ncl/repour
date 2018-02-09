@@ -22,7 +22,8 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "config", "--bool", "core.bare", "false"],
             cwd=dir,
-            desc="Could not disable bare repository"
+            desc="Could not disable bare repository",
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -30,14 +31,16 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "reset", "--hard"],
             cwd=dir,
-            desc="Could not reset hard"
+            desc="Could not reset hard",
+            print_cmd=True
         )
 
     @asyncio.coroutine
     def clone_deep(dir, url):
         yield from expect_ok(
             cmd=["git", "clone", "--", url, dir],
-            desc="Could not clone with git"
+            desc="Could not clone with git",
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -47,6 +50,7 @@ def git_provider():
             cmd=["git", "checkout", ref],
             cwd=dir,
             desc="Could not checkout ref {ref} with git".format(**locals()),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -55,6 +59,7 @@ def git_provider():
             cmd=["git", "clone", "--branch", branch_or_tag, "--depth", "1", "--", url, dir],
             desc="Could not clone with git",
             stderr=None,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -63,6 +68,7 @@ def git_provider():
             cmd=["git", "clone", "--branch", branch_or_tag, "--", url, dir],
             desc="Could not clone with git",
             stderr=None,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -70,6 +76,7 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "clone", "--", url, dir],
             desc="Could not clone {} with git.".format(url),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -77,6 +84,7 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "clone", "--mirror", "--", url, dir],
             desc="Could not clone mirror {} with git.".format(url),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -85,6 +93,7 @@ def git_provider():
             cmd=["git", "tag", name],
             cwd=dir,
             desc="Could not add tag {} with git.".format(name),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -93,6 +102,7 @@ def git_provider():
             cmd=["git", "remote", "remove", name],
             cwd=dir,
             desc="Could not remove remote {} with git.".format(name),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -101,6 +111,7 @@ def git_provider():
             cmd=["git", "remote", "add", name, url, "--"],
             cwd=dir,
             desc="Could not add remote {} with git.".format(url),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -133,6 +144,7 @@ def git_provider():
             cmd=["git", "branch", name, "--"],
             cwd=dir,
             desc="Could not add branch {} with git.".format(name),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -153,6 +165,7 @@ def git_provider():
             cmd=cmd,
             cwd=dir,
             desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -167,6 +180,7 @@ def git_provider():
             cmd=cmd,
             cwd=dir,
             desc="Could not push all to remote '{}' with git".format(remote),
+            print_cmd=True
         )
 
         if tags_also:
@@ -175,6 +189,7 @@ def git_provider():
                 cmd=cmd_tag,
                 cwd=dir,
                 desc="Could not push all tags to remote '{}' with git".format(remote),
+                print_cmd=True
             )
 
     @asyncio.coroutine  # TODO merge with above
@@ -201,7 +216,8 @@ def git_provider():
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + options,
                 desc="Could not" + (" atomic" if atomic else "") + " push " + failure_push_msg + " with git. Make sure user 'pnc-user' has push permissions to this repository",
                 stderr=None,
-                cwd=dir
+                cwd=dir,
+                print_cmd=True
             )
 
         ver = yield from version()
@@ -235,7 +251,8 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "config", "--local", "user.name", name],
             desc="Could not set committer name with git",
-            cwd=dir
+            cwd=dir,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -243,7 +260,8 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "config", "--local", "user.email", email],
             desc="Could not set committer email with git",
-            cwd=dir
+            cwd=dir,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -258,7 +276,8 @@ def git_provider():
             cmd=["git", "commit", "-m", commit_message],
             desc="Could not commit files with git",
             env=env,
-            cwd=dir
+            cwd=dir,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -276,7 +295,8 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "checkout", "--orphan" if orphan else "-b", branch_name],
             desc="Could not create branch with git",
-            cwd=dir
+            cwd=dir,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -284,7 +304,8 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "add", "-A"],
             desc="Could not add files with git",
-            cwd=dir
+            cwd=dir,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -292,7 +313,8 @@ def git_provider():
         yield from expect_ok(
             cmd=["git", "branch", "-d", branch_name],
             desc="Could not delete temporary branch with git",
-            cwd=dir
+            cwd=dir,
+            print_cmd=True
         )
 
     @asyncio.coroutine
@@ -301,7 +323,8 @@ def git_provider():
             yield from expect_ok(
                 cmd=["git", "tag", "-a", "-m", message, tag_name],
                 desc="Could not add tag with git",
-                cwd=dir
+                cwd=dir,
+                print_cmd=True
             )
         except exception.CommandError as e:
             if ("already exists" in e.stderr) and ok_if_exists:
@@ -318,7 +341,8 @@ def git_provider():
                 cmd=["git", "write-tree"],
                 desc="Couldn't get the commit tree with git",
                 stdout="text",
-                cwd=dir
+                cwd=dir,
+                print_cmd=True
         )
         return tree_sha.strip()
 
@@ -356,7 +380,8 @@ def git_provider():
                 cmd=["git", "--no-pager", "log", "--tags", "--no-walk", '--pretty="%T::%d"'],
                 desc="Couldn't get the tree hash / tag relationship via git log",
                 stdout="lines",
-                cwd=dir
+                cwd=dir,
+                print_cmd=True
             )
             # Each line contains information about a tree sha, and the tag(s) pointing to it indirectly
             for item in data:

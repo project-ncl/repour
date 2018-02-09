@@ -123,13 +123,16 @@ def expect_ok_closure(exc_type=exception.CommandError):
         return stdout_text, stderr_text
 
     @asyncio.coroutine
-    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None, live_log=False):
+    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None, live_log=False, print_cmd=False):
         if env is None:
             sub_env = None
         else:
             # Only partially override the existing environment
             sub_env = os.environ.copy()
             sub_env.update(env)
+
+        if print_cmd:
+            logger.info("Running command: ".format(cmd))
 
         p = yield from asyncio.create_subprocess_exec(
             *cmd,
