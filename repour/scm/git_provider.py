@@ -213,7 +213,7 @@ def git_provider():
                 options = ["--follow-tags", remote, branch]
                 failure_push_msg = "tag+branch"
 
-            git_user_process = subprocess.run(["git", "config", "user.name"])
+            git_user_process = subprocess.run(["git", "config", "user.name"], stdout=subprocess.PIPE)
             git_user = git_user_process.stdout.decode("utf-8").strip()
 
             yield from expect_ok(
