@@ -213,8 +213,8 @@ def git_provider():
                 options = ["--follow-tags", remote, branch]
                 failure_push_msg = "tag+branch"
 
-            git_user_process = subprocess.run(["git", "config", "user.name"], stdout=subprocess.PIPE)
-            git_user = git_user_process.stdout.decode("utf-8").strip()
+            process = subprocess.Popen(["git", "config", "user.name"], stdout=subprocess.PIPE)
+            git_user = process.communicate()[0].decode("utf-8").strip()
 
             yield from expect_ok(
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + options,
