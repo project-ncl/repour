@@ -194,7 +194,7 @@ def git_provider():
             )
 
     @asyncio.coroutine  # TODO merge with above
-    def push_with_tags(dir, branch, remote="origin", tryAtomic=True):
+    def push_with_tags(dir, branch, config_git_user, remote="origin", tryAtomic=True):
         """
         Warning: Atomic push is supported since git version 2.4.
         If the atomic push is not supported by git client OR repository provider,
@@ -213,8 +213,15 @@ def git_provider():
                 options = ["--follow-tags", remote, branch]
                 failure_push_msg = "tag+branch"
 
-            process = subprocess.Popen(["git", "config", "user.name"], stdout=subprocess.PIPE)
-            git_user = process.communicate()[0].decode("utf-8").strip()
+            process = subprocess.Popen(["git", "config", "remote.%s.url" % remote], stdout=subprocess.PIPE)
+            url_value = process.communicate()[0].decode("utf-8").strip()
+
+            scmurl_regex = re.compile("^.*://([^@]+)@.*$")
+            scmurl = login_regex.search(url_value)
+            if scmurl:
+                git_user = login.group(1)
+            else:
+                git_user = config_git_user
 
             yield from expect_ok(
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + options,
