@@ -18,7 +18,7 @@ expect_ok = asutil.expect_ok_closure(exception.CommandError)
 git = git_provider.git_provider()
 
 @asyncio.coroutine
-def push_sync_changes(work_dir, ref, remote="origin"):
+def push_sync_changes(work_dir, ref, config_git_user, remote="origin"):
     """ This function is used when we want to sync a repository with another one
         It assumes that you have already set the remote to be the 'other' repository
 
@@ -29,6 +29,7 @@ def push_sync_changes(work_dir, ref, remote="origin"):
         Parameters:
         - work_dir: :str: location of git repository
         - ref: Git ref to sync
+        - config_git_user login used by git if not overriden
         - remote: remote to push the ref to
     """
 
@@ -38,7 +39,7 @@ def push_sync_changes(work_dir, ref, remote="origin"):
     if isRefBranch:
         yield from git["push"](work_dir, remote, ref)  # push it to the remote
     elif isRefTag:
-        yield from git["push_with_tags"](work_dir, ref, remote=remote)
+        yield from git["push_with_tags"](work_dir, ref, config_git_user, remote=remote)
     else:
         # Case if ref is a particular SHA
         # We can't really push a particular hash to the target repository
@@ -70,7 +71,7 @@ def clone_git(clonespec):
             yield from git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
 
             ref = clonespec["ref"]
-            yield from push_sync_changes(clone_dir, ref, "target")
+            yield from push_sync_changes(clone_dir, ref, git_user, "target")
         else:
             # Sync everything if ref not specified
             # From: https://stackoverflow.com/a/7216269/2907906
