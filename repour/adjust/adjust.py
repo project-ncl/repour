@@ -105,7 +105,7 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
 
     ref = adjustspec["ref"]
-    yield from clone.push_sync_changes(work_dir, ref, git_user, "origin")
+    yield from clone.push_sync_changes(work_dir, ref, "origin")
 
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider):
