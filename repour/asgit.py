@@ -55,7 +55,10 @@ def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=False):
 
 @asyncio.coroutine
 def push_with_tags(expect_ok, repo_dir, branch_name):
-    yield from git["push_with_tags"](repo_dir, branch_name, tryAtomic=True)
+    c = yield from config.get_configuration()
+    git_user = c.get("git_username")
+
+    yield from git["push_with_tags"](repo_dir, branch_name, git_user, tryAtomic=True)
 
 
 #
