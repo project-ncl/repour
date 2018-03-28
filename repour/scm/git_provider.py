@@ -217,7 +217,7 @@ def git_provider():
             url_value = process.communicate()[0].decode("utf-8").strip()
 
             scmurl_regex = re.compile("^.*://([^@]+)@.*$")
-            scmurl = login_regex.search(url_value)
+            scmurl = scmurl_regex.search(url_value)
             if scmurl:
                 git_user = login.group(1)
             else:
