@@ -132,7 +132,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
             sub_env.update(env)
 
         if print_cmd:
-            logger.info("Running command: ".format(cmd))
+            logger.info("Running command: {}".format(cmd))
 
         p = yield from asyncio.create_subprocess_exec(
             *cmd,
