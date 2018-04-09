@@ -38,7 +38,10 @@ def push_sync_changes(work_dir, ref, remote="origin"):
     if isRefBranch:
         yield from git["push"](work_dir, remote, ref)  # push it to the remote
     elif isRefTag:
-        yield from git["push_with_tags"](work_dir, ref, remote=remote)
+        c = yield from config.get_configuration()
+        git_user = c.get("git_username")
+
+        yield from git["push_with_tags"](work_dir, ref, git_user, remote=remote)
     else:
         # Case if ref is a particular SHA
         # We can't really push a particular hash to the target repository
