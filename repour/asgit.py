@@ -111,6 +111,10 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     else:
         logger.info("Existing tag containing changes to commit is present. Using it")
         logger.info("Tag name is: {0}".format(tag_name))
+        # If tag name already exists, make sure it's already present in upstream
+        # This happens if we are doing /adjust, with pre-sync enabled.
+        # The external repo might have the tag, but not the internal repo
+        yield from push_with_tags(expect_ok, repo_dir, tag_name)
 
     if tag_name is None:
         return None
