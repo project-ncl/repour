@@ -55,6 +55,7 @@ adjust_raw = {
     Optional("tempBuild"): bool,
     Optional("tempBuildTimestamp"): null_or_str,
     Optional("taskId"): null_or_str,
+    Optional("buildType"): nonempty_str,
 }
 
 adjust = Schema(

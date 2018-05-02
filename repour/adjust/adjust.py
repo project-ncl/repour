@@ -125,6 +125,10 @@ def adjust(adjustspec, repo_provider):
 
     result = {}
 
+    # TODO: maybe remove this later?
+    if 'buildType' in adjustspec:
+        logger.info("Build Type specified: " + adjustspec['buildType'])
+
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
         repo_url = yield from repo_provider(adjustspec, create=False)
