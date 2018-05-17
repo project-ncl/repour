@@ -38,19 +38,6 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         return pme_result
 
-    def get_gav_from_pom(pom_xml_file):
-
-        tree = ET.parse(pom_xml_file)
-        root = tree.getroot()
-
-        namespace = root.tag.split('}')[0].strip('{')
-
-        group_id = root.find('{{{}}}groupId'.format(namespace)).text
-        artif_id = root.find('{{{}}}artifactId'.format(namespace)).text
-        version  = root.find('{{{}}}version'.format(namespace)).text
-
-        return (group_id, artif_id, version)
-
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
         """
@@ -170,7 +157,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         pme_disabled = is_pme_disabled_via_extra_parameters(extra_adjust_parameters)
 
         if pme_disabled:
-            logging.warning("PME is disabled via extra parameters")
+            logger.warning("PME is disabled via extra parameters")
             yield from create_pme_result_file(repo_dir)
 
         adjust_result['resultData'] = yield from get_result_data(repo_dir)
@@ -207,33 +194,49 @@ def get_version_from_pme_result(pme_result):
         logger.error(e)
         return None
 
+
+@asyncio.coroutine
+def get_gav_from_pom(pom_xml_file):
+
+    tree = ET.parse(pom_xml_file)
+    root = tree.getroot()
+
+    namespace = root.tag.split('}')[0].strip('{')
+
+    group_id = root.find('{{{}}}groupId'.format(namespace)).text
+    artif_id = root.find('{{{}}}artifactId'.format(namespace)).text
+    version  = root.find('{{{}}}version'.format(namespace)).text
+
+    return (group_id, artif_id, version)
+
+
 @asyncio.coroutine
 def create_pme_result_file(repo_dir):
 
-    result_file_folder = work_dir + "/target"
+    result_file_folder = repo_dir + "/target"
     result_file_path = result_file_folder + "/pom-manip-ext-result.json"
             
     # get data by reading the pom.xml directly
-    pom_path = work_dir + "/pom.xml"
+    pom_path = repo_dir + "/pom.xml"
 
     try:
-        group_id, artifact_id, version = get_gav_from_pom(pom_path)
+        group_id, artifact_id, version = yield from get_gav_from_pom(pom_path)
     except FileNotFoundError:
-        logger.warn("Could not find pom.xml from: " + str(pom_path))
+        logger.warning("Could not find pom.xml from: " + str(pom_path))
         group_id, artifact_id, version = (None, None, None)
 
-        pme_result = {
-            "VersioningState": {
-                "executionRootModified": {
-                    "groupId": group_id,
-                    "artifactId": artifact_id,
-                    "version": version
-                }
+    pme_result = {
+        "VersioningState": {
+            "executionRootModified": {
+                "groupId": group_id,
+                "artifactId": artifact_id,
+                "version": version
             }
         }
+    }
 
-        if not os.path.exists(result_file_folder):
-            os.makedirs(result_file_folder)
+    if not os.path.exists(result_file_folder):
+        os.makedirs(result_file_folder)
 
-        with open(result_file_path) as outfile:
-            json.dump(pme_result, outfile)
+    with open(result_file_path, 'w') as outfile:
+        json.dump(pme_result, outfile)
