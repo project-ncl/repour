@@ -18,40 +18,17 @@ logger = logging.getLogger(__name__)
 def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_logs=False, specific_indy_group=None, timestamp=None):
 
     @asyncio.coroutine
-    def get_result_data(work_dir, pme_disabled):
-        if pme_disabled:
+    def get_result_data(work_dir):
+        
+        raw_result_data = "{}"
+        result_file_path = work_dir + "/target/pom-manip-ext-result.json"
 
-            logger.warn("PME disabled via parameters! Getting Maven information by parsing pom.xml directly")
-            
-            # get data by reading the pom.xml directly
-            result_file_path = work_dir + "/pom.xml"
+        if os.path.isfile(result_file_path):
+            with open(result_file_path, "r") as file:
+                raw_result_data = file.read()
 
-            try:
-                group_id, artifact_id, version = get_gav_from_pom(results_file_path)
-            except FileNotFoundError:
-                logger.warn("Could not find pom.xml from: " + str(results_file_path))
-                group_id, artifact_id, version = (None, None, None)
-
-            pme_result = {
-                "VersioningState": {
-                    "executionRootModified": {
-                        "groupId": group_id,
-                        "artifactId": artifact_id,
-                        "version": version
-                    }
-                }
-            }
-
-        else:
-            raw_result_data = "{}"
-            result_file_path = work_dir + "/target/pom-manip-ext-result.json"
-
-            if os.path.isfile(result_file_path):
-                with open(result_file_path, "r") as file:
-                    raw_result_data = file.read()
-
-            logger.info('Got PME result data "{raw_result_data}".'.format(**locals()))
-            pme_result = json.loads(raw_result_data)
+        logger.info('Got PME result data "{raw_result_data}".'.format(**locals()))
+        pme_result = json.loads(raw_result_data)
 
         try:
             pme_result["RemovedRepositories"] = get_removed_repos(work_dir, pme_parameters)
@@ -60,19 +37,6 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             logger.error(str(e))
 
         return pme_result
-
-    def get_gav_from_pom(pom_xml_file):
-
-        tree = ET.parse(pom_xml_file)
-        root = tree.getroot()
-
-        namespace = root.tag.split('}')[0].strip('{')
-
-        group_id = root.find('{{{}}}groupId'.format(namespace)).text
-        artif_id = root.find('{{{}}}artifactId'.format(namespace)).text
-        version  = root.find('{{{}}}version'.format(namespace)).text
-
-        return (group_id, artif_id, version)
 
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
@@ -192,7 +156,11 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         pme_disabled = is_pme_disabled_via_extra_parameters(extra_adjust_parameters)
 
-        adjust_result['resultData'] = yield from get_result_data(repo_dir, pme_disabled)
+        if pme_disabled:
+            logger.warning("PME is disabled via extra parameters")
+            yield from create_pme_result_file(repo_dir)
+
+        adjust_result['resultData'] = yield from get_result_data(repo_dir)
         return res
 
     return adjust
@@ -225,3 +193,50 @@ def get_version_from_pme_result(pme_result):
         logger.error("Couldn't extract PME result version from JSON file")
         logger.error(e)
         return None
+
+
+@asyncio.coroutine
+def get_gav_from_pom(pom_xml_file):
+
+    tree = ET.parse(pom_xml_file)
+    root = tree.getroot()
+
+    namespace = root.tag.split('}')[0].strip('{')
+
+    group_id = root.find('{{{}}}groupId'.format(namespace)).text
+    artif_id = root.find('{{{}}}artifactId'.format(namespace)).text
+    version  = root.find('{{{}}}version'.format(namespace)).text
+
+    return (group_id, artif_id, version)
+
+
+@asyncio.coroutine
+def create_pme_result_file(repo_dir):
+
+    result_file_folder = repo_dir + "/target"
+    result_file_path = result_file_folder + "/pom-manip-ext-result.json"
+            
+    # get data by reading the pom.xml directly
+    pom_path = repo_dir + "/pom.xml"
+
+    try:
+        group_id, artifact_id, version = yield from get_gav_from_pom(pom_path)
+    except FileNotFoundError:
+        logger.warning("Could not find pom.xml from: " + str(pom_path))
+        group_id, artifact_id, version = (None, None, None)
+
+    pme_result = {
+        "VersioningState": {
+            "executionRootModified": {
+                "groupId": group_id,
+                "artifactId": artifact_id,
+                "version": version
+            }
+        }
+    }
+
+    if not os.path.exists(result_file_folder):
+        os.makedirs(result_file_folder)
+
+    with open(result_file_path, 'w') as outfile:
+        json.dump(pme_result, outfile)
