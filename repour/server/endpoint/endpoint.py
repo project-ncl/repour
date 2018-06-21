@@ -82,6 +82,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 method=request.method,
                 path=request.path,
             ))
+
+            rejected_data = yield from request.text()
+
+            logger.error("Request data: {data}".format(data=rejected_data))
+
             return web.Response(
                 status=400,
                 content_type="application/json",
@@ -97,10 +102,14 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         try:
             validator(spec)
         except voluptuous.MultipleInvalid as x:
+
             logger.error("Rejected {method} {path}: body failed input validation".format(
                 method=request.method,
                 path=request.path,
             ))
+
+            logger.error("Request data: {data}".format(data=spec))
+
             return web.Response(
                 status=400,
                 content_type="application/json",
