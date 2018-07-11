@@ -107,6 +107,11 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     ref = adjustspec["ref"]
     yield from clone.push_sync_changes(work_dir, ref, "origin")
 
+    # At this point the target repository might have the ref we want to sync, but the local repository might not have all the tags
+    # from the target repository. We need to sync tags because we use it to know if we have tags with existing changes or if we
+    # need to create tags of format <version>-<sha> if existing tag with name <version> exists after pme changes
+    yield from git["fetch_tags"](work_dir)
+
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider):
     """
