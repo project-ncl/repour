@@ -134,6 +134,7 @@ def git_provider():
                 cmd=["git", "show-ref", "--quiet", "--tags", ref, "--"],
                 cwd=dir,
                 desc="Ignore this.",
+                print_cmd=True
             )
             return True
         except Exception as e:
@@ -320,6 +321,15 @@ def git_provider():
         )
 
     @asyncio.coroutine
+    def fetch_tags(dir):
+        yield from expect_ok(
+            cmd=["git", "fetch", "--tags"],
+            desc="Could not fetch tags with git",
+            cwd=dir,
+            print_cmd=True
+        )
+
+    @asyncio.coroutine
     def delete_branch(dir, branch_name):
         yield from expect_ok(
             cmd=["git", "branch", "-d", branch_name],
@@ -489,6 +499,7 @@ def git_provider():
         "push": push,
         "push_all": push_all,
         "push_with_tags": push_with_tags,
+        "fetch_tags": fetch_tags,
         "is_branch": is_branch,
         "is_tag": is_tag,
         "clone": clone,
