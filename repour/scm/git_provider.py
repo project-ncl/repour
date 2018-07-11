@@ -245,8 +245,6 @@ def git_provider():
                 logger.warn("The repository provider does not support atomic push. "
                             "There is a risk of tag/branch inconsistency.")
                 yield from do(False)
-            elif "Updates were rejected because the tag already exists in the remote" in e.stderr:
-                logger.info("git push failed because tag already exists. There is no need to worry")
             else:
                 raise
 
