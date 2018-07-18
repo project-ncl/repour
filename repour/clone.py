@@ -69,7 +69,7 @@ def clone_git(clonespec):
 
         if "ref" in clonespec and clonespec["ref"]:
             yield from git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
-            yield from git["checkout"](clone_dir, clonespec["ref"])  # Checkout ref
+            yield from git["checkout"](clone_dir, clonespec["ref"], force=True)  # Checkout ref
             yield from git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
 
             ref = clonespec["ref"]
