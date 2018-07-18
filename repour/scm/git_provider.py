@@ -45,10 +45,16 @@ def git_provider():
         )
 
     @asyncio.coroutine
-    def checkout(dir, ref):
+    def checkout(dir, ref, force=False):
+
         # Checkout tag or branch or commit-id
+        cmd=["git", "checkout", ref]
+
+        if force:
+            cmd.append("-f")
+
         yield from expect_ok(
-            cmd=["git", "checkout", ref],
+            cmd=cmd,
             cwd=dir,
             desc="Could not checkout ref {ref} with git".format(**locals()),
             print_cmd=True
