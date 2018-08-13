@@ -49,7 +49,7 @@ adjust_raw = {
     "name": name_str,
     "ref": nonempty_str,
     Optional("adjustParameters"): All(dict),
-    Optional("originRepoUrl"): nonempty_str,
+    Optional("originRepoUrl"): Any(None, str),
     Optional("sync"): bool,
     Optional("callback"): callback_raw,
     Optional("tempBuild"): bool,
