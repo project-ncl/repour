@@ -38,9 +38,15 @@ def git_provider():
 
     @asyncio.coroutine
     def clone_deep(dir, url):
+
+        desc="Could not clone {} with git.".format(url)
+
+        if "github.com" in url:
+            desc +=  " " +  private_github_error_msg(url)
+
         yield from expect_ok(
             cmd=["git", "clone", "--", url, dir],
-            desc="Could not clone with git",
+            desc=desc,
             print_cmd=True
         )
 
@@ -62,35 +68,60 @@ def git_provider():
 
     @asyncio.coroutine
     def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
+
+        desc="Could not clone {} with git.".format(url)
+
+        if "github.com" in url:
+            desc +=  " " +  private_github_error_msg(url)
+
         yield from expect_ok(
             cmd=["git", "clone", "--branch", branch_or_tag, "--depth", "1", "--", url, dir],
-            desc="Could not clone with git",
+            desc=desc,
             stderr=None,
             print_cmd=True
         )
 
     @asyncio.coroutine
     def clone_checkout_branch_tag_deep(dir, url, branch_or_tag):
+
+        desc="Could not clone {} with git.".format(url)
+
+        if "github.com" in url:
+            desc +=  " " +  private_github_error_msg(url)
+
         yield from expect_ok(
             cmd=["git", "clone", "--branch", branch_or_tag, "--", url, dir],
-            desc="Could not clone with git",
+            desc=desc,
             stderr=None,
             print_cmd=True
         )
 
     @asyncio.coroutine
     def clone(dir, url):
+
+        desc="Could not clone {} with git.".format(url)
+
+        if "github.com" in url:
+            desc +=  " " +  private_github_error_msg(url)
+
         yield from expect_ok(
             cmd=["git", "clone", "--", url, dir],
-            desc="Could not clone {} with git.".format(url),
+            desc=desc,
             print_cmd=True
         )
 
     @asyncio.coroutine
     def clone_mirror(dir, url):
+
+        desc = "Could not clone mirror {} with git.".format(url)
+
+        if "github.com" in url:
+            desc +=  " " +  private_github_error_msg(url)
+
+
         yield from expect_ok(
             cmd=["git", "clone", "--mirror", "--", url, dir],
-            desc="Could not clone mirror {} with git.".format(url),
+            desc=desc,
             print_cmd=True
         )
 
@@ -491,6 +522,25 @@ def git_provider():
             if f < s:
                 return False
         return True  # equals
+
+    def private_github_error_msg(url):
+        """
+        If a user is trying to clone a private Github repository, we should tell the user what to do to get the clone working.
+        It's expecting the environment variable 'PRIVATE_GITHUB_USER' to be set.
+
+        returns: string with proper message to tell the user what to do
+        """
+        github_user = os.environ['PRIVATE_GITHUB_USER']
+
+        if github_user:
+            further_desc = "If the Github repository is a private repository, you need to add the Github user " + \
+                           "'{user}' with read-permissions to '{url}'".format(user=github_user, url=url)
+        else:
+            further_desc = "If the Github repository is a private repository, you need to add a Github user " + \
+                           "with read-permissions to '{url}'. Please email the Newcastle mailing list for more information".format(url=url)
+
+        return further_desc
+
 
     # TODO make this a class
     return {
