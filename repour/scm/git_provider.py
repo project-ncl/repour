@@ -153,6 +153,18 @@ def git_provider():
         )
 
     @asyncio.coroutine
+    def does_sha_exist(dir, ref):
+        try:  # TODO improve, its ugly
+            yield from expect_ok(
+                cmd=["git", "cat-file", "-e", ref + "^{commit}"],
+                cwd=dir,
+                desc="Ignore this.",
+            )
+            return True
+        except Exception as e:
+            return False
+
+    @asyncio.coroutine
     def is_branch(dir, ref):
         try:  # TODO improve, its ugly
             yield from expect_ok(
@@ -576,5 +588,6 @@ def git_provider():
         "write_tree": write_tree,
         "get_tag_from_tree_sha": get_tag_from_tree_sha,
         "disable_bare_repository": disable_bare_repository,
-        "reset_hard": reset_hard
+        "reset_hard": reset_hard,
+        "does_sha_exist": does_sha_exist
     }

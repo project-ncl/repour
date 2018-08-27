@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import shutil
 
 from . import noop_provider
 from . import pme_provider
@@ -92,6 +93,11 @@ def get_temp_build_timestamp(adjustspec):
     else:
         return None
 
+def check_ref_exists(work_dir, ref):
+    return git["is_tag"](work_dir, ref) or \
+           git["is_branch"](work_dir, ref) or  \
+           git["does_sha_exist"](work_dir, ref)
+
 @asyncio.coroutine
 def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     """ Get external repository and its ref into the internal repository
@@ -100,12 +106,40 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     git_user = configuration.get("git_username")
 
     yield from git["clone"](work_dir, adjustspec["originRepoUrl"])  # Clone origin
-    yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
-    yield from git["remove_remote"](work_dir, "origin")  # Remove origin remote
-    yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
 
-    ref = adjustspec["ref"]
-    yield from clone.push_sync_changes(work_dir, ref, "origin")
+    # See NCL-4069: sometimes even with sync on, the upstream repo might not have the ref, but the downstream repo will
+    # if ref exists on upstream repository, continue the sync as usual
+    # if no, make sure ref exists on downstream repository, and checkout the correct repo
+    # if no, then fail completely
+    if check_ref_exists(work_dir, adjustspec["ref"]):
+        yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
+
+        yield from git["remove_remote"](work_dir, "origin")  # Remove origin remote
+        yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
+
+        ref = adjustspec["ref"]
+        # Sync
+        yield from clone.push_sync_changes(work_dir, ref, "origin")
+
+    else:
+        logger.warn("Upstream repository does not have the 'ref'. Trying to see if 'ref' present in downstream repository")
+        # Delete the upstreamed clone repository
+        shutil.rmtree(work_dir)
+        os.makedirs(work_dir)
+
+        # Clone the internal repository
+        git_user = c.get("git_username")
+
+        yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
+
+        if check_ref_exists(work_dir, adjustspec["ref"]):
+            logger.info("Downstream repository has the ref, but not the upstream one. No syncing required!")
+            yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
+        else:
+            logger.error("Both upstream and downstream repository do not have the 'ref' present. Cannot proceed")
+            raise exception.AdjustError("Both upstream and downstream repository do not have the 'ref' present. Cannot proceed")
+
+
 
     # At this point the target repository might have the ref we want to sync, but the local repository might not have all the tags
     # from the target repository. We need to sync tags because we use it to know if we have tags with existing changes or if we
