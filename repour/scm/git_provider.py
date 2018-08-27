@@ -171,6 +171,7 @@ def git_provider():
                 cmd=["git", "show-ref", "--quiet", "--heads", ref, "--"],
                 cwd=dir,
                 desc="Ignore this.",
+                print_cmd=True
             )
             return True
         except Exception as e:
