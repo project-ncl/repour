@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import shutil
 
 from . import noop_provider
@@ -93,10 +94,27 @@ def get_temp_build_timestamp(adjustspec):
     else:
         return None
 
+@asyncio.coroutine
 def check_ref_exists(work_dir, ref):
-    return git["is_tag"](work_dir, ref) or \
-           git["is_branch"](work_dir, ref) or  \
-           git["does_sha_exist"](work_dir, ref)
+    is_tag = yield from git["is_tag"](work_dir, ref)
+    if is_tag:
+        logger.info("It's a tag")
+        return True
+
+    is_branch = yield from git["is_branch"](work_dir, ref)
+    if is_branch:
+        logger.info("It's a branch")
+        return True
+
+    is_sha = yield from git["does_sha_exist"](work_dir, ref)
+    if is_sha:
+        logger.info("it's a sha")
+        return True
+
+    return False
+    # return git["is_tag"](work_dir, ref) or \
+    #        git["is_branch"](work_dir, ref) or  \
+    #        git["does_sha_exist"](work_dir, ref)
 
 @asyncio.coroutine
 def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
@@ -111,7 +129,8 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     # if ref exists on upstream repository, continue the sync as usual
     # if no, make sure ref exists on downstream repository, and checkout the correct repo
     # if no, then fail completely
-    if check_ref_exists(work_dir, adjustspec["ref"]):
+    ref_exists = yield from check_ref_exists(work_dir, adjustspec["ref"])
+    if ref_exists:
         yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
         yield from git["remove_remote"](work_dir, "origin")  # Remove origin remote
@@ -128,11 +147,10 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
         os.makedirs(work_dir)
 
         # Clone the internal repository
-        git_user = c.get("git_username")
+        yield from git["clone"](work_dir, asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Clone origin
 
-        yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
-
-        if check_ref_exists(work_dir, adjustspec["ref"]):
+        ref_exists = yield from check_ref_exists(work_dir, adjustspec["ref"])
+        if ref_exists:
             logger.info("Downstream repository has the ref, but not the upstream one. No syncing required!")
             yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
         else:
