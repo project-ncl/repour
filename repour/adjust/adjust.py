@@ -98,23 +98,17 @@ def get_temp_build_timestamp(adjustspec):
 def check_ref_exists(work_dir, ref):
     is_tag = yield from git["is_tag"](work_dir, ref)
     if is_tag:
-        logger.info("It's a tag")
         return True
 
     is_branch = yield from git["is_branch"](work_dir, ref)
     if is_branch:
-        logger.info("It's a branch")
         return True
 
     is_sha = yield from git["does_sha_exist"](work_dir, ref)
     if is_sha:
-        logger.info("it's a sha")
         return True
 
     return False
-    # return git["is_tag"](work_dir, ref) or \
-    #        git["is_branch"](work_dir, ref) or  \
-    #        git["does_sha_exist"](work_dir, ref)
 
 @asyncio.coroutine
 def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):

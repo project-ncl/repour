@@ -157,7 +157,6 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 if line != "":
                     subprocess_logger.error(line)
 
-        logger.info("Exit code: " + str(p.returncode))
         if not p.returncode == 0:
             raise exc_type(
                 desc=desc,
