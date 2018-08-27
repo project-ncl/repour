@@ -154,7 +154,7 @@ def git_provider():
 
     @asyncio.coroutine
     def does_sha_exist(dir, ref):
-        try:  # TODO improve, its ugly
+        try:
             yield from expect_ok(
                 cmd=["git", "cat-file", "-e", ref + "^{commit}"],
                 cwd=dir,
