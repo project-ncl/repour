@@ -70,6 +70,12 @@ adjust_modeb = Schema(
     extra=False,
 )
 
+external_to_internal = Schema(
+    {"external_url": nonempty_str},
+    required=True,
+    extra=False,
+)
+
 #
 # Pull
 #

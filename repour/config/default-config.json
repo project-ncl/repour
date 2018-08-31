@@ -30,5 +30,6 @@
     }
   },
   "git_username": "",
+  "git_url_internal_template": "",
   "temp_build_indy_group": ""
 }

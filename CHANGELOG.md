@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - [NCL-4047] Print useful error message when user is trying to sync with a private Github repository without the required permissions
 
+- [NCL-4082] Add endpoint `/git-external-to-internal` to translate external Git repository links into internal Git repository links
+
 ### Fixed
 - [NCL-4039] Repour does not require a value for `originRepoUrl` on the `/adjust` endpoint if sync is false
 
