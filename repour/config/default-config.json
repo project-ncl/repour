@@ -20,7 +20,8 @@
       "cliJarPathAbsolute": "/home/repour/pom-manipulation-cli.jar",
       "defaultParameters": [
         "..."
-      ]
+      ],
+      "temp_build_indy_group": ""
     }
   },
   "scm": {
@@ -30,6 +31,5 @@
     }
   },
   "git_username": "",
-  "git_url_internal_template": "",
-  "temp_build_indy_group": ""
+  "git_url_internal_template": ""
 }
