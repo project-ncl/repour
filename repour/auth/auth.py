@@ -35,7 +35,7 @@ def get_oauth2_jwt_handler(app, next_handler):
             response = yield from next_handler(request)
             return response
 
-        if request.path == "/":
+        if request.path == "/" or request.path == "/git-external-to-internal":
             # we don't authenticate for request to '/'. We'll show relevant repour information there
             response = yield from next_handler(request)
             return response

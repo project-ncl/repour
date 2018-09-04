@@ -543,7 +543,12 @@ def git_provider():
 
         returns: string with proper message to tell the user what to do
         """
-        github_user = os.environ['PRIVATE_GITHUB_USER']
+        try:
+            github_user = os.environ['PRIVATE_GITHUB_USER']
+        except keyError:
+            # if environment variable not specified
+            logger.warn("PRIVATE_GITHUB_USER environment variable not specified!")
+            github_user = None
 
         if github_user:
             further_desc = "If the Github repository is a private repository, you need to add the Github user " + \
