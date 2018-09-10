@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - [NCL-4082] Add endpoint `/git-external-to-internal` to translate external Git repository links into internal Git repository links
 
+- [NCL-4089] Add ability to override default result's groupid/artifactid with custom parameter 'EXECUTION_ROOT_NAME' for the `/adjust` endpoint
+
 ### Fixed
 - [NCL-4039] Repour does not require a value for `originRepoUrl` on the `/adjust` endpoint if sync is false
 

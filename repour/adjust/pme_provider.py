@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_logs=False, specific_indy_group=None, timestamp=None):
 
     @asyncio.coroutine
-    def get_result_data(work_dir):
+    def get_result_data(work_dir, group_id=None, artifact_id=None):
         
         raw_result_data = "{}"
         result_file_path = work_dir + "/target/pom-manip-ext-result.json"
@@ -29,6 +29,13 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         logger.info('Got PME result data "{raw_result_data}".'.format(**locals()))
         pme_result = json.loads(raw_result_data)
+
+        if group_id is not None and artifact_id is not None:
+            logger.warn("Overriding the groupId of the result to: " + group_id)
+            pme_result['VersioningState']['executionRootModified']['groupId'] = group_id
+
+            logger.warn("Overriding the artifactId of the result to: " + artifact_id)
+            pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
 
         try:
             pme_result["RemovedRepositories"] = get_removed_repos(work_dir, pme_parameters)
@@ -60,6 +67,29 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
                     return True
             else:
                 return False
+
+    @asyncio.coroutine
+    def get_extra_param_execution_root_name(extra_adjust_parameters):
+        """
+        If the parameter 'EXECUTION_ROOT_NAME' is present, the string value should be in format '<group_id>:<artifact_id>'
+
+        Return the group_id,artifact_id value.
+
+        If the string is in the wrong format or if the parameter is not present, return None,None instead
+        """
+        paramsString = extra_adjust_parameters.get("EXECUTION_ROOT_NAME", None)
+
+        if paramsString is None:
+            return None, None
+        else:
+            result = paramsString.split(':')
+            if len(result) == 2:
+                return result[0], result[1]
+            else:
+                log.warn('EXECUTION_ROOT_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"')
+                log.warn('Value provided is: "' + paramsString + '"')
+                return None, None
+
 
     def get_removed_repos(work_dir, parameters):
         """
@@ -166,11 +196,12 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             logger.warning("PME is disabled via extra parameters")
             yield from create_pme_result_file(repo_dir)
 
-        adjust_result['resultData'] = yield from get_result_data(repo_dir)
+        override_group_id, override_artifact_id = yield from get_extra_param_execution_root_name(extra_adjust_parameters)
+
+        adjust_result['resultData'] = yield from get_result_data(repo_dir, override_group_id, override_artifact_id)
         return res
 
     return adjust
-
 
 @asyncio.coroutine
 def get_version_from_pme_result(pme_result):
