@@ -165,10 +165,10 @@ def git_provider():
             return False
 
     @asyncio.coroutine
-    def is_branch(dir, ref):
+    def is_branch(dir, ref, remote="origin"):
         try:  # TODO improve, its ugly
             yield from expect_ok(
-                cmd=["git", "show-ref", "--quiet", "--heads", ref, "--"],
+                cmd=["git", "show-branch", "remotes/" + remote + "/" + ref],
                 cwd=dir,
                 desc="Ignore this.",
                 print_cmd=True
