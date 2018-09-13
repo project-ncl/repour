@@ -168,7 +168,7 @@ def git_provider():
     def is_branch(dir, ref, remote="origin"):
 
         # Need to run this for show-branch to work effectively
-        yield from fetch_tags(dir)
+        yield from fetch(dir)
 
         try:  # TODO improve, its ugly
             yield from expect_ok(
@@ -378,6 +378,15 @@ def git_provider():
     def fetch_tags(dir):
         yield from expect_ok(
             cmd=["git", "fetch", "--tags"],
+            desc="Could not fetch tags with git",
+            cwd=dir,
+            print_cmd=True
+        )
+
+    @asyncio.coroutine
+    def fetch(dir):
+        yield from expect_ok(
+            cmd=["git", "fetch"],
             desc="Could not fetch tags with git",
             cwd=dir,
             print_cmd=True
