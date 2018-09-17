@@ -48,8 +48,14 @@ def push_sync_changes(work_dir, ref, remote="origin"):
         # unless it is a tag. We have to create the tag to be able
         # to push the SHA
         tag_name = "repour-sync-" + ref
-        yield from git["add_tag"](work_dir, tag_name)
-        yield from git["push"](work_dir, remote, tag_name)
+
+        tag_already_exists = yield from git["is_tag"](work_dir, ref)
+
+        if not tag_already_exists:
+            yield from git["add_tag"](work_dir, tag_name)
+            yield from git["push"](work_dir, remote, tag_name)
+        else:
+            logger.info("Tag already exists in internal repository. Not pushing anything")
 
 @asyncio.coroutine
 def clone(clonespec, repo_provider):
