@@ -1,4 +1,7 @@
 chardet==3.0.4
+
+# 4.4.1 multidict requires Python >= 3.5
+multidict==4.4.0
 aiohttp==2.2.0
 # 2.0.1 is the last version that supports Python 3.4
 async-timeout==2.0.1
