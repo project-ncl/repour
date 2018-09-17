@@ -159,6 +159,7 @@ def git_provider():
                 cmd=["git", "cat-file", "-e", ref + "^{commit}"],
                 cwd=dir,
                 desc="Ignore this.",
+                print_cmd=True
             )
             return True
         except Exception as e:
