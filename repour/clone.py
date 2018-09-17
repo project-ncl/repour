@@ -49,7 +49,7 @@ def push_sync_changes(work_dir, ref, remote="origin"):
         # to push the SHA
         tag_name = "repour-sync-" + ref
 
-        tag_already_exists = yield from git["is_tag"](work_dir, ref)
+        tag_already_exists = yield from git["is_tag"](work_dir, tag_name)
 
         if not tag_already_exists:
             yield from git["add_tag"](work_dir, tag_name)
