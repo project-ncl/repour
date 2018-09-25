@@ -19,6 +19,7 @@ release.
 When we are ready to release Repour, the following instructions have to be
 followed:
 
+0. Update the changelog file with the current version in the notes
 1. Update the file `repour/__init__.py` inside our git maintenance branch for
    the version. The qualifier should be set to 'FINAL' and not 'SNAPSHOT'.
 
