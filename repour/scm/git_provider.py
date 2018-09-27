@@ -559,7 +559,7 @@ def git_provider():
         """
         try:
             github_user = os.environ['PRIVATE_GITHUB_USER']
-        except keyError:
+        except KeyError:
             # if environment variable not specified
             logger.warn("PRIVATE_GITHUB_USER environment variable not specified!")
             github_user = None
