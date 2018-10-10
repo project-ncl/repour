@@ -138,68 +138,6 @@ class TestAdjust(unittest.TestCase):
                 },
             })
 
-class TestPull(unittest.TestCase):
-    def test_pull(self):
-        def check_adjust(d):
-            d["adjust"] = True
-            self.assertEqual(d, validation.pull(d))
-            d["adjust"] = False
-            self.assertEqual(d, validation.pull(d))
-
-        valid_scm = {
-            "name": "someproject",
-            "type": "git",
-            "ref": "2.2.11.Final",
-            "url": "git://example.com/someproject.git",
-        }
-        self.assertEqual(valid_scm, validation.pull(valid_scm))
-        check_adjust(valid_scm)
-
-        valid_scm["type"] = "hg"
-        self.assertEqual(valid_scm, validation.pull(valid_scm))
-        check_adjust(valid_scm)
-
-        del valid_scm["ref"]
-        self.assertEqual(valid_scm, validation.pull(valid_scm))
-        check_adjust(valid_scm)
-
-        valid_archive = {
-            "name": "someproject",
-            "type": "archive",
-            "url": "http://example.com/someproject.tar.gz",
-        }
-        self.assertEqual(valid_archive, validation.pull(valid_archive))
-        check_adjust(valid_archive)
-
-        with self.assertRaises(voluptuous.MultipleInvalid):
-            valid_archive["name"] = ""
-            validation.pull(valid_archive)
-        with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.pull({})
-        with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.pull({
-                "name": "someproject",
-            })
-        with self.assertRaises(voluptuous.MultipleInvalid):
-            invalid = valid_scm.copy()
-            invalid["asd"] = "asd"
-            validation.pull(invalid)
-        with self.assertRaises(voluptuous.MultipleInvalid):
-            invalid = valid_scm.copy()
-            invalid["url"] = 123
-            validation.pull(invalid)
-
-    def test_callback(self):
-        valid = {
-            "name": "someproject",
-            "type": "archive",
-            "url": "http://example.com/someproject.tar.gz",
-            "callback": {
-                "url": "http://localhost/asd",
-            },
-        }
-        self.assertEqual(valid, validation.pull(valid))
-
 class TestServerConfig(unittest.TestCase):
     def test_server_config(self):
         valid = {
