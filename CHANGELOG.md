@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Section
 
+### Removed
+- [NCL-3872] `/pull` endpoint and tests
+
 ## [1.4.0] - 2018-09-25
 ### Added
 - [NCL-4047] Print useful error message when user is trying to sync with a private Github repository without the required permissions

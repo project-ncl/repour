@@ -10,7 +10,6 @@ from .endpoint import external_to_internal
 from .endpoint import ws
 from ..adjust import adjust
 from .. import clone
-from .. import pull
 from .. import repo
 from .. import websockets
 from .endpoint import validation
@@ -43,18 +42,21 @@ def init(loop, bind, repo_provider, repour_url, adjust_provider):
 
     if repo_provider["type"] == "modeb":
         logger.warn("Mode B selected, guarantees rescinded")
-        pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull_modeb, pull.pull, repour_url)
+        # pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull_modeb, pull.pull, repour_url)
         adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust_modeb, adjust.adjust, repour_url)
     else:
-        pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull, pull.pull, repour_url)
+        # pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull, pull.pull, repour_url)
         adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust, adjust.adjust, repour_url)
 
     logger.debug("Setting up handlers")
     app.router.add_route("GET", "/", info.handle_request)
     app.router.add_route("POST", "/git-external-to-internal", external_to_internal_source)
-    app.router.add_route("POST", "/pull", pull_source)
-    app.router.add_route("POST", "/adjust", adjust_source)
+
+    # See NCL-3872: endpoints removed for PNC 2.0
+    # app.router.add_route("POST", "/pull", pull_source)
     app.router.add_route("POST", "/clone", endpoint.validated_json_endpoint(shutdown_callbacks, validation.clone, clone.clone, repour_url))
+
+    app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
 
