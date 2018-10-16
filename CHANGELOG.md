@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased] - <yyyy>-<mm>-<dd>
 ### Added
-- Section
+- [NCL-4120] Repour dev mode is added! It'll help with preventing tag collision
+             when syncing between internal repositories during testing
 
 ### Removed
 - [NCL-3872] `/pull` endpoint and tests
