@@ -31,5 +31,6 @@
     }
   },
   "git_username": "",
-  "git_url_internal_template": ""
+  "git_url_internal_template": "",
+  "mode": "devel"
 }

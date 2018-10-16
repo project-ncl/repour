@@ -156,9 +156,15 @@ def commit_push_tag(expect_ok, repo_dir,
     # Check if tag name already exists, if so, modify tag name to <tag>-{commitid}
     does_tag_exist = yield from git["is_tag"](repo_dir, tag_name)
 
+    shorthand_commit_id = commit_id[:8] # only show first 8 chars of commit id
+
     if does_tag_exist:
-        shorthand_commit_id = commit_id[:8] # only show first 8 chars of commit id
         logger.info("Tag {0} already exists! Changing it to {0}-{1}".format(tag_name, shorthand_commit_id))
+        tag_name = "{0}-{1}".format(tag_name, shorthand_commit_id)
+    elif c.get("mode", "prod") == "devel":
+        # NCL-4120: if devel mode activated create tag with format: <tag>-<commitid> all the time
+        # reason is to avoid conflict between official internal git repository and test git repository when we try to sync from official internal to test git
+        logger.info("Repour Devel mode activated! Changing tag to {0}-{1} to avoid conflict between internal git repositories".format(tag_name, shorthand_commit_id))
         tag_name = "{0}-{1}".format(tag_name, shorthand_commit_id)
 
     try:
