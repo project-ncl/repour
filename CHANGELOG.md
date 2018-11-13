@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Section
 
+## [1.4.1] - 2018-11-13
+### Changed
+- [NCL-4248] Use a temporary-settings.xml when aligning temporary builds for plugin injection
+
 ## [1.4.0] - 2018-09-25
 ### Added
 - [NCL-4047] Print useful error message when user is trying to sync with a private Github repository without the required permissions
