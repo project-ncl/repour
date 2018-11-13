@@ -18,6 +18,8 @@
     "pme": {
       "provider": "pme",
       "cliJarPathAbsolute": "/home/repour/pom-manipulation-cli.jar",
+      "defaultSettingsParameters": [""],
+      "temporarySettingsParameters": [""],
       "defaultParameters": [
         "..."
       ],
