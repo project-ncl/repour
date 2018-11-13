@@ -222,9 +222,20 @@ def adjust(adjustspec, repo_provider):
 
                 specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
                 timestamp = yield from get_temp_build_timestamp(adjustspec)
+
+                pme_parameters = adjust_provider_config.get("defaultParameters", [])
+                default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
+                temporary_settings_parameters = adjust_provider_config.get("temporarySettingsParameters", [])
+
+                if temp_build_enabled:
+                    pme_parameters = temporary_settings_parameters + pme_parameters
+                else:
+                    pme_parameters = default_settings_parameters + pme_parameters
+
+
                 yield from pme_provider.get_pme_provider(execution_name,
                                                          adjust_provider_config["cliJarPathAbsolute"],
-                                                         adjust_provider_config.get("defaultParameters", []),
+                                                         pme_parameters,
                                                          adjust_provider_config.get("outputToLogs", False),
                                                          specific_indy_group, timestamp) \
                     (work_dir, extra_adjust_parameters, adjust_result)
