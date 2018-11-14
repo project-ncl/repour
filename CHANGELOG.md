@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - [NCL-4120] Repour dev mode is added! It'll help with preventing tag collision
              when syncing between internal repositories during testing
+- [NCL-4255] Sync everything on the `/clone` endpoint if the internal repository is 'new'
 
 ### Removed
 - [NCL-3872] `/pull` endpoint and tests
