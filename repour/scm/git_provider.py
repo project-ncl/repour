@@ -574,6 +574,34 @@ def git_provider():
         return further_desc
 
 
+    @asyncio.coroutine
+    def list_tags(dir):
+        """
+        Returns list of tags
+        """
+        tags = yield from expect_ok(
+                cmd=["git", "tag"],
+                desc="Couldn't get the list of tags",
+                stdout="text",
+                cwd=dir,
+                print_cmd=True
+        )
+        return list(filter(None, [a.strip() for a in tags.split("\n")]))
+
+    @asyncio.coroutine
+    def list_branches(dir):
+        """
+        Returns list of branches
+        """
+        branches = yield from expect_ok(
+                cmd=["git", "branch", "-a"],
+                desc="Couldn't get the list of branches",
+                stdout="text",
+                cwd=dir,
+                print_cmd=True
+        )
+        return list(filter(None, [a.strip() for a in branches.split("\n")]))
+
     # TODO make this a class
     return {
         "version": version,
@@ -609,5 +637,7 @@ def git_provider():
         "get_tag_from_tree_sha": get_tag_from_tree_sha,
         "disable_bare_repository": disable_bare_repository,
         "reset_hard": reset_hard,
-        "does_sha_exist": does_sha_exist
+        "does_sha_exist": does_sha_exist,
+        "list_branches": list_branches,
+        "list_tags": list_tags
     }

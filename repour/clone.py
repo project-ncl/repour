@@ -73,7 +73,11 @@ def clone_git(clonespec):
         c = yield from config.get_configuration()
         git_user = c.get("git_username")
 
-        if "ref" in clonespec and clonespec["ref"]:
+        new_internal_repo = yield from check_new_internal_repo(asutil.add_username_url(clonespec["targetRepoUrl"], git_user))
+        logger.info("The internal repository considered new? => " + str(new_internal_repo))
+
+        # NCL-4255: if ref provided and internal repository is not 'new', sync the ref only
+        if "ref" in clonespec and clonespec["ref"] and not new_internal_repo:
             yield from git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
             yield from git["checkout"](clone_dir, clonespec["ref"], force=True)  # Checkout ref
             yield from git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
@@ -81,7 +85,7 @@ def clone_git(clonespec):
             ref = clonespec["ref"]
             yield from push_sync_changes(clone_dir, ref, "target")
         else:
-            # Sync everything if ref not specified
+            # Sync everything if ref not specified or internal repository is new
             # From: https://stackoverflow.com/a/7216269/2907906
             logger.info("Syncing everything")
             yield from git["clone_mirror"](clone_dir + "/.git", clonespec["originRepoUrl"])  # Clone origin
@@ -91,6 +95,23 @@ def clone_git(clonespec):
             yield from git["push_all"](clone_dir, "target", tags_also=True)
 
         return clonespec
+
+@asyncio.coroutine
+def check_new_internal_repo(git_url):
+    """
+    Check if git url provided has any branches / tags. If not, consider it as new repository
+
+    returns: bool
+    """
+    with asutil.TemporaryDirectory(suffix="git") as temp_dir:
+        yield from git["clone"](temp_dir, git_url)  # Clone origin
+
+        tags = yield from git["list_tags"](temp_dir)
+        if len(tags) > 0:
+            return False
+        else:
+            branches =  yield from git["list_branches"](temp_dir)
+            return len(branches) == 0
 
 scm_types = {
     "git": clone_git,
