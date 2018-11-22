@@ -6,6 +6,7 @@ import shutil
 from . import noop_provider
 from . import pme_provider
 from . import process_provider
+from . import project_manipulator_provider
 from .. import asgit
 from .. import asutil
 from .. import clone
@@ -164,7 +165,6 @@ def adjust(adjustspec, repo_provider):
     This method executes adjust providers as specified in configuration.
     Returns a dictionary corresponding to the HTTP response content.
     """
-    specific_tag_name = None
 
     c = yield from config.get_configuration()
     executions = c.get("adjust", {}).get("executions", [])
@@ -176,9 +176,12 @@ def adjust(adjustspec, repo_provider):
 
     result = {}
 
-    # TODO: maybe remove this later?
+    # By default the buildType is Maven
+    build_type = 'MVN'
+
     if 'buildType' in adjustspec:
         logger.info("Build Type specified: " + adjustspec['buildType'])
+        build_type = adjustspec['buildType']
 
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
@@ -193,61 +196,13 @@ def adjust(adjustspec, repo_provider):
             yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
             yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
-        ### Adjust Phase ###
         yield from asgit.setup_commiter(expect_ok, work_dir)
 
-        for execution_name in executions:
-            adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
-            if adjust_provider_config is None:
-                raise Exception("Adjust execution \"{execution_name}\" configuration not available.".format(**locals()))
-
-            adjust_provider_name = adjust_provider_config.get("provider", None)
-            extra_adjust_parameters = adjustspec.get("adjustParameters", {})
-
-            if adjust_provider_name == "noop":
-                yield from noop_provider.get_noop_provider(execution_name) \
-                    (work_dir, extra_adjust_parameters, adjust_result)
-
-            elif adjust_provider_name == "process":
-                yield from process_provider.get_process_provider(execution_name,
-                                                                 adjust_provider_config["cmd"],
-                                                                 send_log=adjust_provider_config.get("outputToLogs",
-                                                                                                     False)) \
-                    (work_dir, extra_adjust_parameters, adjust_result)
-
-            elif adjust_provider_name == "pme":
-
-                temp_build_enabled = yield from is_temp_build(adjustspec)
-                logger.info("Temp build status: " + str(temp_build_enabled))
-
-                specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
-                timestamp = yield from get_temp_build_timestamp(adjustspec)
-
-                pme_parameters = adjust_provider_config.get("defaultParameters", [])
-                default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
-                temporary_settings_parameters = adjust_provider_config.get("temporarySettingsParameters", [])
-
-                if temp_build_enabled:
-                    pme_parameters = temporary_settings_parameters + pme_parameters
-                else:
-                    pme_parameters = default_settings_parameters + pme_parameters
-
-
-                yield from pme_provider.get_pme_provider(execution_name,
-                                                         adjust_provider_config["cliJarPathAbsolute"],
-                                                         pme_parameters,
-                                                         adjust_provider_config.get("outputToLogs", False),
-                                                         specific_indy_group, timestamp) \
-                    (work_dir, extra_adjust_parameters, adjust_result)
-
-                version = yield from pme_provider.get_version_from_pme_result(adjust_result['resultData'])
-                if version:
-                    specific_tag_name = version
-
-            else:
-                raise Exception("Unknown adjust provider \"{adjust_provider_name}\".".format(**locals()))
-
-            adjust_result["adjustType"].append(execution_name)
+        ### Adjust Phase ###
+        if build_type == 'MVN':
+            specific_tag_name = yield from adjust_mvn(work_dir, c, adjustspec, adjust_result)
+        else:
+            specific_tag_name = yield from adjust_project_manip(work_dir, c, adjustspec, adjust_result)
 
         result = yield from commit_adjustments(
             repo_dir=work_dir,
@@ -262,6 +217,99 @@ def adjust(adjustspec, repo_provider):
 
         result["adjustResultData"] = adjust_result["resultData"]
     return result
+
+
+@asyncio.coroutine
+def adjust_mvn(work_dir, c, adjustspec, adjust_result):
+
+    specific_tag_name = None
+
+    executions = c.get("adjust", {}).get("executions", [])
+
+    for execution_name in executions:
+        adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
+        if adjust_provider_config is None:
+            raise Exception("Adjust execution \"{execution_name}\" configuration not available.".format(**locals()))
+
+        adjust_provider_name = adjust_provider_config.get("provider", None)
+        extra_adjust_parameters = adjustspec.get("adjustParameters", {})
+
+        if adjust_provider_name == "noop":
+            yield from noop_provider.get_noop_provider(execution_name) \
+                (work_dir, extra_adjust_parameters, adjust_result)
+
+        elif adjust_provider_name == "process":
+            yield from process_provider.get_process_provider(execution_name,
+                                                             adjust_provider_config["cmd"],
+                                                             send_log=adjust_provider_config.get("outputToLogs",
+                                                                                                 False)) \
+                (work_dir, extra_adjust_parameters, adjust_result)
+
+        elif adjust_provider_name == "pme":
+
+            temp_build_enabled = yield from is_temp_build(adjustspec)
+            logger.info("Temp build status: " + str(temp_build_enabled))
+
+            specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
+            timestamp = yield from get_temp_build_timestamp(adjustspec)
+
+            pme_parameters = adjust_provider_config.get("defaultParameters", [])
+            default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
+            temporary_settings_parameters = adjust_provider_config.get("temporarySettingsParameters", [])
+
+            if temp_build_enabled:
+                pme_parameters = temporary_settings_parameters + pme_parameters
+            else:
+                pme_parameters = default_settings_parameters + pme_parameters
+
+
+            yield from pme_provider.get_pme_provider(execution_name,
+                                                     adjust_provider_config["cliJarPathAbsolute"],
+                                                     pme_parameters,
+                                                     adjust_provider_config.get("outputToLogs", False),
+                                                     specific_indy_group, timestamp) \
+                (work_dir, extra_adjust_parameters, adjust_result)
+
+            version = yield from pme_provider.get_version_from_pme_result(adjust_result['resultData'])
+            if version:
+                specific_tag_name = version
+
+        else:
+            raise Exception("Unknown adjust provider \"{adjust_provider_name}\".".format(**locals()))
+
+        adjust_result["adjustType"].append(execution_name)
+
+        return specific_tag_name
+
+
+@asyncio.coroutine
+def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
+
+    specific_tag_name = None
+    execution_name = "project-manipulator"
+
+    adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
+
+    default_parameters = adjust_provider_config.get("defaultParameters", [])
+
+    temp_build_enabled = yield from is_temp_build(adjustspec)
+    logger.info("Temp build status: " + str(temp_build_enabled))
+
+    yield from project_manipulator_provider.get_project_manipulator_provider(execution_name,
+                                             adjust_provider_config["cliJarPathAbsolute"],
+                                             default_parameters) \
+        (work_dir, adjust_result)
+
+    # TODO: replace this with the real value
+    version = yield from project_manipulator_provider.get_version_from_result(adjust_result['resultData'])
+
+    if version:
+        specific_tag_name = version
+
+    adjust_result["adjustType"].append(execution_name)
+
+    return specific_tag_name
+
 
 @asyncio.coroutine
 def commit_adjustments(repo_dir, repo_url,
