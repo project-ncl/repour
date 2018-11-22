@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 # value (asyncio_task, websocket_handler)
 websocket_handlers = {}
 
-@asyncio.coroutine
-def register(callback_id, task, websocket_handler):
+async def register(callback_id, task, websocket_handler):
     """ Register a websocket handler with a callback_id and the task where
         the websocket handler was spawn
 
@@ -35,8 +34,7 @@ def register(callback_id, task, websocket_handler):
         websocket_handlers[callback_id].append((task, websocket_handler))
 
 
-@asyncio.coroutine
-def periodic_cleanup():
+async def periodic_cleanup():
     """ Cleanup the websocket_handlers datastructure by removing closed
         websocket handlers and callback_ids with empty websocket list
 
@@ -70,11 +68,10 @@ def periodic_cleanup():
 
         for callback_id in to_remove_callback_id:
             del websocket_handlers[callback_id]
-        yield from asyncio.sleep(30)
+        await asyncio.sleep(30)
 
 
-@asyncio.coroutine
-def send(callback_id, message):
+async def send(callback_id, message):
     """ Send the message to the websocket handlers linked to a callback_id
 
         Parameters:
@@ -95,11 +92,10 @@ def send(callback_id, message):
             if task.done():
                 handlers.remove((task, handler))
             else:
-                yield from handler.send_str(message)
+                await handler.send_str(message)
 
 
-@asyncio.coroutine
-def close(callback_id):
+async def close(callback_id):
     """ Delete all the websocket handler information for a callback_id
 
         Parameters:

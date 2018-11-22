@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from jose import jwt, JWTError
@@ -7,10 +6,8 @@ from repour.config import config
 
 logger = logging.getLogger(__name__)
 
-
-@asyncio.coroutine
-def verify_token(token):
-    c = yield from config.get_configuration()
+async def verify_token(token):
+    c = await config.get_configuration()
     logger.info('Got token!')
 
     OPTIONS = {

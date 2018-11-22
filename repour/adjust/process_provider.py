@@ -1,4 +1,3 @@
-import asyncio
 import io
 import logging
 import os
@@ -16,14 +15,13 @@ stderr_options = asutil.process_stderr_options
 
 # This provider MAY be "extended" by other providers.
 def get_process_provider(execution_name, cmd, get_result_data=None, log_context_option=None, send_log=False):
-    @asyncio.coroutine
-    def get_result_data_default(work_dir):
+
+    async def get_result_data_default(work_dir):
         return {}
 
     get_result_data = get_result_data if get_result_data is not None else get_result_data_default
 
-    @asyncio.coroutine
-    def adjust(repo_dir, extra_adjust_parameters, adjust_result):
+    async def adjust(repo_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
         logger.info('Executing "{execution_name}" using (sub)process adjust provider as "{cmd}".'.format(**locals()))
         log_executable_info(cmd)
@@ -32,7 +30,7 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
         env = None
         stdout = None
         try:
-            stdout = yield from expect_ok(
+            stdout = await expect_ok(
                 cmd=filled_cmd,
                 desc="Adjust subprocess failed.",
                 cwd=repo_dir,
@@ -50,7 +48,7 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
         adjust_result_data = {}
 
         adjust_result_data["adjustType"] = execution_name
-        adjust_result_data["resultData"] = yield from get_result_data(repo_dir)
+        adjust_result_data["resultData"] = await get_result_data(repo_dir)
         return adjust_result_data
 
     return adjust

@@ -35,8 +35,7 @@ class TestDownload(unittest.TestCase):
     @staticmethod
     def fake_resp(suggest_filename=None):
         first_call = True
-        @asyncio.coroutine
-        def fake_read(l):
+        async def fake_read(l):
             nonlocal first_call
             first_call = False
             return b"hello" if first_call else None

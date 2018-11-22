@@ -1,16 +1,14 @@
-import asyncio
 import re
 
 from urllib.parse import urlparse
 
 from ...config import config
 
-@asyncio.coroutine
-def translate(external_to_internal_spec, repo_provider):
+async def translate(external_to_internal_spec, repo_provider):
 
     external_url = external_to_internal_spec["external_url"]
 
-    internal_url = yield from translate_external_to_internal(external_url)
+    internal_url = await translate_external_to_internal(external_url)
 
     result = {
         "external_url": external_url,
@@ -19,11 +17,10 @@ def translate(external_to_internal_spec, repo_provider):
 
     return result
 
-@asyncio.coroutine
-def translate_external_to_internal(external_git_url):
+async def translate_external_to_internal(external_git_url):
     """ Logic from original maitai code to do this: found in GitUrlParser.java#generateInternalGitRepoName """
 
-    c = yield from config.get_configuration()
+    c = await config.get_configuration()
     gerrit_server = c.get("git_url_internal_template", None)
 
     if gerrit_server is None:

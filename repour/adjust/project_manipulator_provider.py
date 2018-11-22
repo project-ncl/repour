@@ -1,11 +1,9 @@
-import asyncio
 
 def get_project_manipulator_provider(execution_name, jar_path, default_parameters):
 
-    @asyncio.coroutine
     # TODO rewrite
-    def get_result_data(work_dir, group_id=None, artifact_id=None):
-        
+    async def get_result_data(work_dir, group_id=None, artifact_id=None):
+
         raw_result_data = "{}"
         result_file_path = work_dir + "/target/pom-manip-ext-result.json"
 
@@ -31,8 +29,7 @@ def get_project_manipulator_provider(execution_name, jar_path, default_parameter
 
         return pme_result
 
-    @asyncio.coroutine
-    def adjust(work_dir, adjust_result):
+    async def adjust(work_dir, adjust_result):
         nonlocal execution_name
 
         cmd = ["java", "-jar", jar_path] + default_parameters
@@ -47,7 +44,7 @@ def get_project_manipulator_provider(execution_name, jar_path, default_parameter
 
         logger.info('Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals()))
 
-        res = yield from process_provider.get_process_provider(execution_name,
+        res = await process_provider.get_process_provider(execution_name,
                                                      cmd,
                                                      get_result_data=get_result_data,
                                                      send_log=True) \
@@ -56,7 +53,6 @@ def get_project_manipulator_provider(execution_name, jar_path, default_parameter
     return adjust
 
 
-@asyncio.coroutine
-def get_version_from_result(data):
+async def get_version_from_result(data):
     # TODO
     pass

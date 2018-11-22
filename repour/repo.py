@@ -1,4 +1,3 @@
-import asyncio
 import collections
 import base64
 import hashlib
@@ -19,19 +18,18 @@ logger = logging.getLogger(__name__)
 # Utility
 #
 
-@asyncio.coroutine
-def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
+async def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
     resp = None
     while resp is None or retry_count >= 0:
-        resp = yield from action()
+        resp = await action()
         if resp.status == reauth_status:
             resp.close()
             retry_count -= 1
-            yield from auth()
+            await auth()
         else:
             break
     else:
-        e = yield from exception.RepoHttpClientError.from_response("Repository provider authentication failed", resp)
+        e = await exception.RepoHttpClientError.from_response("Repository provider authentication failed", resp)
         raise e
 
     return resp
@@ -81,8 +79,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
         }
         return "Digest " + ",".join('{}={}'.format(k,es(v)) for k,v in parts.items())
 
-    @asyncio.coroutine
-    def get_url(spec, create=True, tried_auth=False):
+    async def get_url(spec, create=True, tried_auth=False):
         repo_name = spec["name"]
         nonlocal realm, ncount, nonce
 
@@ -97,7 +94,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
                 readonly=TODO,
             )
 
-        resp = yield from session.put(
+        resp = await session.put(
             auth_url,
             headers={
                 "If-None-Match": "*",
@@ -140,7 +137,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
             ncount = 0
 
             # Try request once more before failing
-            yield from get_url(repo_name, True)
+            await get_url(repo_name, True)
 
         else:
             raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
@@ -154,11 +151,11 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
     session = aiohttp.ClientSession() #pylint: disable=no-member
 
     access_token = ""
-    @asyncio.coroutine
-    def new_token():
+
+    async def new_token():
         nonlocal access_token
 
-        resp = yield from session.post(
+        resp = await session.post(
             auth_url,
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -172,17 +169,16 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         )
         try:
             if resp.status // 100 != 2:
-                e = yield from exception.RepoHttpClientError.from_response("GitLab credentials not accepted", resp)
+                e = await exception.RepoHttpClientError.from_response("GitLab credentials not accepted", resp)
                 raise e
 
-            data = yield from resp.json()
+            data = await resp.json()
             access_token = data["access_token"]
         finally:
             resp.close()
 
-    @asyncio.coroutine
-    def search_project(name):
-        resp = yield from session.get(
+    async def search_project(name):
+        resp = await session.get(
             api_url + "/projects",
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -195,9 +191,8 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         )
         return resp
 
-    @asyncio.coroutine
-    def create_project(name):
-        resp = yield from session.post(
+    async def create_project(name):
+        resp = await session.post(
             api_url + "/projects",
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -223,8 +218,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         )
         return repo_url
 
-    @asyncio.coroutine
-    def get_url(spec, create=True):
+    async def get_url(spec, create=True):
         repo_name = spec["name"]
         # GitLab has a weird non-deterministic relationship between "name" and
         # "path", making it difficult where name and path differ to check if a
@@ -238,16 +232,16 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         # existing ones, do search fallback create, instead of create fallback
         # search.
 
-        resp = yield from _retry_with_auth(
+        resp = await _retry_with_auth(
             action=lambda: search_project(repo_name),
             auth=new_token,
         )
         try:
             if resp.status // 100 != 2:
-                e = yield from exception.RepoHttpClientError.from_response("Unable to search for existing projects", resp)
+                e = await exception.RepoHttpClientError.from_response("Unable to search for existing projects", resp)
                 raise e
             else:
-                projects = yield from resp.json()
+                projects = await resp.json()
         finally:
             resp.close()
 
@@ -259,14 +253,14 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         else:
             # Project doesn't exist
             if create:
-                resp = yield from _retry_with_auth(
+                resp = await _retry_with_auth(
                     action=lambda: create_project(repo_name),
                     auth=new_token,
                 )
                 try:
                     if resp.status == 400:
                         try:
-                            data = yield from resp.json()
+                            data = await resp.json()
                         except Exception:
                             data = {}
                         if "has already been taken" in data.get("message", {}).get("name", []):
@@ -274,22 +268,22 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                             # (interleaving with another create probably), so
                             # search again.
                             logger.info("Recovering from GitLab create interleaving for {repo_name}".format(**locals()))
-                            repo_url = yield from get_url(repo_name, create=False)
+                            repo_url = await get_url(repo_name, create=False)
                         elif "has already been taken" in data.get("message", {}).get("path", []):
-                            e = yield from exception.RepoHttpClientError.from_response(
+                            e = await exception.RepoHttpClientError.from_response(
                                 desc="The path for the given name has already been allocated to a different project",
                                 response=resp,
                                 body=data,
                             )
                             raise e
                         else:
-                            e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp, data)
+                            e = await exception.RepoHttpClientError.from_response("Unable to create project", resp, data)
                             raise e
                     elif resp.status // 100 != 2:
-                        e = yield from exception.RepoHttpClientError.from_response("Unable to create project", resp)
+                        e = await exception.RepoHttpClientError.from_response("Unable to create project", resp)
                         raise e
                     else:
-                        project = yield from resp.json()
+                        project = await resp.json()
                         repo_url = path_to_urls(project["path_with_namespace"])
                         logger.info("Created new GitLab repo at {repo_url}".format(**locals()))
                 finally:
@@ -303,8 +297,8 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
 def repo_gitolite(ssh_url, http_url):
     logger.info("Using gitolite repository provider, SSH: {ssh_url} HTTP: {http_url}".format(**locals()))
     name_pattern = re.compile(r'^[0-9a-zA-Z][-0-9a-zA-Z._@/+]*$')
-    @asyncio.coroutine
-    def get_url(spec, create=True):
+
+    async def get_url(spec, create=True):
         repo_name = spec["name"]
         match = name_pattern.match(repo_name)
         if not match:
@@ -328,8 +322,8 @@ def repo_gitolite(ssh_url, http_url):
 def repo_local(root_url):
     logger.info("Using local repository provider, root: {root_url}".format(**locals()))
     root_path = urllib.parse.urlparse(root_url).path
-    @asyncio.coroutine
-    def get_url(spec, create=True):
+
+    async def get_url(spec, create=True):
         repo_name = spec["name"]
         repo_path = os.path.join(root_path, repo_name)
         _repo_url = urllib.parse.ParseResult(
@@ -351,7 +345,7 @@ def repo_local(root_url):
         if os.path.exists(repo_path):
             logger.info("Returning existing local repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(**locals()))
         else:
-            yield from expect_ok(
+            await expect_ok(
                 cmd=["git", "init", "--bare", repo_path],
                 desc="Could not create local repo with git",
             )
@@ -362,8 +356,8 @@ def repo_local(root_url):
 
 def repo_modeb():
     logger.warn("Using Mode B repository provider (client-specified repositories)".format(**locals()))
-    @asyncio.coroutine
-    def get_url(spec, create=True):
+
+    async def get_url(spec, create=True):
         return RepoUrls(
             readwrite=spec["internal_url"]["readwrite"],
             readonly=spec["internal_url"]["readonly"],

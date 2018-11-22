@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import shutil
@@ -24,8 +23,7 @@ logger = logging.getLogger(__name__)
 git = git_provider.git_provider()
 expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
-@asyncio.coroutine
-def is_sync_on(adjustspec):
+async def is_sync_on(adjustspec):
     """ For sync to be active, we need to both have the originRepoUrl information
         and the 'sync' key to be set to on.
 
@@ -47,8 +45,7 @@ def is_sync_on(adjustspec):
         logger.info("'sync' key set to False: Auto-Sync feature disabled")
         return False
 
-@asyncio.coroutine
-def is_temp_build(adjustspec):
+async def is_temp_build(adjustspec):
     """ For temp build to be active, we need to both provide a 'is_temp_build' key
         in our request and its value must be true
 
@@ -60,17 +57,15 @@ def is_temp_build(adjustspec):
     else:
         return False
 
-@asyncio.coroutine
-def get_specific_indy_group(adjustspec, adjust_provider_config):
-    temp_build_enabled = yield from is_temp_build(adjustspec)
+async def get_specific_indy_group(adjustspec, adjust_provider_config):
+    temp_build_enabled = await is_temp_build(adjustspec)
 
     if temp_build_enabled:
         return adjust_provider_config.get("temp_build_indy_group", None)
     else:
         return None
 
-@asyncio.coroutine
-def get_temp_build_timestamp(adjustspec):
+async def get_temp_build_timestamp(adjustspec):
     """ Find the timestamp to provide to PME from the adjust request.
 
         If the timestamp is set *AND* the temp_build key is set to true, then
@@ -81,7 +76,7 @@ def get_temp_build_timestamp(adjustspec):
     temp_build_timestamp_key = 'tempBuildTimestamp'
     temp_build_timestamp = None
 
-    temp_build_enabled = yield from is_temp_build(adjustspec)
+    temp_build_enabled = await is_temp_build(adjustspec)
 
     if temp_build_timestamp_key in adjustspec:
         temp_build_timestamp = adjustspec[temp_build_timestamp_key]
@@ -95,45 +90,43 @@ def get_temp_build_timestamp(adjustspec):
     else:
         return None
 
-@asyncio.coroutine
-def check_ref_exists(work_dir, ref):
-    is_tag = yield from git["is_tag"](work_dir, ref)
+async def check_ref_exists(work_dir, ref):
+    is_tag = await git["is_tag"](work_dir, ref)
     if is_tag:
         return True
 
-    is_branch = yield from git["is_branch"](work_dir, ref)
+    is_branch = await git["is_branch"](work_dir, ref)
     if is_branch:
         return True
 
-    is_sha = yield from git["does_sha_exist"](work_dir, ref)
+    is_sha = await git["does_sha_exist"](work_dir, ref)
     if is_sha:
         return True
 
     return False
 
-@asyncio.coroutine
-def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
+async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     """ Get external repository and its ref into the internal repository
     """
-    internal_repo_url = yield from repo_provider(adjustspec, create=False)
+    internal_repo_url = await repo_provider(adjustspec, create=False)
     git_user = configuration.get("git_username")
 
-    yield from git["clone"](work_dir, adjustspec["originRepoUrl"])  # Clone origin
+    await git["clone"](work_dir, adjustspec["originRepoUrl"])  # Clone origin
 
     # See NCL-4069: sometimes even with sync on, the upstream repo might not have the ref, but the downstream repo will
     # if ref exists on upstream repository, continue the sync as usual
     # if no, make sure ref exists on downstream repository, and checkout the correct repo
     # if no, then fail completely
-    ref_exists = yield from check_ref_exists(work_dir, adjustspec["ref"])
+    ref_exists = await check_ref_exists(work_dir, adjustspec["ref"])
     if ref_exists:
-        yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
+        await git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
-        yield from git["rename_remote"](work_dir, "origin", "origin_remote")  # Rename origin remote
-        yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
+        await git["rename_remote"](work_dir, "origin", "origin_remote")  # Rename origin remote
+        await git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
 
         ref = adjustspec["ref"]
         # Sync
-        yield from clone.push_sync_changes(work_dir, ref, "origin", origin_remote="origin_remote")
+        await clone.push_sync_changes(work_dir, ref, "origin", origin_remote="origin_remote")
 
     else:
         logger.warn("Upstream repository does not have the 'ref'. Trying to see if 'ref' present in downstream repository")
@@ -142,12 +135,12 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
         os.makedirs(work_dir)
 
         # Clone the internal repository
-        yield from git["clone"](work_dir, asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Clone origin
+        await git["clone"](work_dir, asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Clone origin
 
-        ref_exists = yield from check_ref_exists(work_dir, adjustspec["ref"])
+        ref_exists = await check_ref_exists(work_dir, adjustspec["ref"])
         if ref_exists:
             logger.info("Downstream repository has the ref, but not the upstream one. No syncing required!")
-            yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
+            await git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
         else:
             logger.error("Both upstream and downstream repository do not have the 'ref' present. Cannot proceed")
             raise exception.AdjustCommandError("Both upstream and downstream repository do not have the 'ref' present. Cannot proceed",
@@ -158,16 +151,15 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     # At this point the target repository might have the ref we want to sync, but the local repository might not have all the tags
     # from the target repository. We need to sync tags because we use it to know if we have tags with existing changes or if we
     # need to create tags of format <version>-<sha> if existing tag with name <version> exists after pme changes
-    yield from git["fetch_tags"](work_dir, remote="origin")
+    await git["fetch_tags"](work_dir, remote="origin")
 
-@asyncio.coroutine
-def adjust(adjustspec, repo_provider):
+async def adjust(adjustspec, repo_provider):
     """
     This method executes adjust providers as specified in configuration.
     Returns a dictionary corresponding to the HTTP response content.
     """
 
-    c = yield from config.get_configuration()
+    c = await config.get_configuration()
     executions = c.get("adjust", {}).get("executions", [])
 
     adjust_result = {
@@ -186,26 +178,26 @@ def adjust(adjustspec, repo_provider):
 
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
-        repo_url = yield from repo_provider(adjustspec, create=False)
+        repo_url = await repo_provider(adjustspec, create=False)
 
-        sync_enabled = yield from is_sync_on(adjustspec)
+        sync_enabled = await is_sync_on(adjustspec)
         if sync_enabled:
-            yield from sync_external_repo(adjustspec, repo_provider, work_dir, c)
+            await sync_external_repo(adjustspec, repo_provider, work_dir, c)
         else:
             git_user = c.get("git_username")
 
-            yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
-            yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
+            await git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
+            await git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
-        yield from asgit.setup_commiter(expect_ok, work_dir)
+        await asgit.setup_commiter(expect_ok, work_dir)
 
         ### Adjust Phase ###
         if build_type == 'MVN':
-            specific_tag_name = yield from adjust_mvn(work_dir, c, adjustspec, adjust_result)
+            specific_tag_name = await adjust_mvn(work_dir, c, adjustspec, adjust_result)
         else:
-            specific_tag_name = yield from adjust_project_manip(work_dir, c, adjustspec, adjust_result)
+            specific_tag_name = await adjust_project_manip(work_dir, c, adjustspec, adjust_result)
 
-        result = yield from commit_adjustments(
+        result = await commit_adjustments(
             repo_dir=work_dir,
             repo_url=repo_url,
             original_ref=adjustspec["ref"],
@@ -220,8 +212,7 @@ def adjust(adjustspec, repo_provider):
     return result
 
 
-@asyncio.coroutine
-def adjust_mvn(work_dir, c, adjustspec, adjust_result):
+async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
 
     specific_tag_name = None
 
@@ -236,11 +227,11 @@ def adjust_mvn(work_dir, c, adjustspec, adjust_result):
         extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
         if adjust_provider_name == "noop":
-            yield from noop_provider.get_noop_provider(execution_name) \
+            await noop_provider.get_noop_provider(execution_name) \
                 (work_dir, extra_adjust_parameters, adjust_result)
 
         elif adjust_provider_name == "process":
-            yield from process_provider.get_process_provider(execution_name,
+            await process_provider.get_process_provider(execution_name,
                                                              adjust_provider_config["cmd"],
                                                              send_log=adjust_provider_config.get("outputToLogs",
                                                                                                  False)) \
@@ -248,11 +239,11 @@ def adjust_mvn(work_dir, c, adjustspec, adjust_result):
 
         elif adjust_provider_name == "pme":
 
-            temp_build_enabled = yield from is_temp_build(adjustspec)
+            temp_build_enabled = await is_temp_build(adjustspec)
             logger.info("Temp build status: " + str(temp_build_enabled))
 
-            specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
-            timestamp = yield from get_temp_build_timestamp(adjustspec)
+            specific_indy_group = await get_specific_indy_group(adjustspec, adjust_provider_config)
+            timestamp = await get_temp_build_timestamp(adjustspec)
 
             pme_parameters = adjust_provider_config.get("defaultParameters", [])
             default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
@@ -264,14 +255,14 @@ def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 pme_parameters = default_settings_parameters + pme_parameters
 
 
-            yield from pme_provider.get_pme_provider(execution_name,
+            await pme_provider.get_pme_provider(execution_name,
                                                      adjust_provider_config["cliJarPathAbsolute"],
                                                      pme_parameters,
                                                      adjust_provider_config.get("outputToLogs", False),
                                                      specific_indy_group, timestamp) \
                 (work_dir, extra_adjust_parameters, adjust_result)
 
-            version = yield from pme_provider.get_version_from_pme_result(adjust_result['resultData'])
+            version = await pme_provider.get_version_from_pme_result(adjust_result['resultData'])
             if version:
                 specific_tag_name = version
 
@@ -283,8 +274,7 @@ def adjust_mvn(work_dir, c, adjustspec, adjust_result):
         return specific_tag_name
 
 
-@asyncio.coroutine
-def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
+async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
 
     specific_tag_name = None
     execution_name = "project-manipulator"
@@ -293,16 +283,16 @@ def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
 
     default_parameters = adjust_provider_config.get("defaultParameters", [])
 
-    temp_build_enabled = yield from is_temp_build(adjustspec)
+    temp_build_enabled = await is_temp_build(adjustspec)
     logger.info("Temp build status: " + str(temp_build_enabled))
 
-    yield from project_manipulator_provider.get_project_manipulator_provider(execution_name,
+    await project_manipulator_provider.get_project_manipulator_provider(execution_name,
                                              adjust_provider_config["cliJarPathAbsolute"],
                                              default_parameters) \
         (work_dir, adjust_result)
 
     # TODO: replace this with the real value
-    version = yield from project_manipulator_provider.get_version_from_result(adjust_result['resultData'])
+    version = await project_manipulator_provider.get_version_from_result(adjust_result['resultData'])
 
     if version:
         specific_tag_name = version
@@ -312,15 +302,14 @@ def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
     return specific_tag_name
 
 
-@asyncio.coroutine
-def commit_adjustments(repo_dir, repo_url,
+async def commit_adjustments(repo_dir, repo_url,
                        original_ref, adjust_type,
                        force_continue_on_no_changes=False,
                        specific_tag_name=None):
     """
     Careful: Returns None if no changes were made, unless force_continue_on_no_changes is True
     """
-    d = yield from asgit.push_new_dedup_branch(
+    d = await asgit.push_new_dedup_branch(
         expect_ok=expect_ok,
         repo_dir=repo_dir,
         repo_url=repo_url,

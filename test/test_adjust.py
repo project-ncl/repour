@@ -37,14 +37,12 @@ class TestAdjust(unittest.TestCase):
         cls.origin_git_cls.cleanup()
 
     def test_standalone(self):
-        @asyncio.coroutine
-        def adjust(d):
+        async def adjust(d):
             with open(os.path.join(d, "asd.txt"), "w") as f:
                 f.write("Hello Hello")
             return "test"
 
-        @asyncio.coroutine
-        def repo_provider(p, create):
+        async def repo_provider(p, create):
             return self.origin_git
 
         d = loop.run_until_complete(repour.adjust.adjust.adjust(

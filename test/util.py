@@ -1,4 +1,3 @@
-import asyncio
 import os
 import subprocess
 import tempfile
@@ -72,24 +71,22 @@ def setup_http(cls, loop, routes):
     cls.server = loop.run_until_complete(loop.create_server(cls.handler, host, port))
 
 def teardown_http(cls, loop):
-    loop.run_until_complete(cls.handler.finish_connections(0.25))
     cls.server.close()
     loop.run_until_complete(cls.server.wait_closed())
 
 def http_write_handler(stream):
-    @asyncio.coroutine
-    def handler(request):
+    async def handler(request):
         resp = aiohttp.web.StreamResponse()
-        yield from resp.prepare(request)
+        await resp.prepare(request)
 
         stream.seek(0)
         while True:
             buf = stream.read(4096)
             if not buf:
                 break
-            resp.write(buf)
-            yield from resp.drain()
-        yield from resp.write_eof()
+            await resp.write(buf)
+            await resp.drain()
+        await resp.write_eof()
 
         return resp
 

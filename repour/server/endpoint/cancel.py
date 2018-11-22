@@ -6,14 +6,13 @@ from aiohttp import web
 
 logger = logging.getLogger(__name__)
 
-@asyncio.coroutine
-def handle_cancel(request):
+async def handle_cancel(request):
 
     task_id_to_cancel = request.match_info['task_id']
     logger.info("Cancel request obtained: " + str(task_id_to_cancel))
 
     if not task_id_to_cancel:
-        response = yield from bad_response("Task id is not provided")
+        response = await bad_response("Task id is not provided")
         return response
 
     all_tasks = asyncio.Task.all_tasks()
@@ -27,16 +26,15 @@ def handle_cancel(request):
             cancelled_tasks = True
 
     if cancelled_tasks:
-        response = yield from success_response("Tasks with task_id: " + str(task_id_to_cancel) + " cancelled")
+        response = await success_response("Tasks with task_id: " + str(task_id_to_cancel) + " cancelled")
         return response
     else:
         # if we are here, the task id wasn't found
-        response = yield from bad_response("task id " + str(task_id_to_cancel) + " not found!")
+        response = await bad_response("task id " + str(task_id_to_cancel) + " not found!")
         return response
 
 
-@asyncio.coroutine
-def bad_response(error_message):
+async def bad_response(error_message):
     logger.warn(error_message)
     response = web.Response(
         status=400,
@@ -51,8 +49,7 @@ def bad_response(error_message):
     return response
 
 
-@asyncio.coroutine
-def success_response(message):
+async def success_response(message):
 
     logger.info(message)
 
