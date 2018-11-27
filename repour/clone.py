@@ -33,7 +33,7 @@ def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origin"):
         - origin_remote: remote that was cloned from
     """
 
-    isRefBranch = yield from git["is_branch"](work_dir, ref, origin=origin_remote)  # if ref is a branch, we don't have to create one
+    isRefBranch = yield from git["is_branch"](work_dir, ref, remote=origin_remote)  # if ref is a branch, we don't have to create one
     isRefTag = yield from git["is_tag"](work_dir, ref)
 
     if isRefBranch:
