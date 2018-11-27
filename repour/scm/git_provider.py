@@ -144,6 +144,15 @@ def git_provider():
         )
 
     @asyncio.coroutine
+    def rename_remote(dir, old_name, new_name):
+        yield from expect_ok(
+            cmd=["git", "remote", "rename", old_name, new_name],
+            cwd=dir,
+            desc="Could not remove rename remote '{}' to '{}'".format(old_name, new_name),
+            print_cmd=True
+        )
+
+    @asyncio.coroutine
     def add_remote(dir, name, url):
         yield from expect_ok(
             cmd=["git", "remote", "add", name, url, "--"],
@@ -580,6 +589,7 @@ def git_provider():
         "init": init,
         "add_tag": add_tag,
         "remove_remote": remove_remote,
+        "rename_remote": rename_remote,
         "add_remote": add_remote,
         "add_branch": add_branch,
         "delete_branch": delete_branch,
