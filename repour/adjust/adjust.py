@@ -127,12 +127,12 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     if ref_exists:
         yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
-        yield from git["remove_remote"](work_dir, "origin")  # Remove origin remote
+        yield from git["rename_remote"](work_dir, "origin", "origin_remote")  # Rename origin remote
         yield from git["add_remote"](work_dir, "origin", asutil.add_username_url(internal_repo_url.readwrite, git_user))  # Add target remote
 
         ref = adjustspec["ref"]
         # Sync
-        yield from clone.push_sync_changes(work_dir, ref, "origin")
+        yield from clone.push_sync_changes(work_dir, ref, "origin", origin_remote="origin_remote")
 
     else:
         logger.warn("Upstream repository does not have the 'ref'. Trying to see if 'ref' present in downstream repository")
