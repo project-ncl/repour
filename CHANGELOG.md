@@ -5,8 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - <yyyy>-<mm>-<dd>
+### Changed
+- [NCL-4285] Syncs where the ref does not exist are now considered User error instead of system error
+
 ### Fixed
 - [NCL-4231] Fix bug in repour syncing of branches for `/adjust` endpoint
+
 
 ## [1.4.1] - 2018-11-13
 ### Changed
