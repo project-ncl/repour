@@ -149,7 +149,8 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
             yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
         else:
             logger.error("Both upstream and downstream repository do not have the 'ref' present. Cannot proceed")
-            raise exception.AdjustError("Both upstream and downstream repository do not have the 'ref' present. Cannot proceed")
+            raise exception.AdjustCommandError("Both upstream and downstream repository do not have the 'ref' present. Cannot proceed",
+                                         [], exit_code=10)
 
 
 
