@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased] - <yyyy>-<mm>-<dd>
 ### Changed
+
+## [1.4.2] - 2018-12-03
+### Changed
 - [NCL-4285] Syncs where the ref does not exist are now considered User error instead of system error
 
 ### Fixed
