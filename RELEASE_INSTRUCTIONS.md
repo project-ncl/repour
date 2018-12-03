@@ -22,12 +22,14 @@ followed:
 1. Update the file `repour/__init__.py` inside our git maintenance branch for
    the version. The qualifier should be set to 'FINAL' and not 'SNAPSHOT'.
 
-2. Commit the changes and push to upstream git repository
+2. Update the Changelog with the correct version + release date
 
-3. Create a tag with format 'pnc-<major>.<minor>.<micro>' and push to upstream
+3. Commit the changes and push to upstream git repository
+
+4. Create a tag with format 'pnc-<major>.<minor>.<micro>' and push to upstream
    git repository
 
-4. Change the file `repour/__init__.py` again to increase the micro version by
+5. Change the file `repour/__init__.py` again to increase the micro version by
    one, and change the qualifier to 'SNAPSHOT'. Don't forget to commit and push
    those changes
 
