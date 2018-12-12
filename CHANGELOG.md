@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased] - <yyyy>-<mm>-<dd>
 ### Changed
+- [NCL-4316] Use parent groupid/version when necessary for pom.xml with no PME disabled
 
 ## [1.4.2] - 2018-12-03
 ### Changed
