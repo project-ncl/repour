@@ -19,7 +19,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
     @asyncio.coroutine
     def get_result_data(work_dir, group_id=None, artifact_id=None):
-        
+
         raw_result_data = "{}"
         result_file_path = work_dir + "/target/pom-manip-ext-result.json"
 
@@ -240,9 +240,53 @@ def get_gav_from_pom(pom_xml_file):
 
     namespace = root.tag.split('}')[0].strip('{')
 
-    group_id = root.find('{{{}}}groupId'.format(namespace)).text
-    artif_id = root.find('{{{}}}artifactId'.format(namespace)).text
-    version  = root.find('{{{}}}version'.format(namespace)).text
+    parent = root.find('{{{}}}parent'.format(namespace))
+    parent_group_id = None
+    parent_version = None
+
+    # https://maven.apache.org/pom.html#Maven_Coordinates
+    # Docs concerning how inheritance of groupId and version from parent
+    if parent is not None:
+
+        parent_group_id_elem = parent.find('{{{}}}groupId'.format(namespace))
+        parent_version_elem = parent.find('{{{}}}version'.format(namespace))
+
+        if parent_group_id_elem is not None:
+            parent_group_id = parent_group_id_elem.text
+
+        if parent_version_elem is not None:
+            parent_version = parent_version_elem.text
+
+    group_id_elem = root.find('{{{}}}groupId'.format(namespace))
+
+    if group_id_elem is not None:
+        group_id = group_id_elem.text
+
+    elif (group_id_elem is None) and (parent_group_id is not None):
+        logger.info("Using parent groupId information")
+        group_id = parent_group_id
+
+    else:
+        raise Exception("Could not find the groupId in the pom.xml")
+
+    artif_id_elem = root.find('{{{}}}artifactId'.format(namespace))
+
+    if artif_id_elem is not None:
+        artif_id = artif_id_elem.text
+    else:
+        raise Exception("Could not find the artifactId in the pom.xml")
+
+    version_elem  = root.find('{{{}}}version'.format(namespace))
+
+    if version_elem is not None:
+        version = version_elem.text
+
+    elif (version_elem is None) and (parent_version is not None):
+        logger.info("Using parent version information")
+        version = parent_version
+
+    else:
+        raise Exception("Could not find the version in the pom.xml")
 
     return (group_id, artif_id, version)
 
