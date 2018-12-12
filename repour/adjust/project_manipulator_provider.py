@@ -1,58 +1,117 @@
+import json
+import logging
+import os
+import tempfile
 
-def get_project_manipulator_provider(execution_name, jar_path, default_parameters):
+from . import process_provider
+from .. import exception
 
-    # TODO rewrite
-    async def get_result_data(work_dir, group_id=None, artifact_id=None):
+logger = logging.getLogger(__name__)
 
+def get_project_manipulator_provider(execution_name, jar_path, default_parameters, specific_indy_group, timestamp):
+
+    async def get_result_data(work_dir, results_file=None):
+        
         raw_result_data = "{}"
-        result_file_path = work_dir + "/target/pom-manip-ext-result.json"
+        if results_file:
+            results_file_path = results_file
+        else:
+            raise Exception("Could not figure out path of results from alignment")
 
-        if os.path.isfile(result_file_path):
-            with open(result_file_path, "r") as file:
+        if os.path.isfile(results_file_path):
+            with open(results_file_path, "r") as file:
                 raw_result_data = file.read()
 
-        logger.info('Got PME result data "{raw_result_data}".'.format(**locals()))
-        pme_result = json.loads(raw_result_data)
+            # delete results file afterwards
+            os.remove(results_file_path)
 
-        if group_id is not None and artifact_id is not None:
-            logger.warn("Overriding the groupId of the result to: " + group_id)
-            pme_result['VersioningState']['executionRootModified']['groupId'] = group_id
+        logger.info('Got project manipulator result data "{raw_result_data}".'.format(**locals()))
 
-            logger.warn("Overriding the artifactId of the result to: " + artifact_id)
-            pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
+        result_data = json.loads(raw_result_data)
 
-        try:
-            pme_result["RemovedRepositories"] = get_removed_repos(work_dir, pme_parameters)
-        except FileNotFoundError as e:
-            logger.error('File for removed repositories could not be found')
-            logger.error(str(e))
+        result_data['RemovedRepositories'] = []
 
-        return pme_result
+        return result_data
 
-    async def adjust(work_dir, adjust_result):
+
+    async def get_extra_parameters(extra_adjust_parameters):
+        """
+        Get the extra CUSTOM_PROJECT_MANIPULATOR_PARAMETERS parameters from PNC
+        """
+        subfolder = ''
+
+        paramsString = extra_adjust_parameters.get("CUSTOM_PROJECT_MANIPULATOR_PARAMETERS", None)
+        if paramsString is None:
+            return []
+        else:
+            params = shlex.split(paramsString)
+            for p in params:
+                if p[0] != "-":
+                    desc = ('Parameters that do not start with dash "-" are not allowed. '
+                            + 'Found "{p}" in "{params}".'.format(**locals()))
+                    raise exception.AdjustCommandError(desc, [], 10, stderr=desc)
+
+            return params
+
+    async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
 
-        cmd = ["java", "-jar", jar_path] + default_parameters
+        temp_build_parameters = []
 
-        # TODO: read from Orch
-        extra_adjust_parameters = []
+        if timestamp and not specific_indy_group:
+            logger.error('Timestamp specified but specific indy group not specified!')
+            logger.error('Timestamp: ' + timestamp)
+            raise Exception('Timestamp specified but specific indy group not specified!')
 
-        # TODO: figure out how to get the correct path
-        package_json = 'package.json'
+        if timestamp:
+            temp_build_parameters.append("-DversionIncrementalSuffix=" + timestamp + "-redhat")
 
-        cmd += ['-f', package_json]
+        if specific_indy_group:
+            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
+
+        extra_parameters = await get_extra_parameters(extra_adjust_parameters)
+
+        filename = tempfile.NamedTemporaryFile(delete=False).name
+
+        cmd = ["java", "-jar", jar_path] + default_parameters + temp_build_parameters + extra_parameters + \
+              ['--result=' + filename]
 
         logger.info('Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals()))
 
         res = await process_provider.get_process_provider(execution_name,
                                                      cmd,
                                                      get_result_data=get_result_data,
-                                                     send_log=True) \
+                                                     send_log=True,
+                                                     results_file=filename) \
             (work_dir, extra_adjust_parameters, adjust_result)
+
+        # TODO: need to detect when it is disabled and grab the version otherwise
+
+        adjust_result['resultData'] = res['resultData']
+
+        return res
 
     return adjust
 
 
 async def get_version_from_result(data):
-    # TODO
-    pass
+    """
+    Format of project_manipulator_result should be as follows:
+
+    {
+        "name": "<name>",
+        "version": "<version>"
+    }
+
+    Function tries to extract version generated by PME from the pme_result
+
+    Parameters:
+    - data: :dict:
+    """
+    try:
+        version = data['version']
+        return version
+    except  Exception as e:
+        logger.error("Couldn't extract Project Manipulator result version from JSON file")
+        logger.error(e)
+        return None
