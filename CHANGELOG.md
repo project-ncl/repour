@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased] - <yyyy>-<mm>-<dd>
 ### Added
 
+## [1.4.4] - 2018-12-12
+### Fixed
+- [NCL-4231] Fetch tags when syncing branches for '/adjust' endpoint
 
 ## [1.4.3] - 2018-12-12
 ### Changed
