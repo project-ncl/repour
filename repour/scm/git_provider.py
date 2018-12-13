@@ -385,9 +385,9 @@ def git_provider():
         )
 
     @asyncio.coroutine
-    def fetch_tags(dir):
+    def fetch_tags(dir, remote="origin"):
         yield from expect_ok(
-            cmd=["git", "fetch", "--tags"],
+            cmd=["git", "fetch", remote, "--tags"],
             desc="Could not fetch tags with git",
             cwd=dir,
             print_cmd=True
