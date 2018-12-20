@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import os
@@ -17,8 +16,7 @@ logger = logging.getLogger(__name__)
 # TODO: NCL-3503: Finish implementation once the other components are figured out
 def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_logs=False, specific_indy_group=None, timestamp=None):
 
-    @asyncio.coroutine
-    def get_result_data(work_dir, group_id=None, artifact_id=None):
+    async def get_result_data(work_dir, group_id=None, artifact_id=None):
 
         raw_result_data = "{}"
         result_file_path = work_dir + "/target/pom-manip-ext-result.json"
@@ -68,8 +66,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             else:
                 return False
 
-    @asyncio.coroutine
-    def get_extra_param_execution_root_name(extra_adjust_parameters):
+    async def get_extra_param_execution_root_name(extra_adjust_parameters):
         """
         If the parameter 'EXECUTION_ROOT_NAME' is present, the string value should be in format '<group_id>:<artifact_id>'
 
@@ -124,8 +121,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         return result
 
-    @asyncio.coroutine
-    def get_extra_parameters(extra_adjust_parameters):
+    async def get_extra_parameters(extra_adjust_parameters):
         """
         Get the extra PME parameters from PNC
         If the PME parameters contain '--file=<folder>/pom.xml', then extract that folder
@@ -155,8 +151,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
             return params_without_file_option, subfolder
 
-    @asyncio.coroutine
-    def adjust(repo_dir, extra_adjust_parameters, adjust_result):
+    async def adjust(repo_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
 
         temp_build_parameters = []
@@ -172,7 +167,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         if specific_indy_group:
             temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
 
-        extra_parameters, subfolder = yield from get_extra_parameters(extra_adjust_parameters)
+        extra_parameters, subfolder = await get_extra_parameters(extra_adjust_parameters)
 
         # readjust the repo_dir to run PME from the folder where the root pom.xml is located
         # See: PRODTASKS-361
@@ -184,7 +179,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         logger.info('Executing "' + execution_name + '" using "pme" adjust provider '
                     + '(delegating to "process" provider). Command is "{cmd}".'.format(**locals()))
 
-        res = yield from process_provider.get_process_provider(execution_name,
+        res = await process_provider.get_process_provider(execution_name,
                                                      cmd,
                                                      get_result_data=get_result_data,
                                                      send_log=output_to_logs) \
@@ -194,17 +189,16 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         if pme_disabled:
             logger.warning("PME is disabled via extra parameters")
-            yield from create_pme_result_file(repo_dir)
+            await create_pme_result_file(repo_dir)
 
-        override_group_id, override_artifact_id = yield from get_extra_param_execution_root_name(extra_adjust_parameters)
+        override_group_id, override_artifact_id = await get_extra_param_execution_root_name(extra_adjust_parameters)
 
-        adjust_result['resultData'] = yield from get_result_data(repo_dir, override_group_id, override_artifact_id)
+        adjust_result['resultData'] = await get_result_data(repo_dir, override_group_id, override_artifact_id)
         return res
 
     return adjust
 
-@asyncio.coroutine
-def get_version_from_pme_result(pme_result):
+async def get_version_from_pme_result(pme_result):
     """
     Format of pme_result should be as follows:
 
@@ -232,8 +226,7 @@ def get_version_from_pme_result(pme_result):
         return None
 
 
-@asyncio.coroutine
-def get_gav_from_pom(pom_xml_file):
+async def get_gav_from_pom(pom_xml_file):
 
     tree = ET.parse(pom_xml_file)
     root = tree.getroot()
@@ -291,17 +284,16 @@ def get_gav_from_pom(pom_xml_file):
     return (group_id, artif_id, version)
 
 
-@asyncio.coroutine
-def create_pme_result_file(repo_dir):
+async def create_pme_result_file(repo_dir):
 
     result_file_folder = repo_dir + "/target"
     result_file_path = result_file_folder + "/pom-manip-ext-result.json"
-            
+
     # get data by reading the pom.xml directly
     pom_path = repo_dir + "/pom.xml"
 
     try:
-        group_id, artifact_id, version = yield from get_gav_from_pom(pom_path)
+        group_id, artifact_id, version = await get_gav_from_pom(pom_path)
     except FileNotFoundError:
         logger.warning("Could not find pom.xml from: " + str(pom_path))
         group_id, artifact_id, version = (None, None, None)

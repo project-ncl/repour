@@ -62,9 +62,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
     client_session = aiohttp.ClientSession()  # pylint: disable=no-member
     shutdown_callbacks.append(client_session.close)
 
-    @asyncio.coroutine
-    def handler(request):
-        c = yield from config.get_configuration()
+    async def handler(request):
+        c = await config.get_configuration()
 
         log_context = request.headers.get("LOG-CONTEXT", "").strip()
         if log_context == "":
@@ -76,14 +75,14 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         asyncio.Task.current_task().callback_id = callback_id
 
         try:
-            spec = yield from request.json()
+            spec = await request.json()
         except ValueError:
             logger.error("Rejected {method} {path}: body is not parsable as json".format(
                 method=request.method,
                 path=request.path,
             ))
 
-            rejected_data = yield from request.text()
+            rejected_data = await request.text()
 
             logger.error("Request data: {data}".format(data=rejected_data))
 
@@ -136,10 +135,9 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         if task_id:
             asyncio.Task.current_task().task_id = task_id
 
-        @asyncio.coroutine
-        def do_call():
+        async def do_call():
             try:
-                ret = yield from coro(spec, **request.app)
+                ret = await coro(spec, **request.app)
             except cfutures.CancelledError as e:
                 # do nothing else
                 logger.info("Cancellation request received")
@@ -172,9 +170,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
         if callback_mode:
 
-            @asyncio.coroutine
-            def do_callback(callback_spec):
-                status, obj = yield from do_call()
+            async def do_callback(callback_spec):
+                status, obj = await do_call()
 
                 obj["callback"] = {
                     "status": status,
@@ -183,8 +180,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
                 logger.info("Callback data: {}".format(obj))
 
-                @asyncio.coroutine
-                def send_result():
+                async def send_result():
                     try:
                         # TODO refactor this into auth.py, we cannot use middleware for callbacks
                         headers = {}
@@ -194,7 +190,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             logger.debug('Authorization enabled, adding header to callback: ' + str(auth_header))
                             headers.update(auth_header)
 
-                        resp = yield from client_session.request(
+                        resp = await client_session.request(
                             callback_spec.get("method", "POST"),
                             callback_spec["url"],
                             headers=headers,
@@ -216,7 +212,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
                 backoff = 1
                 max_attempts = 9
-                resp = yield from send_result()
+                resp = await send_result()
 
                 while resp is None or resp.status // 100 != 2:
                     if resp is not None:
@@ -226,7 +222,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
                     sleep_period = 2 ** backoff
                     logger.debug("Sleeping for {sleep_period}".format(**locals()))
-                    yield from asyncio.sleep(sleep_period)
+                    await asyncio.sleep(sleep_period)
 
                     backoff += 1
 
@@ -234,7 +230,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         logger.error("Giving up on callback after {max_attempts} attempts".format(**locals()))
                         break
 
-                    resp = yield from send_result()
+                    resp = await send_result()
 
                 if backoff <= max_attempts:
                     logger.info("Callback result sent successfully")
@@ -257,7 +253,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             }
 
         else:
-            status, obj = yield from do_call()
+            status, obj = await do_call()
 
         response = web.Response(
             status=status,

@@ -24,11 +24,9 @@ logger = logging.getLogger(__name__)
 
 shutdown_callbacks = []
 
-
-@asyncio.coroutine
-def init(loop, bind, repo_provider, repour_url, adjust_provider):
+async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     logger.debug("Running init")
-    c = yield from config.get_configuration()
+    c = await config.get_configuration()
 
     auth_provider = c.get('auth', {}).get('provider', None)
     logger.info("Using auth provider '" + str(auth_provider) + "'.")
@@ -61,7 +59,7 @@ def init(loop, bind, repo_provider, repour_url, adjust_provider):
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
 
     logger.debug("Creating asyncio server")
-    srv = yield from loop.create_server(app.make_handler(), bind["address"], bind["port"])
+    srv = await loop.create_server(app.make_handler(), bind["address"], bind["port"])
     for socket in srv.sockets:
         logger.info("Server started on socket: {}".format(socket.getsockname()))
 
@@ -70,9 +68,9 @@ def start_server(bind, repo_provider, repour_url, adjust_provider):
     logger.debug("Starting server")
     loop = asyncio.get_event_loop()
 
-    # Monkey patch for Python 3.4.1
-    if not hasattr(loop, "create_task"):
-        loop.create_task = lambda c: asyncio.async(c, loop=loop)
+    #  # Monkey patch for Python 3.4.1
+    #  if not hasattr(loop, "create_task"):
+        #  loop.create_task = lambda c: asyncio.async(c, loop=loop)
 
 
     loop.run_until_complete(init(

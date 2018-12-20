@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - [NCL-4255] Sync everything on the `/clone` endpoint if the internal repository is 'new'
 - [NCL-3793] Support for alignment using project-manipulator for NPM projects
 
+- [NCL-4250] Python >= 3.5 support
+
 ### Removed
 - [NCL-3872] `/pull` endpoint and tests
 

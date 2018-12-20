@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 import aiohttp.web
@@ -25,19 +24,18 @@ def is_websocket(request):
             and connection_header == 'Upgrade')
 
 
-@asyncio.coroutine
-def get_oauth2_jwt_handler(app, next_handler):
-    @asyncio.coroutine
-    def handler(request):
+async def get_oauth2_jwt_handler(app, next_handler):
+
+    async def handler(request):
 
         if is_websocket(request):
             # we don't authenticate for websocket requests
-            response = yield from next_handler(request)
+            response = await next_handler(request)
             return response
 
         if request.path == "/" or request.path == "/git-external-to-internal":
             # we don't authenticate for request to '/'. We'll show relevant repour information there
-            response = yield from next_handler(request)
+            response = await next_handler(request)
             return response
 
         auth_header_value = request.headers.get('Authorization', None)
@@ -47,11 +45,11 @@ def get_oauth2_jwt_handler(app, next_handler):
             return fail(request)
 
         token = auth_header_value[prefix_length:]
-        token_verified = yield from oauth2_jwt.verify_token(token)
+        token_verified = await oauth2_jwt.verify_token(token)
         if not token_verified:
             return fail(request)
 
-        response = yield from next_handler(request)
+        response = await next_handler(request)
         response.headers['Authorization'] = request.headers['Authorization']
         return response
 

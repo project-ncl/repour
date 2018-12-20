@@ -1,4 +1,3 @@
-import asyncio
 import os
 import repour
 import sys
@@ -7,12 +6,11 @@ from ...scm import git_provider
 from ... import exception
 
 
-@asyncio.coroutine
-def handle_request(request):
+async def handle_request(request):
     version = repour.__version__
     path_name = os.path.dirname(sys.argv[0])
     try:
-        git_sha = yield from git_provider.git_provider()["rev_parse"](path_name)
+        git_sha = await git_provider.git_provider()["rev_parse"](path_name)
     except exception.CommandError:
         git_sha = "Unknown"
 

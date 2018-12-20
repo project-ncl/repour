@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import os
@@ -10,8 +9,7 @@ CONFIG_FILE_PATH_ENV_PROPERTY_NAME = 'REPOUR_CONFIG_FILE_PATH'
 _cached_configuration = None
 
 
-@asyncio.coroutine
-def get_configuration():
+async def get_configuration():
     return get_configuration_sync()
 
 

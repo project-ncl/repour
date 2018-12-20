@@ -25,36 +25,33 @@ def _find_filename(url, resp):
     else:
         return cd_filename
 
-@asyncio.coroutine
-def download(url, stream):
+async def download(url, stream):
     loop = asyncio.get_event_loop()
 
-    resp = yield from aiohttp.request("get", url)
-    try:
-        while True:
-            chunk = yield from resp.content.read(4096)
-            if not chunk:
-                break
-            yield from loop.run_in_executor(None, stream.write, chunk)
-    except:
-        resp.close()
-        raise
-    else:
-        resp.close()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+
+            try:
+                while True:
+                    chunk = await resp.content.read(4096)
+                    if not chunk:
+                        break
+                    await loop.run_in_executor(None, stream.write, chunk)
+            except:
+                raise
 
     filename = _find_filename(url, resp)
 
     if hasattr(stream, "flush"):
-        yield from loop.run_in_executor(None, stream.flush)
+        await loop.run_in_executor(None, stream.flush)
     if hasattr(stream, "sync"):
-        yield from loop.run_in_executor(None, stream.sync)
+        await loop.run_in_executor(None, stream.sync)
 
     return filename
 
-@asyncio.coroutine
-def rmtree(dir_path, ignore_errors=False, loop=None):
+async def rmtree(dir_path, ignore_errors=False, loop=None):
     loop = asyncio.get_event_loop() if loop is None else loop
-    yield from loop.run_in_executor(None, lambda: shutil.rmtree(dir_path, ignore_errors))
+    await loop.run_in_executor(None, lambda: shutil.rmtree(dir_path, ignore_errors))
 
 class TemporaryDirectory(object):
     def __init__(self, suffix="", prefix="tmp", loop=None):
@@ -99,8 +96,8 @@ process_stderr_options = {
 }
 
 def expect_ok_closure(exc_type=exception.CommandError):
-    @asyncio.coroutine
-    def print_live_log(process):
+
+    async def print_live_log(process):
         """
         Known issues: it doesn't really process stderr, it assumes stderr is redirected
                       to stdout
@@ -109,7 +106,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
         stderr_text = ""
 
         while True:
-            data = yield from process.stdout.readline()
+            data = await process.stdout.readline()
             decoded = data.decode()
             if decoded == '':
                 # that means we reached EOF and process stopped
@@ -122,8 +119,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
         stdout_text = '\n'.join(stdout_data_ary)
         return stdout_text, stderr_text
 
-    @asyncio.coroutine
-    def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None, live_log=False, print_cmd=False):
+    async def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None, live_log=False, print_cmd=False):
         if env is None:
             sub_env = None
         else:
@@ -134,7 +130,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
         if print_cmd:
             logger.info("Running command: {}".format(cmd))
 
-        p = yield from asyncio.create_subprocess_exec(
+        p = await asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.DEVNULL,
             stdout=None if stdout == process_stdout_options["ignore"] else asyncio.subprocess.PIPE,
@@ -145,10 +141,10 @@ def expect_ok_closure(exc_type=exception.CommandError):
         )
 
         if live_log:
-            stdout_text, stderr_text = yield from print_live_log(p)
-            yield from p.wait()
+            stdout_text, stderr_text = await print_live_log(p)
+            await p.wait()
         else:
-            stdout_data, stderr_data = yield from p.communicate()
+            stdout_data, stderr_data = await p.communicate()
             stderr_text = "" if stderr_data is None else _convert_bytes(stderr_data, "text")
             stdout_text = "" if stdout_data is None else _convert_bytes(stdout_data, "text")
 

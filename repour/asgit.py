@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import uuid
 
@@ -16,49 +15,42 @@ c = config.get_configuration_sync()
 git = git_provider.git_provider()
 
 
-@asyncio.coroutine
-def setup_commiter(expect_ok, repo_dir):
-    yield from git["set_user_name"](repo_dir, c.get("scm", {}).get("git", {}).get("user.name", "Repour"))
-    yield from git["set_user_email"](repo_dir, c.get("scm", {}).get("git", {}).get("user.email", "<>"))
+async def setup_commiter(expect_ok, repo_dir):
+    await git["set_user_name"](repo_dir, c.get("scm", {}).get("git", {}).get("user.name", "Repour"))
+    await git["set_user_email"](repo_dir, c.get("scm", {}).get("git", {}).get("user.email", "<>"))
 
 
-@asyncio.coroutine
-def fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date="1970-01-01 00:00:00 +0000"):
+async def fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date="1970-01-01 00:00:00 +0000"):
     # To maintain an identical commitid for identical trees, use a fixed author/commit date.
-    yield from git["commit"](repo_dir, commit_message, commit_date)
-    head_commitid = yield from git["rev_parse"](repo_dir)
+    await git["commit"](repo_dir, commit_message, commit_date)
+    head_commitid = await git["rev_parse"](repo_dir)
     return head_commitid
 
 
-@asyncio.coroutine
-def normal_date_commit(expect_ok, repo_dir, commit_message):
-    commit_id = yield from fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date=None)
+async def normal_date_commit(expect_ok, repo_dir, commit_message):
+    commit_id = await fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date=None)
     return commit_id
 
 
-@asyncio.coroutine
-def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
-    yield from git["create_branch_checkout"](repo_dir, branch_name, orphan)
-    yield from git["add_all"](repo_dir)
+async def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
+    await git["create_branch_checkout"](repo_dir, branch_name, orphan)
+    await git["add_all"](repo_dir)
 
 
-@asyncio.coroutine
-def replace_branch(expect_ok, repo_dir, current_branch_name, new_name):
-    yield from git["create_branch_checkout"](repo_dir, new_name)
-    yield from git["delete_branch"](repo_dir, current_branch_name)
+async def replace_branch(expect_ok, repo_dir, current_branch_name, new_name):
+    await git["create_branch_checkout"](repo_dir, new_name)
+    await git["delete_branch"](repo_dir, current_branch_name)
 
 
-@asyncio.coroutine
-def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=False):
-    yield from git["tag_annotated"](repo_dir, tag_name, message, ok_if_exists=ok_if_exists)
+async def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=False):
+    await git["tag_annotated"](repo_dir, tag_name, message, ok_if_exists=ok_if_exists)
 
 
-@asyncio.coroutine
-def push_with_tags(expect_ok, repo_dir, branch_name):
-    c = yield from config.get_configuration()
+async def push_with_tags(expect_ok, repo_dir, branch_name):
+    c = await config.get_configuration()
     git_user = c.get("git_username")
 
-    yield from git["push_with_tags"](repo_dir, branch_name, git_user, tryAtomic=True)
+    await git["push_with_tags"](repo_dir, branch_name, git_user, tryAtomic=True)
 
 
 #
@@ -68,8 +60,7 @@ def push_with_tags(expect_ok, repo_dir, branch_name):
 # on the current ref, without making the new commit
 #
 
-@asyncio.coroutine
-def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False,
+async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False,
                           no_change_ok=False, force_continue_on_no_changes=False, real_commit_time=False,
                           specific_tag_name=None):
     # There are a few priorities for reference names:
@@ -83,15 +74,15 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # As many things as possible are controlled for the commit, so the commitid
     # can be used for deduplication.
     temp_branch = "repour_commitid_search_temp_branch_" + str(uuid.uuid1())
-    yield from prepare_new_branch(expect_ok, repo_dir, temp_branch, orphan=orphan)
+    await prepare_new_branch(expect_ok, repo_dir, temp_branch, orphan=orphan)
 
     if real_commit_time:
         # prepare_new_branch does a git add all, so calling git write-tree
         # should give the current tree SHA of the directory
-        tree_sha = yield from git["write_tree"](repo_dir)
+        tree_sha = await git["write_tree"](repo_dir)
 
         # Find if there's already a tag for the tree sha above
-        tag_name = yield from git["get_tag_from_tree_sha"](repo_dir, tree_sha)
+        tag_name = await git["get_tag_from_tree_sha"](repo_dir, tree_sha)
 
         # Find if tree sha already exists in a tag
         # - yes -> return existing tag, if no_change_ok = true
@@ -104,7 +95,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # find the tag using the tree SHA
     if tag_name is None:
         logger.info("No existing commit/tag with changes to commit ispresent. Creating new commit/tag")
-        tag_name = yield from commit_push_tag(expect_ok, repo_dir,
+        tag_name = await commit_push_tag(expect_ok, repo_dir,
                                               operation_name, operation_description,
                                               no_change_ok, force_continue_on_no_changes,
                                               real_commit_time, specific_tag_name)
@@ -114,7 +105,7 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
         # If tag name already exists, make sure it's already present in upstream
         # This happens if we are doing /adjust, with pre-sync enabled.
         # The external repo might have the tag, but not the internal repo
-        yield from push_with_tags(expect_ok, repo_dir, tag_name)
+        await push_with_tags(expect_ok, repo_dir, tag_name)
 
     if tag_name is None:
         return None
@@ -127,21 +118,20 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
             },
         }
 
-@asyncio.coroutine
-def commit_push_tag(expect_ok, repo_dir,
+async def commit_push_tag(expect_ok, repo_dir,
                     operation_name, operation_description,
                     no_change_ok, force_continue_on_no_changes,
                     real_commit_time,
                     specific_tag_name=None):
     try:
         if real_commit_time:
-            commit_id = yield from normal_date_commit(expect_ok, repo_dir, "Repour")
+            commit_id = await normal_date_commit(expect_ok, repo_dir, "Repour")
         else:
-            commit_id = yield from fixed_date_commit(expect_ok, repo_dir, "Repour")
+            commit_id = await fixed_date_commit(expect_ok, repo_dir, "Repour")
 
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
-            commit_id = yield from git["rev_parse"](repo_dir)
+            commit_id = await git["rev_parse"](repo_dir)
         else:
             raise
 
@@ -154,7 +144,7 @@ def commit_push_tag(expect_ok, repo_dir,
         tag_name = "repour-{commit_id}".format(**locals())
 
     # Check if tag name already exists, if so, modify tag name to <tag>-{commitid}
-    does_tag_exist = yield from git["is_tag"](repo_dir, tag_name)
+    does_tag_exist = await git["is_tag"](repo_dir, tag_name)
 
     shorthand_commit_id = commit_id[:8] # only show first 8 chars of commit id
 
@@ -168,7 +158,7 @@ def commit_push_tag(expect_ok, repo_dir,
         tag_name = "{0}-{1}".format(tag_name, shorthand_commit_id)
 
     try:
-        yield from annotated_tag(expect_ok, repo_dir, tag_name, operation_description, ok_if_exists=force_continue_on_no_changes)
+        await annotated_tag(expect_ok, repo_dir, tag_name, operation_description, ok_if_exists=force_continue_on_no_changes)
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
             # No changes were made
@@ -182,7 +172,7 @@ def commit_push_tag(expect_ok, repo_dir,
     # already exist, git will return quickly with an 0 (success) status
     # instead of uploading the objects.
     try:
-        yield from push_with_tags(expect_ok, repo_dir, None)
+        await push_with_tags(expect_ok, repo_dir, None)
     except exception.CommandError as e:
         # Modify the exit code to 10. This tells Maitai to not treat this as
         # a SYSTEM_ERROR (NCL-2871)

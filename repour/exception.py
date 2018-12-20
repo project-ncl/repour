@@ -16,10 +16,9 @@ class CommandError(DescribedError):
 
 class HttpClientError(DescribedError):
     @classmethod
-    @asyncio.coroutine
-    def from_response(cls, desc, response, body=None):
+    async def from_response(cls, desc, response, body=None):
         if response.content and not response.content.at_eof():
-            b = yield from response.text()
+            b = await response.text()
         else:
             if body is None:
                 b = None

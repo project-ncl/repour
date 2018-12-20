@@ -18,40 +18,36 @@ expect_ok = asutil.expect_ok_closure(exception.CommandError)
 #
 
 def git_provider():
-    @asyncio.coroutine
-    def disable_bare_repository(dir):
-        yield from expect_ok(
+    async def disable_bare_repository(dir):
+        await expect_ok(
             cmd=["git", "config", "--bool", "core.bare", "false"],
             cwd=dir,
             desc="Could not disable bare repository",
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def reset_hard(dir):
-        yield from expect_ok(
+    async def reset_hard(dir):
+        await expect_ok(
             cmd=["git", "reset", "--hard"],
             cwd=dir,
             desc="Could not reset hard",
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def clone_deep(dir, url):
+    async def clone_deep(dir, url):
 
         desc="Could not clone {} with git.".format(url)
 
         if "github.com" in url:
             desc +=  " " +  private_github_error_msg(url)
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=["git", "clone", "--", url, dir],
             desc=desc,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def checkout(dir, ref, force=False):
+    async def checkout(dir, ref, force=False):
 
         # Checkout tag or branch or commit-id
         cmd=["git", "checkout", ref]
@@ -59,59 +55,55 @@ def git_provider():
         if force:
             cmd.append("-f")
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=cmd,
             cwd=dir,
             desc="Could not checkout ref {ref} with git".format(**locals()),
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
+    async def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
 
         desc="Could not clone {} with git.".format(url)
 
         if "github.com" in url:
             desc +=  " " +  private_github_error_msg(url)
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=["git", "clone", "--branch", branch_or_tag, "--depth", "1", "--", url, dir],
             desc=desc,
             stderr=None,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def clone_checkout_branch_tag_deep(dir, url, branch_or_tag):
+    async def clone_checkout_branch_tag_deep(dir, url, branch_or_tag):
 
         desc="Could not clone {} with git.".format(url)
 
         if "github.com" in url:
             desc +=  " " +  private_github_error_msg(url)
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=["git", "clone", "--branch", branch_or_tag, "--", url, dir],
             desc=desc,
             stderr=None,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def clone(dir, url):
+    async def clone(dir, url):
 
         desc="Could not clone {} with git.".format(url)
 
         if "github.com" in url:
             desc +=  " " +  private_github_error_msg(url)
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=["git", "clone", "--", url, dir],
             desc=desc,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def clone_mirror(dir, url):
+    async def clone_mirror(dir, url):
 
         desc = "Could not clone mirror {} with git.".format(url)
 
@@ -119,52 +111,47 @@ def git_provider():
             desc +=  " " +  private_github_error_msg(url)
 
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=["git", "clone", "--mirror", "--", url, dir],
             desc=desc,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def add_tag(dir, name):
-        yield from expect_ok(
+    async def add_tag(dir, name):
+        await expect_ok(
             cmd=["git", "tag", name],
             cwd=dir,
             desc="Could not add tag {} with git.".format(name),
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def remove_remote(dir, name):
-        yield from expect_ok(
+    async def remove_remote(dir, name):
+        await expect_ok(
             cmd=["git", "remote", "remove", name],
             cwd=dir,
             desc="Could not remove remote {} with git.".format(name),
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def rename_remote(dir, old_name, new_name):
-        yield from expect_ok(
+    async def rename_remote(dir, old_name, new_name):
+        await expect_ok(
             cmd=["git", "remote", "rename", old_name, new_name],
             cwd=dir,
             desc="Could not remove rename remote '{}' to '{}'".format(old_name, new_name),
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def add_remote(dir, name, url):
-        yield from expect_ok(
+    async def add_remote(dir, name, url):
+        await expect_ok(
             cmd=["git", "remote", "add", name, url, "--"],
             cwd=dir,
             desc="Could not add remote {} with git.".format(url),
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def does_sha_exist(dir, ref):
+    async def does_sha_exist(dir, ref):
         try:
-            yield from expect_ok(
+            await expect_ok(
                 cmd=["git", "cat-file", "-e", ref + "^{commit}"],
                 cwd=dir,
                 desc="Ignore this.",
@@ -174,14 +161,13 @@ def git_provider():
         except Exception as e:
             return False
 
-    @asyncio.coroutine
-    def is_branch(dir, ref, remote="origin"):
+    async def is_branch(dir, ref, remote="origin"):
 
         # Need to run this for show-branch to work effectively
-        yield from fetch(dir)
+        await fetch(dir)
 
         try:  # TODO improve, its ugly
-            yield from expect_ok(
+            await expect_ok(
                 cmd=["git", "show-branch", "remotes/" + remote + "/" + ref],
                 cwd=dir,
                 desc="Ignore this.",
@@ -191,10 +177,9 @@ def git_provider():
         except Exception as e:
             return False
 
-    @asyncio.coroutine
-    def is_tag(dir, ref):
+    async def is_tag(dir, ref):
         try:  # TODO improve, its ugly
-            yield from expect_ok(
+            await expect_ok(
                 cmd=["git", "show-ref", "--quiet", "--tags", ref, "--"],
                 cwd=dir,
                 desc="Ignore this.",
@@ -204,21 +189,18 @@ def git_provider():
         except Exception as e:
             return False
 
-    @asyncio.coroutine
-    def add_branch(dir, name):
-        yield from expect_ok(
+    async def add_branch(dir, name):
+        await expect_ok(
             cmd=["git", "branch", name, "--"],
             cwd=dir,
             desc="Could not add branch {} with git.".format(name),
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def push_force(dir, remote, branch_or_tag):  # Warning! --force
-        yield from push(dir, remote, branch_or_tag, force=True)
+    async def push_force(dir, remote, branch_or_tag):  # Warning! --force
+        await push(dir, remote, branch_or_tag, force=True)
 
-    @asyncio.coroutine
-    def push(dir, remote, branch_or_tag, force=False):
+    async def push(dir, remote, branch_or_tag, force=False):
 
         cmd = ["git", "push"]
 
@@ -227,22 +209,21 @@ def git_provider():
 
         cmd.extend([remote, branch_or_tag, "--"])
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=cmd,
             cwd=dir,
             desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def push_all(dir, remote, tags_also=False):
+    async def push_all(dir, remote, tags_also=False):
 
         cmd = ["git", "push", "--all"]
 
 
         cmd.extend([remote, "--"])
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=cmd,
             cwd=dir,
             desc="Could not push all to remote '{}' with git".format(remote),
@@ -251,15 +232,15 @@ def git_provider():
 
         if tags_also:
             cmd_tag = ["git", "push", "--tags", remote, "--"]
-            yield from expect_ok(
+            await expect_ok(
                 cmd=cmd_tag,
                 cwd=dir,
                 desc="Could not push all tags to remote '{}' with git".format(remote),
                 print_cmd=True
             )
 
-    @asyncio.coroutine  # TODO merge with above
-    def push_with_tags(dir, branch, config_git_user, remote="origin", tryAtomic=True):
+    # TODO merge with above
+    async def push_with_tags(dir, branch, config_git_user, remote="origin", tryAtomic=True):
         """
         Warning: Atomic push is supported since git version 2.4.
         If the atomic push is not supported by git client OR repository provider,
@@ -270,7 +251,7 @@ def git_provider():
         If branch is None, it is assumed that you only want to push the tags
         """
 
-        def do(atomic):
+        async def do(atomic):
             if branch is None:
                 options = ["--tags"]
                 failure_push_msg = "tag"
@@ -288,7 +269,7 @@ def git_provider():
             else:
                 git_user = config_git_user
 
-            yield from expect_ok(
+            await expect_ok(
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + options,
                 desc="Could not" + (" atomic" if atomic else "") + " push " + failure_push_msg + " with git. Make sure user '" + git_user + "' has push permissions to this repository",
                 stderr=None,
@@ -296,59 +277,55 @@ def git_provider():
                 print_cmd=True
             )
 
-        ver = yield from version()
+        ver = await version()
         doAtomic = tryAtomic if versionGreaterEqualsThan(ver, [2, 4]) else False
         if tryAtomic and not doAtomic:
             logger.warn("Cannot perform atomic push. It is not supported in this git version " + '.'.join(
                 [str(e) for e in ver]))
 
         try:
-            yield from do(doAtomic)
+            await do(doAtomic)
         except exception.CommandError as e:
             if "support" in e.stderr:
                 logger.warn("The repository provider does not support atomic push. "
                             "There is a risk of tag/branch inconsistency.")
-                yield from do(False)
+                await do(False)
             elif "Updates were rejected because the tag already exists in the remote" in e.stderr:
                 logger.info("git push failed because tag already exists. There is no need to worry")
             else:
                 raise
 
-    @asyncio.coroutine
-    def init(dir):
-        yield from expect_ok(
+    async def init(dir):
+        await expect_ok(
             cmd=["git", "init"],
             cwd=dir,
             desc="Could not re-init with git",
         )
 
-    @asyncio.coroutine
-    def set_user_name(dir, name):
-        yield from expect_ok(
+    async def set_user_name(dir, name):
+        await expect_ok(
             cmd=["git", "config", "--local", "user.name", name],
             desc="Could not set committer name with git",
             cwd=dir,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def set_user_email(dir, email):
-        yield from expect_ok(
+    async def set_user_email(dir, email):
+        await expect_ok(
             cmd=["git", "config", "--local", "user.email", email],
             desc="Could not set committer email with git",
             cwd=dir,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def commit(dir, commit_message, commit_date=None):
+    async def commit(dir, commit_message, commit_date=None):
 
         if commit_date:
             env = {"GIT_AUTHOR_DATE": commit_date, "GIT_COMMITTER_DATE": commit_date}
         else:
             env = {}
 
-        yield from expect_ok(
+        await expect_ok(
             cmd=["git", "commit", "-m", commit_message],
             desc="Could not commit files with git",
             env=env,
@@ -356,9 +333,8 @@ def git_provider():
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def rev_parse(dir, rev="HEAD"):
-        res = yield from expect_ok(
+    async def rev_parse(dir, rev="HEAD"):
+        res = await expect_ok(
             cmd=["git", "rev-parse", rev],
             desc="Could not get " + rev + " commitid with git",
             stdout="single",
@@ -366,55 +342,49 @@ def git_provider():
         )
         return res
 
-    @asyncio.coroutine
-    def create_branch_checkout(dir, branch_name, orphan=False):
-        yield from expect_ok(
+    async def create_branch_checkout(dir, branch_name, orphan=False):
+        await expect_ok(
             cmd=["git", "checkout", "--orphan" if orphan else "-b", branch_name],
             desc="Could not create branch with git",
             cwd=dir,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def add_all(dir):
-        yield from expect_ok(
+    async def add_all(dir):
+        await expect_ok(
             cmd=["git", "add", "-A"],
             desc="Could not add files with git",
             cwd=dir,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def fetch_tags(dir, remote="origin"):
-        yield from expect_ok(
+    async def fetch_tags(dir, remote="origin"):
+        await expect_ok(
             cmd=["git", "fetch", remote, "--tags"],
             desc="Could not fetch tags with git",
             cwd=dir,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def fetch(dir):
-        yield from expect_ok(
+    async def fetch(dir):
+        await expect_ok(
             cmd=["git", "fetch"],
             desc="Could not fetch tags with git",
             cwd=dir,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def delete_branch(dir, branch_name):
-        yield from expect_ok(
+    async def delete_branch(dir, branch_name):
+        await expect_ok(
             cmd=["git", "branch", "-d", branch_name],
             desc="Could not delete temporary branch with git",
             cwd=dir,
             print_cmd=True
         )
 
-    @asyncio.coroutine
-    def tag_annotated(dir, tag_name, message, ok_if_exists=False):
+    async def tag_annotated(dir, tag_name, message, ok_if_exists=False):
         try:
-            yield from expect_ok(
+            await expect_ok(
                 cmd=["git", "tag", "-a", "-m", message, tag_name],
                 desc="Could not add tag with git",
                 cwd=dir,
@@ -426,12 +396,11 @@ def git_provider():
             else:
                 raise e
 
-    @asyncio.coroutine
-    def write_tree(dir):
+    async def write_tree(dir):
         """
         Get the tree SHA from current index
         """
-        tree_sha = yield from expect_ok(
+        tree_sha = await expect_ok(
                 cmd=["git", "write-tree"],
                 desc="Couldn't get the commit tree with git",
                 stdout="text",
@@ -440,8 +409,7 @@ def git_provider():
         )
         return tree_sha.strip()
 
-    @asyncio.coroutine
-    def get_tag_from_tree_sha(dir, tree_sha):
+    async def get_tag_from_tree_sha(dir, tree_sha):
         """
         Return the tag for a particular tree SHA
         Return None if no such tag exists
@@ -468,7 +436,7 @@ def git_provider():
                 return None
 
         try:
-            data = yield from expect_ok(
+            data = await expect_ok(
                 # separate the tree SHA and the tag information with '::'
                 # output is <tree_sha>:: (tag: <tag1>, <tag2>, ...)
                 cmd=["git", "--no-pager", "log", "--tags", "--no-walk", '--pretty="%T::%d"'],
@@ -495,42 +463,39 @@ def git_provider():
                 return None
 
 
-    @asyncio.coroutine
-    def clone_checkout_ref_auto(dir, url, ref):
+    async def clone_checkout_ref_auto(dir, url, ref):
         """
         Clone and checkout ref as shallowly as possible
         """
         try:
-            yield from clone_checkout_branch_tag_shallow(dir, url, ref)
+            await clone_checkout_branch_tag_shallow(dir, url, ref)
         except exception.CommandError as e:
             if "does not support" in e.stderr:
                 # Fallback to single branch (for dumb http transport)
                 try:
-                    yield from clone_checkout_branch_tag_deep(dir, url, ref)
+                    await clone_checkout_branch_tag_deep(dir, url, ref)
                 except exception.CommandError as e:
                     # Fallback to deep+checkout (for commitid)
                     if "not found" in e.stderr:
-                        yield from clone_deep(dir, url)
-                        yield from checkout(dir, ref)
+                        await clone_deep(dir, url)
+                        await checkout(dir, ref)
                     else:
                         raise
             elif "not found" in e.stderr:
                 # Fallback to deep+checkout (for commitid)
-                yield from clone_deep(dir, url)
-                yield from checkout(dir, ref)
+                await clone_deep(dir, url)
+                await checkout(dir, ref)
             else:
                 raise
 
-    @asyncio.coroutine
-    def cleanup(dir):
-        yield from asutil.rmtree(os.path.join(dir, ".git"))
+    async def cleanup(dir):
+        await asutil.rmtree(os.path.join(dir, ".git"))
 
-    @asyncio.coroutine
-    def version():  # TODO cache?
+    async def version():  # TODO cache?
         """
         Return an array with components of the current git version (as numbers, ordered from most significant)
         """
-        out = yield from expect_ok(
+        out = await expect_ok(
             cmd=["git", "--version"],
             desc="Could not find out git version.",
             stdout=asutil.process_stdout_options["text"]
@@ -583,12 +548,11 @@ def git_provider():
         return further_desc
 
 
-    @asyncio.coroutine
-    def list_tags(dir):
+    async def list_tags(dir):
         """
         Returns list of tags
         """
-        tags = yield from expect_ok(
+        tags = await expect_ok(
                 cmd=["git", "tag"],
                 desc="Couldn't get the list of tags",
                 stdout="text",
@@ -597,12 +561,11 @@ def git_provider():
         )
         return list(filter(None, [a.strip() for a in tags.split("\n")]))
 
-    @asyncio.coroutine
-    def list_branches(dir):
+    async def list_branches(dir):
         """
         Returns list of branches
         """
-        branches = yield from expect_ok(
+        branches = await expect_ok(
                 cmd=["git", "branch", "-a"],
                 desc="Couldn't get the list of branches",
                 stdout="text",
