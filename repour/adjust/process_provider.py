@@ -14,7 +14,7 @@ stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
 
 # This provider MAY be "extended" by other providers.
-def get_process_provider(execution_name, cmd, get_result_data=None, log_context_option=None, send_log=False):
+def get_process_provider(execution_name, cmd, get_result_data=None, log_context_option=None, send_log=False, results_file=None):
 
     async def get_result_data_default(work_dir):
         return {}
@@ -48,7 +48,7 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
         adjust_result_data = {}
 
         adjust_result_data["adjustType"] = execution_name
-        adjust_result_data["resultData"] = await get_result_data(repo_dir)
+        adjust_result_data["resultData"] = await get_result_data(repo_dir, results_file=results_file)
         return adjust_result_data
 
     return adjust

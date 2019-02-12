@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import shutil
@@ -280,16 +281,22 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
     execution_name = "project-manipulator"
 
     adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
+    extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
     default_parameters = adjust_provider_config.get("defaultParameters", [])
 
     temp_build_enabled = await is_temp_build(adjustspec)
     logger.info("Temp build status: " + str(temp_build_enabled))
 
+    specific_indy_group = await get_specific_indy_group(adjustspec, adjust_provider_config)
+    timestamp = await get_temp_build_timestamp(adjustspec)
+
     await project_manipulator_provider.get_project_manipulator_provider(execution_name,
                                              adjust_provider_config["cliJarPathAbsolute"],
-                                             default_parameters) \
-        (work_dir, adjust_result)
+                                             default_parameters,
+                                             specific_indy_group,
+                                             timestamp) \
+        (work_dir, extra_adjust_parameters, adjust_result)
 
     # TODO: replace this with the real value
     version = await project_manipulator_provider.get_version_from_result(adjust_result['resultData'])

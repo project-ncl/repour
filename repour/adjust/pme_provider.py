@@ -16,10 +16,13 @@ logger = logging.getLogger(__name__)
 # TODO: NCL-3503: Finish implementation once the other components are figured out
 def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_logs=False, specific_indy_group=None, timestamp=None):
 
-    async def get_result_data(work_dir, group_id=None, artifact_id=None):
+    async def get_result_data(work_dir, group_id=None, artifact_id=None, results_file=None):
 
         raw_result_data = "{}"
-        result_file_path = work_dir + "/target/pom-manip-ext-result.json"
+        if results_file:
+            results_file_path = results_file
+        else:
+            result_file_path = work_dir + "/target/pom-manip-ext-result.json"
 
         if os.path.isfile(result_file_path):
             with open(result_file_path, "r") as file:
