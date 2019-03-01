@@ -55,12 +55,16 @@ def git_provider():
         if force:
             cmd.append("-f")
 
-        await expect_ok(
-            cmd=cmd,
-            cwd=dir,
-            desc="Could not checkout ref {ref} with git".format(**locals()),
-            print_cmd=True
-        )
+        try:
+            await expect_ok(
+                cmd=cmd,
+                cwd=dir,
+                desc="Could not checkout ref {ref} with git".format(**locals()),
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
+            raise
 
     async def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
 
@@ -97,11 +101,15 @@ def git_provider():
         if "github.com" in url:
             desc +=  " " +  private_github_error_msg(url)
 
-        await expect_ok(
-            cmd=["git", "clone", "--", url, dir],
-            desc=desc,
-            print_cmd=True
-        )
+        try:
+            await expect_ok(
+                cmd=["git", "clone", "--", url, dir],
+                desc=desc,
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
+            raise
 
     async def clone_mirror(dir, url):
 
@@ -209,12 +217,16 @@ def git_provider():
 
         cmd.extend([remote, branch_or_tag, "--"])
 
-        await expect_ok(
-            cmd=cmd,
-            cwd=dir,
-            desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
-            print_cmd=True
-        )
+        try:
+            await expect_ok(
+                cmd=cmd,
+                cwd=dir,
+                desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
+            raise
 
     async def push_all(dir, remote, tags_also=False):
 
@@ -293,6 +305,7 @@ def git_provider():
             elif "Updates were rejected because the tag already exists in the remote" in e.stderr:
                 logger.info("git push failed because tag already exists. There is no need to worry")
             else:
+                e.exit_code = 10
                 raise
 
     async def init(dir):
@@ -359,20 +372,28 @@ def git_provider():
         )
 
     async def fetch_tags(dir, remote="origin"):
-        await expect_ok(
-            cmd=["git", "fetch", remote, "--tags"],
-            desc="Could not fetch tags with git",
-            cwd=dir,
-            print_cmd=True
-        )
+        try:
+            await expect_ok(
+                cmd=["git", "fetch", remote, "--tags"],
+                desc="Could not fetch tags with git",
+                cwd=dir,
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
+            raise
 
     async def fetch(dir):
-        await expect_ok(
-            cmd=["git", "fetch"],
-            desc="Could not fetch tags with git",
-            cwd=dir,
-            print_cmd=True
-        )
+        try:
+            await expect_ok(
+                cmd=["git", "fetch"],
+                desc="Could not fetch tags with git",
+                cwd=dir,
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
+            raise
 
     async def delete_branch(dir, branch_name):
         await expect_ok(
