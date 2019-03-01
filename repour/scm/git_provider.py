@@ -59,12 +59,18 @@ def git_provider():
         if force:
             cmd.append("-f")
 
-        yield from expect_ok(
-            cmd=cmd,
-            cwd=dir,
-            desc="Could not checkout ref {ref} with git".format(**locals()),
-            print_cmd=True
-        )
+        try:
+            yield from expect_ok(
+                cmd=cmd,
+                cwd=dir,
+                desc="Could not checkout ref {ref} with git".format(**locals()),
+                print_cmd=True
+            )
+
+        except exception.CommandError as e:
+            # if repo does not exist, it's a user error
+            e.exit_code = 10
+            raise
 
     @asyncio.coroutine
     def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
@@ -104,11 +110,17 @@ def git_provider():
         if "github.com" in url:
             desc +=  " " +  private_github_error_msg(url)
 
-        yield from expect_ok(
-            cmd=["git", "clone", "--", url, dir],
-            desc=desc,
-            print_cmd=True
-        )
+        try:
+            yield from expect_ok(
+                cmd=["git", "clone", "--", url, dir],
+                desc=desc,
+                print_cmd=True
+            )
+
+        except exception.CommandError as e:
+            # if repo does not exist, it's a user error
+            e.exit_code = 10
+            raise
 
     @asyncio.coroutine
     def clone_mirror(dir, url):
@@ -227,12 +239,15 @@ def git_provider():
 
         cmd.extend([remote, branch_or_tag, "--"])
 
-        yield from expect_ok(
-            cmd=cmd,
-            cwd=dir,
-            desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
-            print_cmd=True
-        )
+        try:
+            yield from expect_ok(
+                cmd=cmd,
+                cwd=dir,
+                desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
 
     @asyncio.coroutine
     def push_all(dir, remote, tags_also=False):
@@ -312,6 +327,7 @@ def git_provider():
             elif "Updates were rejected because the tag already exists in the remote" in e.stderr:
                 logger.info("git push failed because tag already exists. There is no need to worry")
             else:
+                e.exit_code = 10
                 raise
 
     @asyncio.coroutine
@@ -386,21 +402,27 @@ def git_provider():
 
     @asyncio.coroutine
     def fetch_tags(dir, remote="origin"):
-        yield from expect_ok(
-            cmd=["git", "fetch", remote, "--tags"],
-            desc="Could not fetch tags with git",
-            cwd=dir,
-            print_cmd=True
-        )
+        try:
+            yield from expect_ok(
+                cmd=["git", "fetch", remote, "--tags"],
+                desc="Could not fetch tags with git",
+                cwd=dir,
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
 
     @asyncio.coroutine
     def fetch(dir):
-        yield from expect_ok(
-            cmd=["git", "fetch"],
-            desc="Could not fetch tags with git",
-            cwd=dir,
-            print_cmd=True
-        )
+        try:
+            yield from expect_ok(
+                cmd=["git", "fetch"],
+                desc="Could not fetch tags with git",
+                cwd=dir,
+                print_cmd=True
+            )
+        except exception.CommandError as e:
+            e.exit_code = 10
 
     @asyncio.coroutine
     def delete_branch(dir, branch_name):
