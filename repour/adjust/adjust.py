@@ -7,6 +7,7 @@ from . import noop_provider
 from . import pme_provider
 from . import process_provider
 from . import project_manipulator_provider
+from . import gradle_provider
 from .. import asgit
 from .. import asutil
 from .. import clone
@@ -195,6 +196,8 @@ async def adjust(adjustspec, repo_provider):
         ### Adjust Phase ###
         if build_type == 'MVN':
             specific_tag_name = await adjust_mvn(work_dir, c, adjustspec, adjust_result)
+        elif build_type == 'GRADLE':
+            specific_tag_name = await adjust_gradle(work_dir, c, adjustspec, adjust_result)
         else:
             specific_tag_name = await adjust_project_manip(work_dir, c, adjustspec, adjust_result)
 
@@ -211,6 +214,32 @@ async def adjust(adjustspec, repo_provider):
 
         result["adjustResultData"] = adjust_result["resultData"]
     return result
+
+
+async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
+    logger.info("Using Gradle manipulation")
+
+    executions = c.get("adjust", {}).get("executions", [])
+
+    adjust_provider_config = c.get("adjust", {}).get(gradle_provider.EXECUTION_NAME, None)
+
+    if adjust_provider_config is None:
+        raise Exception("Adjust execution '{0}' configuration not available. Please add the '{0}' section to your configuration file".format(gradle_provider.EXECUTION_NAME))
+
+    for parameter in ["gradleAnalyzerPluginVersion", "gradleAnalyzerPluginLibDir"]:
+        if parameter not in adjust_provider_config:
+            raise Exception("Required {} configuration parameters: '{}' is missing in configuration file".format(gradle_provider.EXECUTION_NAME, parameter))
+
+    default_parameters = adjust_provider_config.get("defaultParameters", [])
+    extra_adjust_parameters = adjustspec.get("adjustParameters", {})
+
+    result = await gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginVersion"], adjust_provider_config["gradleAnalyzerPluginLibDir"], default_parameters) \
+        (work_dir, extra_adjust_parameters, adjust_result)
+
+    if "version" not in result['resultData']:
+        raise Exception("No 'version' key found in the result")
+
+    return result["resultData"]["version"]
 
 
 async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
