@@ -70,6 +70,7 @@ async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, o
     # The following scheme does not include the origin_ref, although it is good
     # information, because it comprimises length and parsability too much.
     tag_name = None
+    commit = None
 
     # As many things as possible are controlled for the commit, so the commitid
     # can be used for deduplication.
@@ -83,6 +84,9 @@ async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, o
 
         # Find if there's already a tag for the tree sha above
         tag_name = await git["get_tag_from_tree_sha"](repo_dir, tree_sha)
+
+        if tag_name:
+            commit = await git["get_commit_from_tag_name"](repo_dir, tag_name)
 
         # Find if tree sha already exists in a tag
         # - yes -> return existing tag, if no_change_ok = true
@@ -99,6 +103,8 @@ async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, o
                                               operation_name, operation_description,
                                               no_change_ok, force_continue_on_no_changes,
                                               real_commit_time, specific_tag_name)
+
+        commit = await git["get_commit_from_tag_name"](repo_dir, tag_name)
     else:
         logger.info("Existing tag containing changes to commit is present. Using it")
         logger.info("Tag name is: {0}".format(tag_name))
@@ -112,6 +118,7 @@ async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, o
     else:
         return {
             "tag": tag_name,
+            "commit": commit,
             "url": {
                 "readwrite": repo_url.readwrite,
                 "readonly": repo_url.readonly,

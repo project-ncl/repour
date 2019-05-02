@@ -483,6 +483,17 @@ def git_provider():
             if "does not have any commits yet" in e.stderr:
                 return None
 
+    async def get_commit_from_tag_name(repo_dir, tag_name):
+
+        commit = await expect_ok(
+                cmd=["git", "rev-list", "-n", "1", tag_name],
+                desc="Couldn't get the commit from tag with git",
+                stdout="text",
+                cwd=repo_dir,
+                print_cmd=True
+        )
+
+        return commit.strip()
 
     async def clone_checkout_ref_auto(dir, url, ref):
         """
@@ -629,6 +640,7 @@ def git_provider():
         "tag_annotated": tag_annotated,
         "write_tree": write_tree,
         "get_tag_from_tree_sha": get_tag_from_tree_sha,
+        "get_commit_from_tag_name": get_commit_from_tag_name,
         "disable_bare_repository": disable_bare_repository,
         "reset_hard": reset_hard,
         "does_sha_exist": does_sha_exist,
