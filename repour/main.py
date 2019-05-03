@@ -196,7 +196,7 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
     )
 
     formatter_callback = logging.Formatter(
-        fmt="[{levelname}] {name}:{lineno} {message}",
+        fmt="{asctime} [{levelname}] {name}:{lineno} {message}",
         style="{",
     )
 
