@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
              when syncing between internal repositories during testing
 - [NCL-4255] Sync everything on the `/clone` endpoint if the internal repository is 'new'
 - [NCL-3793] Support for alignment using project-manipulator for NPM projects
-
+- [NCL-4585] Support for alignment using Gradle analyze init plugin for Gradle projects
 - [NCL-4250] Python >= 3.5 support
 
 ### Removed
