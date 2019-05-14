@@ -3,9 +3,11 @@ import logging
 import os
 import shutil
 
+from . import gradle_provider
 from . import noop_provider
 from . import pme_provider
 from . import process_provider
+
 from .. import asgit
 from .. import asutil
 from .. import clone
@@ -168,7 +170,6 @@ def adjust(adjustspec, repo_provider):
     specific_tag_name = None
 
     c = yield from config.get_configuration()
-    executions = c.get("adjust", {}).get("executions", [])
 
     adjust_result = {
         "adjustType": [],
@@ -177,9 +178,15 @@ def adjust(adjustspec, repo_provider):
 
     result = {}
 
-    # TODO: maybe remove this later?
-    if 'buildType' in adjustspec:
-        logger.info("Build Type specified: " + adjustspec['buildType'])
+    # The adjust body is missing the buildType key, exit early
+    if 'buildType' not in adjustspec:
+        raise Exception("No build type specified in adjust body: buildType key is missing")
+
+    buildType = adjustspec["buildType"]
+
+    # There is no configuration for the specific build type provider found in the Repour config file, exit early
+    if buildType not in c.get("adjust", {}):
+        raise Exception("Adjust provider for \"{buildType}\" build type could not be found.".format(**locals()))
 
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
@@ -197,58 +204,64 @@ def adjust(adjustspec, repo_provider):
         ### Adjust Phase ###
         yield from asgit.setup_commiter(expect_ok, work_dir)
 
-        for execution_name in executions:
-            adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
-            if adjust_provider_config is None:
-                raise Exception("Adjust execution \"{execution_name}\" configuration not available.".format(**locals()))
+        adjust_provider_config = c.get("adjust", {}).get(buildType, None)
 
-            adjust_provider_name = adjust_provider_config.get("provider", None)
-            extra_adjust_parameters = adjustspec.get("adjustParameters", {})
+        if adjust_provider_config is None:
+            raise Exception("Adjust execution \"{buildType}\" configuration not available.".format(**locals()))
 
-            if adjust_provider_name == "noop":
-                yield from noop_provider.get_noop_provider(execution_name) \
-                    (work_dir, extra_adjust_parameters, adjust_result)
+        extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
-            elif adjust_provider_name == "process":
-                yield from process_provider.get_process_provider(execution_name,
-                                                                 adjust_provider_config["cmd"],
-                                                                 send_log=adjust_provider_config.get("outputToLogs",
-                                                                                                     False)) \
-                    (work_dir, extra_adjust_parameters, adjust_result)
+        if buildType == "NPM":
+            yield from process_provider.get_process_provider("process",
+                                                                adjust_provider_config["cmd"],
+                                                                send_log=adjust_provider_config.get("outputToLogs",
+                                                                                                    False)) \
+                (work_dir, extra_adjust_parameters, adjust_result)
+        elif buildType == "GRADLE":
+            logger.info("Using Gradle manipulation")
 
-            elif adjust_provider_name == "pme":
+            for parameter in ["gradleAnalyzerPluginVersion", "gradleAnalyzerPluginLibDir"]:
+                if parameter not in adjust_provider_config:
+                    raise Exception("Required {} configuration parameter: '{}' is missing in the Repour configuration file".format(buildType, parameter))
 
-                temp_build_enabled = yield from is_temp_build(adjustspec)
-                logger.info("Temp build status: " + str(temp_build_enabled))
+            default_parameters = adjust_provider_config.get("defaultParameters", [])
 
-                specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
-                timestamp = yield from get_temp_build_timestamp(adjustspec)
+            adjust_result = yield from gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginVersion"], adjust_provider_config["gradleAnalyzerPluginLibDir"], default_parameters) \
+                (work_dir, extra_adjust_parameters, adjust_result)
 
-                pme_parameters = adjust_provider_config.get("defaultParameters", [])
-                default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
-                temporary_settings_parameters = adjust_provider_config.get("temporarySettingsParameters", [])
+            if "version" in adjust_result['resultData']:
+                specific_tag_name = adjust_result['resultData']['version']
 
-                if temp_build_enabled:
-                    pme_parameters = temporary_settings_parameters + pme_parameters
-                else:
-                    pme_parameters = default_settings_parameters + pme_parameters
+        elif buildType == "MVN":
+            temp_build_enabled = yield from is_temp_build(adjustspec)
+            logger.info("Temp build status: " + str(temp_build_enabled))
 
+            specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
+            timestamp = yield from get_temp_build_timestamp(adjustspec)
 
-                yield from pme_provider.get_pme_provider(execution_name,
-                                                         adjust_provider_config["cliJarPathAbsolute"],
-                                                         pme_parameters,
-                                                         adjust_provider_config.get("outputToLogs", False),
-                                                         specific_indy_group, timestamp) \
-                    (work_dir, extra_adjust_parameters, adjust_result)
+            pme_parameters = adjust_provider_config.get("defaultParameters", [])
+            default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
+            temporary_settings_parameters = adjust_provider_config.get("temporarySettingsParameters", [])
 
-                version = yield from pme_provider.get_version_from_pme_result(adjust_result['resultData'])
-                if version:
-                    specific_tag_name = version
-
+            if temp_build_enabled:
+                pme_parameters = temporary_settings_parameters + pme_parameters
             else:
-                raise Exception("Unknown adjust provider \"{adjust_provider_name}\".".format(**locals()))
+                pme_parameters = default_settings_parameters + pme_parameters
 
-            adjust_result["adjustType"].append(execution_name)
+
+            yield from pme_provider.get_pme_provider("pme",
+                                                        adjust_provider_config["cliJarPathAbsolute"],
+                                                        pme_parameters,
+                                                        adjust_provider_config.get("outputToLogs", False),
+                                                        specific_indy_group, timestamp) \
+                (work_dir, extra_adjust_parameters, adjust_result)
+
+            version = yield from pme_provider.get_version_from_pme_result(adjust_result['resultData'])
+            if version:
+                specific_tag_name = version
+
+        else:
+            raise Exception("Unknown build type \"{buildType}\".".format(**locals()))
 
         result = yield from commit_adjustments(
             repo_dir=work_dir,
