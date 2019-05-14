@@ -21,7 +21,7 @@ Configuration
                 "gradleAnalyzerPluginVersion": "1.0.0",
                 "gradleAnalyzerPluginLibDir": "/home/goldmann/git/redhat/repour/libs",
                 "defaultParameters": [
-                    "-Dda.endpoint.url=http://da.custom.com/da/rest/v-1"
+                    "-DrestURL=http://da.custom.com/da/rest/v-1"
                 ]
             }
         }
@@ -44,5 +44,5 @@ There are multiple ways how the plugin can be provided. Following options are av
 
     This will be changed in the future versions after the plugin will be published to https://plugins.gradle.org/.
 
-The ``defaultParameters`` key should specify at least ``da.endpoint.url`` which is a URL to Dependency
+The ``defaultParameters`` key should specify at least ``restURL`` which is a URL to Dependency
 Analyzer (DA) REST interface.
