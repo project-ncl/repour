@@ -70,7 +70,35 @@ def get_gradle_provider(init_file_path, default_parameters):
             return result
 
     async def get_result_data(work_dir, results_file=None):
-        """ Read the manipulation.json file and return it as an object"""
+        """ Read the manipulation.json file and return it as an object
+
+        Format is:
+
+        {
+            VersioningState: {
+                executionRootModified: {
+                    groupId: "value",
+                    artifactId: "value",
+                    version: "value"
+                }
+            },
+            RemovedRepositories: []
+        }
+
+        """
+
+        template = {
+            "VersioningState": {
+                "executionRootModified": {
+                    "groupId": None,
+                    "artifactId": None,
+                    "version": None
+                }
+            },
+            "RemovedRepositories": []
+        }
+
+        # TODO: populate RemoveRepositories in the future
 
         logger.info(
             "Reading '{}' file with alignment result".format(results_file))
@@ -81,6 +109,11 @@ def get_gradle_provider(init_file_path, default_parameters):
                     results_file))
 
             with open(results_file, "r") as f:
-                return json.load(f)
+                result = json.load(f)
+                template["VersioningState"]["executionRootModified"]["groupId"] = result["group"]
+                template["VersioningState"]["executionRootModified"]["artifactId"] = result["name"]
+                template["VersioningState"]["executionRootModified"]["version"] = result["version"]
+
+                return template
 
     return adjust
