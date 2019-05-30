@@ -53,7 +53,7 @@ def get_gradle_provider(init_file_path, default_parameters):
 
             expect_ok = asutil.expect_ok_closure()
 
-            yield expect_ok(
+            yield from expect_ok(
                 cmd=["./gradlew", "--version"],
                 desc="Failed getting Gradle version",
                 cwd=work_dir,
