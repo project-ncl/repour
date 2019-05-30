@@ -226,14 +226,14 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
     if adjust_provider_config is None:
         raise Exception("Adjust execution '{0}' configuration not available. Please add the '{0}' section to your configuration file".format(gradle_provider.EXECUTION_NAME))
 
-    for parameter in ["gradleAnalyzerPluginVersion", "gradleAnalyzerPluginLibDir"]:
+    for parameter in ["gradleAnalyzerPluginInitFilePath"]:
         if parameter not in adjust_provider_config:
             raise Exception("Required {} configuration parameters: '{}' is missing in configuration file".format(gradle_provider.EXECUTION_NAME, parameter))
 
     default_parameters = adjust_provider_config.get("defaultParameters", [])
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
-    result = await gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginVersion"], adjust_provider_config["gradleAnalyzerPluginLibDir"], default_parameters) \
+    result = await gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters) \
         (work_dir, extra_adjust_parameters, adjust_result)
 
     if "version" not in result['resultData']:
