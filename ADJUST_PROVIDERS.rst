@@ -18,8 +18,7 @@ Configuration
     {
         "adjust": {
             "GRADLE": {
-                "gradleAnalyzerPluginVersion": "1.0.0",
-                "gradleAnalyzerPluginLibDir": "/home/goldmann/git/redhat/repour/libs",
+                "gradleAnalyzerPluginInitFilePath": "/opt/repour/analyzer-init.gradle",
                 "defaultParameters": [
                     "-DrestURL=http://da.custom.com/da/rest/v-1"
                 ]
@@ -30,19 +29,10 @@ Configuration
 .. note::
     The ``GRADLE`` key is required to be upper case.
 
-The ``gradleAnalyzerPluginVersion`` specifies the plugin version that is required to run the analyze phase.
-
-There are multiple ways how the plugin can be provided. Following options are available:
-
-1. It can be fetched from a custom directory specified as ``gradleAnalyzerPluginLibDir``,
-2. It can be fetched from local Maven repository,
-3. It can be fetched from Maven Central.
-
-.. warning::
-    Currently specifying ``gradleAnalyzerPluginLibDir`` is required. This should be an absolute path
-    to a directory where the analyze jar can be found.
-
-    This will be changed in the future versions after the plugin will be published to https://plugins.gradle.org/.
+The ``gradleAnalyzerPluginInitFilePath`` specifies the path on local disk to the Gradle init file responsible
+for triggering the analyzer plugin. This file should define the Gradle plugin version and location from
+where it should be fetched. Examples of working init files can be found on Maven Central for particular plugin versions:
+http://central.maven.org/maven2/org/jboss/gm/analyzer/analyzer/
 
 The ``defaultParameters`` key should specify at least ``restURL`` which is a URL to Dependency
 Analyzer (DA) REST interface.
