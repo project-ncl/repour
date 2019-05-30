@@ -113,7 +113,7 @@ def get_gradle_provider(init_file_path, default_parameters):
             with open(MANIPULATION_FILE_NAME, "r") as f:
                 result = json.load(f)
                 template["VersioningState"]["executionRootModified"]["groupId"] = result["group"]
-                template["VersioningState"]["executionRootModified"]["artifactId"] = result["artifactId"]
+                template["VersioningState"]["executionRootModified"]["artifactId"] = result["name"]
                 template["VersioningState"]["executionRootModified"]["version"] = result["version"]
 
                 return template
