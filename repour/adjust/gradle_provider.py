@@ -1,37 +1,20 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
 
 from string import Template
 
 from . import process_provider
+from .. import asutil
 
 logger = logging.getLogger(__name__)
 
 EXECUTION_NAME = "GRADLE"
 
-INIT_SCRIPT_FILE_NAME = "init-align.gradle"
+INIT_SCRIPT_FILE_NAME = "analyzer-init.gradle"
 MANIPULATION_FILE_NAME = "manipulation.json"
-
-INIT_SCRIPT_CONTENT = Template("""
-initscript {
-    repositories {
-        flatDir {
-            dirs '${lib_dir}'
-        }
-
-        mavenLocal()
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jboss.gm.analyzer:analyzer:${version}"
-    }
-}
-
-allprojects {
-    apply plugin: org.jboss.gm.analyzer.alignment.AlignmentPlugin
-}""")
 
 
 class Chdir(object):
@@ -48,27 +31,32 @@ class Chdir(object):
         os.chdir(self.savedPath)
 
 
-def get_gradle_provider(plugin_version, plugin_lib_dir, default_parameters):
+def get_gradle_provider(init_file_path, default_parameters):
 
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         """Generate the manipulation.json file with information about aligned versions"""
 
+        if not os.path.exists(init_file_path):
+            raise Exception(
+                "The Gradle init file '{}' does not exist - are you sure you provided the correct path in configuration?".format(init_file_path))
+
         logger.info("Adjusting in {}".format(work_dir))
 
         with Chdir(work_dir):
+            logger.info(
+                "Copying Gradle init file from '{}'".format(init_file_path))
+            shutil.copy2(init_file_path, INIT_SCRIPT_FILE_NAME)
 
-            init_file_content = INIT_SCRIPT_CONTENT.substitute(
-                version=plugin_version,
-                lib_dir=plugin_lib_dir
+            logger.info("Getting Gradle version...")
+
+            expect_ok = asutil.expect_ok_closure()
+
+            await expect_ok(
+                cmd=["./gradlew", "--version"],
+                desc="Failed getting Gradle version",
+                cwd=work_dir,
+                live_log=True
             )
-
-            logger.info("Writing '{}' init script file".format(
-                INIT_SCRIPT_FILE_NAME))
-
-            logger.info(init_file_content)
-
-            with open(INIT_SCRIPT_FILE_NAME, "w") as f:
-                f.write(init_file_content)
 
             cmd = ["./gradlew", "--console", "plain", "--no-daemon", "--stacktrace",
                    "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters
@@ -76,7 +64,7 @@ def get_gradle_provider(plugin_version, plugin_lib_dir, default_parameters):
             result = await process_provider.get_process_provider(EXECUTION_NAME,
                                                                  cmd,
                                                                  get_result_data=get_result_data,
-                                                                 send_log=False,
+                                                                 send_log=True,
                                                                  results_file=MANIPULATION_FILE_NAME)(work_dir, extra_adjust_parameters, adjust_result)
 
             return result
