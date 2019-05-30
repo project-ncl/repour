@@ -220,13 +220,13 @@ def adjust(adjustspec, repo_provider):
         elif buildType == "GRADLE":
             logger.info("Using Gradle manipulation")
 
-            for parameter in ["gradleAnalyzerPluginVersion", "gradleAnalyzerPluginLibDir"]:
+            for parameter in ["gradleAnalyzerPluginInitFilePath"]:
                 if parameter not in adjust_provider_config:
                     raise Exception("Required {} configuration parameter: '{}' is missing in the Repour configuration file".format(buildType, parameter))
 
             default_parameters = adjust_provider_config.get("defaultParameters", [])
 
-            adjust_result = yield from gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginVersion"], adjust_provider_config["gradleAnalyzerPluginLibDir"], default_parameters) \
+            adjust_result = yield from gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters) \
                 (work_dir, extra_adjust_parameters, adjust_result)
 
             if "version" in adjust_result['resultData']:
