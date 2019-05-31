@@ -115,7 +115,8 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
                                 repo[enabled_elem.parentNode.localName] = bool_value
                         for tag in ["id", "name", "url"]:
                             for elem in repo_elem.getElementsByTagName(tag):
-                                repo[tag] = elem.childNodes[0].data
+                                if elem.childNodes:
+                                    repo[tag] = elem.childNodes[0].data
                         result.append(repo)
                     break
                 else:
