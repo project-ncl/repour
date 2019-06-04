@@ -236,10 +236,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
     result = await gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters) \
         (work_dir, extra_adjust_parameters, adjust_result)
 
-    if "version" not in result['resultData']:
-        raise Exception("No 'version' key found in the result")
-
-    return result["resultData"]["version"]
+    return result["resultData"]["VersioningState"]["executionRootModified"]["version"]
 
 
 async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
