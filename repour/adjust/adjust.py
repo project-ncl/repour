@@ -229,8 +229,7 @@ def adjust(adjustspec, repo_provider):
             adjust_result = yield from gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters) \
                 (work_dir, extra_adjust_parameters, adjust_result)
 
-            if "version" in adjust_result['resultData']:
-                specific_tag_name = adjust_result['resultData']['version']
+            specific_tag_name = adjust_result["resultData"]["VersioningState"]["executionRootModified"]["version"]
 
         elif buildType == "MVN":
             temp_build_enabled = yield from is_temp_build(adjustspec)
