@@ -20,7 +20,8 @@ Configuration
             "GRADLE": {
                 "gradleAnalyzerPluginInitFilePath": "/opt/repour/analyzer-init.gradle",
                 "defaultParameters": [
-                    "-DrestURL=http://da.custom.com/da/rest/v-1"
+                    "-DrestURL=http://da.custom.com/da/rest/v-1",
+                    "-DrepoRemovalBackup=repositories-backup.xml"
                 ]
             }
         }
@@ -34,5 +35,9 @@ for triggering the analyzer plugin. This file should define the Gradle plugin ve
 where it should be fetched. Examples of working init files can be found on Maven Central for particular plugin versions:
 http://central.maven.org/maven2/org/jboss/gm/analyzer/analyzer/
 
-The ``defaultParameters`` key should specify at least ``restURL`` which is a URL to Dependency
-Analyzer (DA) REST interface.
+The ``defaultParameters`` specifies default parameters that should be passed to the plugin execution process.
+
+Available ``defaultParameters``:
+
+* ``restURL`` (required) -- URL to Dependency Analyzer (DA) REST interface
+* ``repoRemovalBackup`` -- name of the XML file containing repositories that were removed from the build.
