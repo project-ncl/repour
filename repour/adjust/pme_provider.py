@@ -7,6 +7,7 @@ import re
 import xml.etree.ElementTree as ET
 
 from . import process_provider
+from . import util
 from .. import exception
 from xml.dom import minidom
 
@@ -39,7 +40,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
 
         try:
-            pme_result["RemovedRepositories"] = get_removed_repos(work_dir, pme_parameters)
+            pme_result["RemovedRepositories"] = util.get_removed_repos(work_dir, pme_parameters)
         except FileNotFoundError as e:
             logger.error('File for removed repositories could not be found')
             logger.error(str(e))
@@ -86,43 +87,10 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             if len(result) == 2:
                 return result[0], result[1]
             else:
-                log.warn('EXECUTION_ROOT_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"')
-                log.warn('Value provided is: "' + paramsString + '"')
+                logger.warn('EXECUTION_ROOT_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"')
+                logger.warn('Value provided is: "' + paramsString + '"')
                 return None, None
 
-
-    def get_removed_repos(work_dir, parameters):
-        """
-        Parses the filename of the removed repos backup file from the parameters list and if there
-        is one, it reads the list of repos and returns it.
-        """
-        result = []
-
-        pattern = re.compile("-DrepoRemovalBackup[ =](.+)")
-        for parameter in parameters:
-            m = pattern.match(parameter)
-            if m is not None:
-                filepath = os.path.join(work_dir, m.group(1))
-                logger.debug('Files and folders in the work directory:\n  %s', os.listdir(work_dir))
-
-                if os.path.exists(filepath):
-                    tree = minidom.parse(filepath)
-                    for repo_elem in tree.getElementsByTagName("repository"):
-                        repo = {"releases": True, "snapshots": True, "name": "", "id": "", "url": ""}
-                        for enabled_elem in repo_elem.getElementsByTagName("enabled"):
-                            if enabled_elem.parentNode.localName in ["releases", "snapshots"]:
-                                bool_value = enabled_elem.childNodes[0].data == "true"
-                                repo[enabled_elem.parentNode.localName] = bool_value
-                        for tag in ["id", "name", "url"]:
-                            for elem in repo_elem.getElementsByTagName(tag):
-                                repo[tag] = elem.childNodes[0].data
-                        result.append(repo)
-                    break
-                else:
-                    logger.info('File %s does not exist. It seems no repositories were removed '
-                                'by PME.', filepath)
-
-        return result
 
     async def get_extra_parameters(extra_adjust_parameters):
         """
