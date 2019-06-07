@@ -8,6 +8,7 @@ import subprocess
 from string import Template
 
 from . import process_provider
+from . import util
 from .. import asutil
 
 logger = logging.getLogger(__name__)
@@ -84,8 +85,6 @@ def get_gradle_provider(init_file_path, default_parameters):
             "RemovedRepositories": []
         }
 
-        # TODO: populate RemoveRepositories in the future
-
         manipulation_file_path = os.path.join(work_dir, MANIPULATION_FILE_NAME)
 
         logger.info(
@@ -101,6 +100,13 @@ def get_gradle_provider(init_file_path, default_parameters):
             template["VersioningState"]["executionRootModified"]["artifactId"] = result["name"]
             template["VersioningState"]["executionRootModified"]["version"] = result["version"]
 
-            return template
+        try:
+            template["RemovedRepositories"] = util.get_removed_repos(
+                work_dir, default_parameters)
+        except FileNotFoundError as e:
+            logger.error('File for removed repositories could not be found')
+            logger.error(str(e))
+
+        return template
 
     return adjust
