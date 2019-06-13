@@ -44,7 +44,7 @@ def get_gradle_provider(init_file_path, default_parameters):
             live_log=True
         )
 
-        cmd = ["./gradlew", "--console", "plain", "--no-daemon", "--stacktrace",
+        cmd = ["./gradlew", "--info", "--console", "plain", "--no-daemon", "--stacktrace",
                "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters
 
         result = yield from process_provider.get_process_provider(EXECUTION_NAME,
