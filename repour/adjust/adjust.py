@@ -7,6 +7,7 @@ from . import gradle_provider
 from . import noop_provider
 from . import pme_provider
 from . import process_provider
+from . import util
 
 from .. import asgit
 from .. import asutil
@@ -47,54 +48,6 @@ def is_sync_on(adjustspec):
     else: # sync key set to False
         logger.info("'sync' key set to False: Auto-Sync feature disabled")
         return False
-
-@asyncio.coroutine
-def is_temp_build(adjustspec):
-    """ For temp build to be active, we need to both provide a 'is_temp_build' key
-        in our request and its value must be true
-
-        return: :bool: whether temp build feature enabled or not
-    """
-    key = 'tempBuild'
-    if (key in adjustspec) and adjustspec[key] is True:
-        return True
-    else:
-        return False
-
-@asyncio.coroutine
-def get_specific_indy_group(adjustspec, adjust_provider_config):
-    temp_build_enabled = yield from is_temp_build(adjustspec)
-
-    if temp_build_enabled:
-        return adjust_provider_config.get("temp_build_indy_group", None)
-    else:
-        return None
-
-@asyncio.coroutine
-def get_temp_build_timestamp(adjustspec):
-    """ Find the timestamp to provide to PME from the adjust request.
-
-        If the timestamp is set *AND* the temp_build key is set to true, then
-        this function returns the value of the timestamp.
-
-        Otherwise it will return None
-    """
-    temp_build_timestamp_key = 'tempBuildTimestamp'
-    temp_build_timestamp = None
-
-    temp_build_enabled = yield from is_temp_build(adjustspec)
-
-    if temp_build_timestamp_key in adjustspec:
-        temp_build_timestamp = adjustspec[temp_build_timestamp_key]
-
-    if temp_build_timestamp is None:
-        temp_build_timestamp = "temporary"
-
-    if temp_build_enabled:
-        logger.info("Temp build timestamp set to: " + str(temp_build_timestamp))
-        return temp_build_timestamp
-    else:
-        return None
 
 @asyncio.coroutine
 def check_ref_exists(work_dir, ref):
@@ -162,6 +115,22 @@ def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     yield from git["fetch_tags"](work_dir, remote="origin")
 
 @asyncio.coroutine
+def handle_temp_build(adjustspec, adjust_provider_config):
+    temp_build_enabled = yield from util.is_temp_build(adjustspec)
+    logger.info("Temp build status: " + str(temp_build_enabled))
+
+    specific_indy_group = yield from util.get_specific_indy_group(adjustspec, adjust_provider_config)
+    timestamp = yield from util.get_temp_build_timestamp(adjustspec)
+
+    if timestamp and not specific_indy_group:
+        logger.error('Timestamp specified but specific indy group not specified!')
+        logger.error('Timestamp: ' + timestamp)
+
+        raise Exception('Timestamp specified but specific indy group not specified!')
+
+    return temp_build_enabled, timestamp, specific_indy_group
+
+@asyncio.coroutine
 def adjust(adjustspec, repo_provider):
     """
     This method executes adjust providers as specified in configuration.
@@ -209,6 +178,8 @@ def adjust(adjustspec, repo_provider):
         if adjust_provider_config is None:
             raise Exception("Adjust execution \"{buildType}\" configuration not available.".format(**locals()))
 
+        temp_build_enabled, timestamp, specific_indy_group = yield from handle_temp_build(adjustspec, adjust_provider_config)
+
         extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
         if buildType == "NPM":
@@ -226,18 +197,12 @@ def adjust(adjustspec, repo_provider):
 
             default_parameters = adjust_provider_config.get("defaultParameters", [])
 
-            adjust_result = yield from gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters) \
+            adjust_result = yield from gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters, specific_indy_group, timestamp) \
                 (work_dir, extra_adjust_parameters, adjust_result)
 
             specific_tag_name = adjust_result["resultData"]["VersioningState"]["executionRootModified"]["version"]
 
         elif buildType == "MVN":
-            temp_build_enabled = yield from is_temp_build(adjustspec)
-            logger.info("Temp build status: " + str(temp_build_enabled))
-
-            specific_indy_group = yield from get_specific_indy_group(adjustspec, adjust_provider_config)
-            timestamp = yield from get_temp_build_timestamp(adjustspec)
-
             pme_parameters = adjust_provider_config.get("defaultParameters", [])
             default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
             temporary_settings_parameters = adjust_provider_config.get("temporarySettingsParameters", [])
