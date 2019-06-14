@@ -59,11 +59,6 @@ def get_project_manipulator_provider(execution_name, jar_path, default_parameter
 
         temp_build_parameters = []
 
-        if timestamp and not specific_indy_group:
-            logger.error('Timestamp specified but specific indy group not specified!')
-            logger.error('Timestamp: ' + timestamp)
-            raise Exception('Timestamp specified but specific indy group not specified!')
-
         if timestamp:
             temp_build_parameters.append("-DversionIncrementalSuffix=" + timestamp + "-redhat")
 

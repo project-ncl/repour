@@ -18,7 +18,7 @@ INIT_SCRIPT_FILE_NAME = "analyzer-init.gradle"
 MANIPULATION_FILE_NAME = "manipulation.json"
 
 
-def get_gradle_provider(init_file_path, default_parameters):
+def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=None, timestamp=None):
 
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         """Generate the manipulation.json file with information about aligned versions"""
@@ -26,6 +26,16 @@ def get_gradle_provider(init_file_path, default_parameters):
         if not os.path.exists(init_file_path):
             raise Exception(
                 "The Gradle init file '{}' does not exist - are you sure you provided the correct path in configuration?".format(init_file_path))
+
+        temp_build_parameters = []
+
+        if timestamp:
+            temp_build_parameters.append(
+                "-DversionIncrementalSuffix=" + timestamp + "-redhat")
+
+        if specific_indy_group:
+            temp_build_parameters.append(
+                "-DrestRepositoryGroup=" + specific_indy_group)
 
         logger.info("Adjusting in {}".format(work_dir))
         logger.info("Copying Gradle init file from '{}'".format(init_file_path))
@@ -44,7 +54,7 @@ def get_gradle_provider(init_file_path, default_parameters):
         )
 
         cmd = ["./gradlew", "--info", "--console", "plain", "--no-daemon", "--stacktrace",
-               "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters
+               "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters
 
         result = await process_provider.get_process_provider(EXECUTION_NAME,
                                                              cmd,

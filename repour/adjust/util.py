@@ -42,3 +42,52 @@ def get_removed_repos(work_dir, parameters):
                     'File %s does not exist. It seems no repositories were removed', filepath)
 
     return result
+
+
+def is_temp_build(adjustspec):
+    """ For temp build to be active, we need to both provide a 'is_temp_build' key
+        in our request and its value must be true
+
+        return: :bool: whether temp build feature enabled or not
+    """
+    key = 'tempBuild'
+    if (key in adjustspec) and adjustspec[key] is True:
+        return True
+    else:
+        return False
+
+
+def get_specific_indy_group(adjustspec, adjust_provider_config):
+    temp_build_enabled = is_temp_build(adjustspec)
+
+    if temp_build_enabled:
+        return adjust_provider_config.get("temp_build_indy_group", None)
+    else:
+        return None
+
+
+def get_temp_build_timestamp(adjustspec):
+    """ Find the timestamp to provide to PME from the adjust request.
+
+        If the timestamp is set *AND* the temp_build key is set to true, then
+        this function returns the value of the timestamp.
+
+        Otherwise it will return None
+    """
+    temp_build_timestamp_key = 'tempBuildTimestamp'
+    temp_build_timestamp = None
+
+    temp_build_enabled = is_temp_build(adjustspec)
+
+    if temp_build_timestamp_key in adjustspec:
+        temp_build_timestamp = adjustspec[temp_build_timestamp_key]
+
+    if temp_build_timestamp is None:
+        temp_build_timestamp = "temporary"
+
+    if temp_build_enabled:
+        logger.info("Temp build timestamp set to: " +
+                    str(temp_build_timestamp))
+        return temp_build_timestamp
+    else:
+        return None
