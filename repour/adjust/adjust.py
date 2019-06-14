@@ -8,6 +8,7 @@ from . import pme_provider
 from . import process_provider
 from . import project_manipulator_provider
 from . import gradle_provider
+from . import util
 from .. import asgit
 from .. import asutil
 from .. import clone
@@ -46,51 +47,6 @@ async def is_sync_on(adjustspec):
     else: # sync key set to False
         logger.info("'sync' key set to False: Auto-Sync feature disabled")
         return False
-
-async def is_temp_build(adjustspec):
-    """ For temp build to be active, we need to both provide a 'is_temp_build' key
-        in our request and its value must be true
-
-        return: :bool: whether temp build feature enabled or not
-    """
-    key = 'tempBuild'
-    if (key in adjustspec) and adjustspec[key] is True:
-        return True
-    else:
-        return False
-
-async def get_specific_indy_group(adjustspec, adjust_provider_config):
-    temp_build_enabled = await is_temp_build(adjustspec)
-
-    if temp_build_enabled:
-        return adjust_provider_config.get("temp_build_indy_group", None)
-    else:
-        return None
-
-async def get_temp_build_timestamp(adjustspec):
-    """ Find the timestamp to provide to PME from the adjust request.
-
-        If the timestamp is set *AND* the temp_build key is set to true, then
-        this function returns the value of the timestamp.
-
-        Otherwise it will return None
-    """
-    temp_build_timestamp_key = 'tempBuildTimestamp'
-    temp_build_timestamp = None
-
-    temp_build_enabled = await is_temp_build(adjustspec)
-
-    if temp_build_timestamp_key in adjustspec:
-        temp_build_timestamp = adjustspec[temp_build_timestamp_key]
-
-    if temp_build_timestamp is None:
-        temp_build_timestamp = "temporary"
-
-    if temp_build_enabled:
-        logger.info("Temp build timestamp set to: " + str(temp_build_timestamp))
-        return temp_build_timestamp
-    else:
-        return None
 
 async def check_ref_exists(work_dir, ref):
     is_tag = await git["is_tag"](work_dir, ref)
@@ -215,6 +171,20 @@ async def adjust(adjustspec, repo_provider):
         result["adjustResultData"] = adjust_result["resultData"]
     return result
 
+async def handle_temp_build(adjustspec, adjust_provider_config):
+    temp_build_enabled = util.is_temp_build(adjustspec)
+    logger.info("Temp build status: " + str(temp_build_enabled))
+
+    specific_indy_group = util.get_specific_indy_group(adjustspec, adjust_provider_config)
+    timestamp = util.get_temp_build_timestamp(adjustspec)
+
+    if timestamp and not specific_indy_group:
+        logger.error('Timestamp specified but specific indy group not specified!')
+        logger.error('Timestamp: ' + timestamp)
+
+        raise Exception('Timestamp specified but specific indy group not specified!')
+
+    return temp_build_enabled, timestamp, specific_indy_group
 
 async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
     logger.info("Using Gradle manipulation")
@@ -226,6 +196,8 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
     if adjust_provider_config is None:
         raise Exception("Adjust execution '{0}' configuration not available. Please add the '{0}' section to your configuration file".format(gradle_provider.EXECUTION_NAME))
 
+    temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(adjustspec, adjust_provider_config)
+
     for parameter in ["gradleAnalyzerPluginInitFilePath"]:
         if parameter not in adjust_provider_config:
             raise Exception("Required {} configuration parameters: '{}' is missing in configuration file".format(gradle_provider.EXECUTION_NAME, parameter))
@@ -233,7 +205,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
     default_parameters = adjust_provider_config.get("defaultParameters", [])
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
-    result = await gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters) \
+    result = await gradle_provider.get_gradle_provider(adjust_provider_config["gradleAnalyzerPluginInitFilePath"], default_parameters, specific_indy_group, timestamp) \
         (work_dir, extra_adjust_parameters, adjust_result)
 
     return result["resultData"]["VersioningState"]["executionRootModified"]["version"]
@@ -265,12 +237,7 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 (work_dir, extra_adjust_parameters, adjust_result)
 
         elif adjust_provider_name == "pme":
-
-            temp_build_enabled = await is_temp_build(adjustspec)
-            logger.info("Temp build status: " + str(temp_build_enabled))
-
-            specific_indy_group = await get_specific_indy_group(adjustspec, adjust_provider_config)
-            timestamp = await get_temp_build_timestamp(adjustspec)
+            temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(adjustspec, adjust_provider_config)
 
             pme_parameters = adjust_provider_config.get("defaultParameters", [])
             default_settings_parameters = adjust_provider_config.get("defaultSettingsParameters", [])
@@ -311,11 +278,7 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
 
     default_parameters = adjust_provider_config.get("defaultParameters", [])
 
-    temp_build_enabled = await is_temp_build(adjustspec)
-    logger.info("Temp build status: " + str(temp_build_enabled))
-
-    specific_indy_group = await get_specific_indy_group(adjustspec, adjust_provider_config)
-    timestamp = await get_temp_build_timestamp(adjustspec)
+    temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(adjustspec, adjust_provider_config)
 
     await project_manipulator_provider.get_project_manipulator_provider(execution_name,
                                              adjust_provider_config["cliJarPathAbsolute"],
