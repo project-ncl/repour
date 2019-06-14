@@ -128,11 +128,6 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         temp_build_parameters = []
 
-        if timestamp and not specific_indy_group:
-            logger.error('Timestamp specified but specific indy group not specified!')
-            logger.error('Timestamp: ' + timestamp)
-            raise Exception('Timestamp specified but specific indy group not specified!')
-
         if timestamp:
             temp_build_parameters.append("-DversionIncrementalSuffix=" + timestamp + "-redhat")
 
