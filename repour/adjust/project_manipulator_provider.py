@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shlex
 import tempfile
 
 from . import process_provider
