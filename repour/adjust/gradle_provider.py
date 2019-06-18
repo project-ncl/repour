@@ -52,6 +52,9 @@ def get_gradle_provider(init_file_path, default_parameters):
                                                              send_log=True,
                                                              results_file=MANIPULATION_FILE_NAME)(work_dir, extra_adjust_parameters, adjust_result)
 
+        adjust_result["adjustType"] = result["adjustType"]
+        adjust_result["resultData"] = result["resultData"]
+
         return result
 
     async def get_result_data(work_dir, results_file=None):
