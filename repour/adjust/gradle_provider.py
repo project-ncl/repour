@@ -39,6 +39,10 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             temp_build_parameters.append(
                 "-DrestRepositoryGroup=" + specific_indy_group)
 
+        extra_parameters, subfolder = yield from util.get_extra_parameters(extra_adjust_parameters)
+
+        work_dir = os.path.join(work_dir, subfolder)
+
         logger.info("Adjusting in {}".format(work_dir))
         logger.info("Copying Gradle init file from '{}'".format(init_file_path))
         shutil.copy2(init_file_path, os.path.join(
@@ -56,7 +60,7 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
         )
 
         cmd = ["./gradlew", "--info", "--console", "plain", "--no-daemon", "--stacktrace",
-               "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters
+               "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
 
         result = yield from process_provider.get_process_provider(EXECUTION_NAME,
                                                                   cmd,
