@@ -2,8 +2,11 @@ import asyncio
 import logging
 import os
 import re
+import shlex
 
 from xml.dom import minidom
+
+from .. import exception
 
 logger = logging.getLogger(__name__)
 
@@ -95,3 +98,36 @@ def get_temp_build_timestamp(adjustspec):
         return temp_build_timestamp
     else:
         return None
+
+
+@asyncio.coroutine
+def get_extra_parameters(extra_adjust_parameters):
+    """
+    Get the extra PME parameters from PNC
+    If the PME parameters contain '--file=<folder>/pom.xml', then extract that folder
+    and remove that --file option from the list of extra params.
+    In PME 2.11 and PME 2.12, there is a bug where that option causes the file target/pom-manip-ext-result.json
+    to be badly generated. Fixed in PME 2.13+
+    See: PRODTASKS-361
+    Returns: tuple<list<string>, string>: list of params(minus the --file option), and folder where to run PME
+    If '--file' option not used, the folder will be an empty string
+    """
+    subfolder = ''
+
+    paramsString = extra_adjust_parameters.get("CUSTOM_PME_PARAMETERS", None)
+    if paramsString is None:
+        return [], subfolder
+    else:
+        params = shlex.split(paramsString)
+        for p in params:
+            if p[0] != "-":
+                desc = ('Parameters that do not start with dash "-" are not allowed. '
+                        + 'Found "{p}" in "{params}".'.format(**locals()))
+                raise exception.AdjustCommandError(desc, [], 10, stderr=desc)
+            if p.startswith("--file"):
+                subfolder = p.replace("--file=", "").replace("pom.xml", "")
+
+        params_without_file_option = [
+            p for p in params if not p.startswith("--file=")]
+
+        return params_without_file_option, subfolder
