@@ -49,8 +49,13 @@ function downloadLatestSnapshot {
 
   URL="$BASE_URL/$SNAPSHOT_VERSION/maven-metadata.xml"
   curl -sLo metadata.xml "$URL"
-  FILE=pom-manipulation-cli-$(sed -n 's/ *<version>\(.*\)-SNAPSHOT<\/version>/\1/p' metadata.xml)-$(sed -n 's/ *<timestamp>\(.*\)<\/timestamp>/\1/p' metadata.xml)-$(sed -n 's/ *<buildNumber>\(.*\)<\/buildNumber>/\1/p' metadata.xml).jar
 
+  FILE_SNAPSHOT_SUFFIX=$(sed -n 's/ *<version>\(.*\)-SNAPSHOT<\/version>/\1/p' metadata.xml)-$(sed -n 's/ *<timestamp>\(.*\)<\/timestamp>/\1/p' metadata.xml)-$(sed -n 's/ *<buildNumber>\(.*\)<\/buildNumber>/\1/p' metadata.xml)
+  if [[ "$FILE_SNAPSHOT_SUFFIX" == "--" ]]; then
+    FILE_SNAPSHOT_SUFFIX=$SNAPSHOT_VERSION
+  fi
+
+  FILE="pom-manipulation-cli-$FILE_SNAPSHOT_SUFFIX.jar"
   URL="$BASE_URL/$SNAPSHOT_VERSION/$FILE"
   curl -Lo pom-manipulation-cli.jar "$URL"
   rm metadata.xml
