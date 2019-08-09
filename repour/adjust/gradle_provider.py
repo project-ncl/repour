@@ -52,14 +52,21 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
 
         expect_ok = asutil.expect_ok_closure()
 
+        # Use system gradle
+        command_gradle = 'gradle'
+
+        # If gradlew present, use it instead
+        if os.path.isfile(os.path.join(work_dir, './gradlew')):
+            command_gradle = './gradlew'
+
         yield from expect_ok(
-            cmd=["./gradlew", "--version"],
+            cmd=[command_gradle, "--version"],
             desc="Failed getting Gradle version",
             cwd=work_dir,
             live_log=True
         )
 
-        cmd = ["./gradlew", "--info", "--console", "plain", "--no-daemon", "--stacktrace",
+        cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
                "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
 
         result = yield from process_provider.get_process_provider(EXECUTION_NAME,
