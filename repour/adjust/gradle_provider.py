@@ -52,12 +52,7 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
 
         expect_ok = asutil.expect_ok_closure()
 
-        # Use system gradle
-        command_gradle = 'gradle'
-
-        # If gradlew present, use it instead
-        if os.path.isfile(os.path.join(work_dir, './gradlew')):
-            command_gradle = './gradlew'
+        command_gradle = get_command_gradle(work_dir)
 
         yield from expect_ok(
             cmd=[command_gradle, "--version"],
@@ -131,3 +126,14 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
         return template
 
     return adjust
+
+def get_command_gradle(work_dir):
+
+    # Use system gradle
+    command_gradle = 'gradle'
+
+    # If gradlew present, use it instead
+    if os.path.isfile(os.path.join(work_dir, './gradlew')):
+        command_gradle = './gradlew'
+
+    return command_gradle
