@@ -1,8 +1,8 @@
+import argparse
 import asyncio
 import logging
 import os
 import re
-import shlex
 
 from xml.dom import minidom
 
@@ -118,16 +118,12 @@ def get_extra_parameters(extra_adjust_parameters):
     if paramsString is None:
         return [], subfolder
     else:
-        params = shlex.split(paramsString)
-        for p in params:
-            if p[0] != "-":
-                desc = ('Parameters that do not start with dash "-" are not allowed. '
-                        + 'Found "{p}" in "{params}".'.format(**locals()))
-                raise exception.AdjustCommandError(desc, [], 10, stderr=desc)
-            if p.startswith("--file"):
-                subfolder = p.replace("--file=", "").replace("pom.xml", "")
 
-        params_without_file_option = [
-            p for p in params if not p.startswith("--file=")]
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-f", "--file")
+        (options, remaining_args) = parser.parse_known_args(paramsString.split())
 
-        return params_without_file_option, subfolder
+        if options.file is not None:
+            subfolder = options.file.replace("/pom.xml", "")
+
+        return remaining_args, subfolder
