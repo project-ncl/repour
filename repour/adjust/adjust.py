@@ -16,6 +16,14 @@ from .. import exception
 from ..config import config
 from ..scm import git_provider
 
+from prometheus_client import Summary
+from prometheus_client import Histogram
+from prometheus_async.aio import time
+
+REQ_TIME = Summary("adjust_req_time", "time spent with adjust endpoint")
+REQ_HISTOGRAM_TIME = Histogram("adjust_req_histogram", "Histogram for adjust endpoint",
+                               buckets=[1, 10, 60, 120, 300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 4500, 5400, 6300, 7200])
+
 logger = logging.getLogger(__name__)
 
 # Each adjust provider is represented by a get_*_provider factory function,
@@ -111,6 +119,8 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # need to create tags of format <version>-<sha> if existing tag with name <version> exists after pme changes
     await git["fetch_tags"](work_dir, remote="origin")
 
+@time(REQ_TIME)
+@time(REQ_HISTOGRAM_TIME)
 async def adjust(adjustspec, repo_provider):
     """
     This method executes adjust providers as specified in configuration.

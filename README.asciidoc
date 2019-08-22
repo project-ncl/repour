@@ -715,6 +715,25 @@ GitLab integration tests will be executed using the local Docker server. To run 
 1. ensure your vex environment includes `venv/integration-test.txt`
 2. prefix `REPOUR_RUN_IT=1` before the `unittest` command, to set the triggering environment variable. For example: `REPOUR_RUN_IT=1 vex rpo python -m unittest`
 
+== Monitoring
+We currently monitor endpoints requests and error by using the Prometheus client, exposing the metrics in the `/metrics` endpoint. We can optionally export the data to Graphite if environment variable `GRAPHITE_SERVER` and `GRAPHITE_KEY`` are defined. `GRAPHITE_KEY` is the prefix for the data, and is usually set to the url of the server.
+
+You can also override the default port for the Graphite server with `GRAPHITE_PORT`
+
+The metrics monitored are:
+
+- time request of `/adjust`, `/clone`, `/cancel`, `/external-to-internal`, `/`, and sending result to callback urls
+  * This covers latency and traffic
+
+- errors:
+  * validation json error
+  * 400 response
+  * 500 response
+  * can't send response to callback
+
+- CPU, memory, GC
+  * Covers saturation
+
 == License
 
 The content of this repository is released under the ASL 2.0, as provided in the LICENSE file. See the NOTICE file for the copyright statement and a list of contributors. By submitting a "pull request" or otherwise contributing to this repository, you agree to license your contribution under the license identified above.
