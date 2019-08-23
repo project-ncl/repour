@@ -215,6 +215,9 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
     callback_id_log.setFormatter(formatter_callback)
     root_logger.addHandler(callback_id_log)
 
+    # Cleanup of old log files
+    asyncio.get_event_loop().create_task(file_callback_log.setup_clean_old_logfiles())
+
     log_level = default_level + (10 * quiet_count) - (10 * verbose_count)
     root_logger.setLevel(log_level)
 

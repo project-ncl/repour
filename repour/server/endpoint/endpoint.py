@@ -181,8 +181,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             if os.path.isfile(log_file):
                 with open(log_file, "r") as f:
                     logs = f.read()
-                # cleanup
-                os.remove(log_file)
 
             obj["log"] = logs
             return status, obj

@@ -5,6 +5,8 @@ import json
 import logging
 import os
 
+from repour import asutil
+
 from aiohttp import web
 
 from prometheus_client import Summary
@@ -134,7 +136,8 @@ async def check_if_other_repour_replicas_cancelled(task_id):
     cancel_indicator_filename = os.path.join(CANCEL_PATH, task_id + ".cancel")
 
     if not os.path.exists(cancel_indicator_filename):
-        open(cancel_indicator_filename, 'w')
+        f = open(cancel_indicator_filename, 'w')
+        f.close()
 
     for _ in range(10):
 
@@ -155,12 +158,15 @@ async def remove_old_cancel_indicator_files():
     Old files defined as having an age greater than 1 hour
     """
     for filename in os.listdir(CANCEL_PATH):
-        epoch_filename = int(os.stat(filename).st_ctime)
+
+        path = os.path.join(CANCEL_PATH, filename)
+
+        epoch_filename = int(os.stat(path).st_ctime)
         current_epoch = calendar.timegm(time.gmtime())
 
         if current_epoch - epoch_filename > 3600:
-            logger.warn("Removing old cancel taskid file indicator: " + filename)
-            os.remove(os.path.join(CANCEL_PATH, filename))
+            logger.warn("Removing old cancel taskid file indicator: " + path)
+            asutil.safe_remove_file(path)
 
 
 def get_task_id_dict():

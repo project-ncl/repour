@@ -4,6 +4,7 @@ import os
 
 from .logs.file_callback_log import get_callback_log_path
 
+
 # Period to re-read file to see if change happened
 PERIOD = 0.3
 
@@ -62,23 +63,30 @@ async def setup_tail_job(callback_id):
 
     if os.path.exists(path):
         with open(path) as f:
+            # seek to end of file initially to simulate 'tail'
+            next_seek = f.seek(0, 2)
 
-            # seek to end of file
-            f.seek(0, 2)
+        while True:
 
-            while True:
-                line = await readline(f)
-                await send(callback_id, line)
+            line, next_seek = await readline(path, next_seek)
+            await send(callback_id, line)
 
 
-async def readline(f):
+async def readline(path, next_seek):
     """
     Helper function to only return when there is a new line written to the file. Otherwise it sleeps for PERIOD seconds
+
+    Re-open the file everytime to avoid syncing / caching issues with shared storage
     """
     while True:
-        data = f.readline()
-        if data:
-            return data
+        with open(path, "r") as f:
+
+            f.seek(next_seek)
+            data = f.readline()
+
+            if data:
+                return data, f.tell()
+
         await asyncio.sleep(PERIOD)
 
 
@@ -116,6 +124,7 @@ async def periodic_cleanup():
                 to_remove_callback_id.append(callback_id)
 
         for callback_id in to_remove_callback_id:
+            logger.info("Removing websocket information for task_id: " + callback_id)
             del websocket_handlers[callback_id]
 
             if callback_id in websocket_taillog_workers:
@@ -143,7 +152,6 @@ async def send(callback_id, message):
         - None
     """
     global websocket_handlers
-    global websocket_taillog_workers
 
     if callback_id in websocket_handlers:
         handlers = websocket_handlers[callback_id]
