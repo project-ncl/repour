@@ -16,8 +16,20 @@ from . import validation
 from ...config import config
 from ...logs import file_callback_log
 
+from prometheus_client import Counter
+from prometheus_client import Summary
+from prometheus_client import Histogram
+from prometheus_async.aio import time
+
 logger = logging.getLogger(__name__)
 
+ERROR_VALIDATION_JSON_COUNTER = Counter('error_validation_json_counter', 'User sent bad JSON requests that failed validation')
+ERROR_RESPONSE_400_COUNTER = Counter('error_response_400_counter', 'App returned 400 status')
+ERROR_RESPONSE_500_COUNTER = Counter('error_response_500_counter', 'App returned 500 status')
+ERROR_CALLBACK_COUNTER = Counter('error_callback_counter', 'Errors calling callback url')
+
+REQ_TIME = Summary("callback_time", "time spent with calling callback")
+REQ_HISTOGRAM_TIME = Histogram("callback_histogram", "Histogram for calling callback")
 
 def create_log_context_id():
     return "repour-" + base64.b32encode(os.urandom(20)).decode("ascii").lower()
@@ -84,6 +96,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             ))
 
             rejected_data = yield from request.text()
+            ERROR_VALIDATION_JSON_COUNTER.inc()
 
             logger.error("Request data: {data}".format(data=rejected_data))
 
@@ -107,6 +120,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 method=request.method,
                 path=request.path,
             ))
+            ERROR_VALIDATION_JSON_COUNTER.inc()
 
             logger.error("Request data: {data}".format(data=spec))
 
@@ -148,11 +162,13 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             except exception.DescribedError as e:
                 status = 400
                 traceback_id, obj = described_error_to_obj(e)
+                ERROR_VALIDATION_JSON_COUNTER.inc()
                 logger.error("Failed ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
                 log_traceback_multi_line()
             except Exception as e:
                 status = 500
                 traceback_id, obj = exception_to_obj(e)
+                ERROR_RESPONSE_500_COUNTER.inc()
                 logger.error(
                     "Internal failure ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
                 log_traceback_multi_line()
@@ -183,6 +199,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
                 logger.info("Callback data: {}".format(obj))
 
+                @time(REQ_TIME)
+                @time(REQ_HISTOGRAM_TIME)
                 @asyncio.coroutine
                 def send_result():
                     try:
@@ -204,6 +222,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             ).encode("utf-8")
                         )
                     except Exception as e:
+                        ERROR_CALLBACK_COUNTER.inc()
                         logger.error(
                             "Unable to send result of callback, exception {ename}, attempt {backoff}/{max_attempts}".format(
                                 ename=e.__class__.__name__,

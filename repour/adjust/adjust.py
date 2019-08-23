@@ -15,6 +15,13 @@ from .. import clone
 from .. import exception
 from ..config import config
 from ..scm import git_provider
+from prometheus_client import Summary
+from prometheus_client import Histogram
+from prometheus_async.aio import time
+
+REQ_TIME = Summary("adjust_req_time", "time spent with adjust endpoint")
+REQ_HISTOGRAM_TIME = Histogram("adjust_req_histogram", "Histogram for adjust endpoint",
+                               buckets=[1, 10, 60, 120, 300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 4500, 5400, 6300, 7200])
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +137,9 @@ def handle_temp_build(adjustspec, adjust_provider_config):
 
     return temp_build_enabled, timestamp, specific_indy_group
 
+
+@time(REQ_TIME)
+@time(REQ_HISTOGRAM_TIME)
 @asyncio.coroutine
 def adjust(adjustspec, repo_provider):
     """
