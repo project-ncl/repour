@@ -2,8 +2,8 @@ import asyncio
 import logging
 import os
 
-CALLBACK_LOGS_PATH = os.environ.get("LOGS_FOLDER", '/tmp/repour-logs-callback')
-
+SHARED_PATH_PREFOLDER = os.environ.get("SHARED_FOLDER", '/tmp')
+CALLBACK_LOGS_PATH = os.path.join(SHARED_PATH_PREFOLDER, "repour-logs-callback")
 
 def get_callback_log_path(callback_id):
     return os.path.join(CALLBACK_LOGS_PATH, callback_id + '.log')

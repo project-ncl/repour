@@ -64,6 +64,8 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
 
 
     await setup_graphite_exporter()
+    # used for distributed cancel operation
+    asyncio.get_event_loop().create_task(cancel.start_cancel_loop())
 
     logger.debug("Creating asyncio server")
     srv = await loop.create_server(app.make_handler(), bind["address"], bind["port"])
