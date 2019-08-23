@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import prometheus_async.aio as aio
 
 from aiohttp import web
 
@@ -15,6 +17,7 @@ from .. import websockets
 from .endpoint import validation
 from ..auth import auth
 from ..config import config
+from prometheus_client.bridge.graphite import GraphiteBridge
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +60,10 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
+    app.router.add_route("GET", "/metrics", aio.web.server_stats)
+
+
+    await setup_graphite_exporter()
 
     logger.debug("Creating asyncio server")
     srv = await loop.create_server(app.make_handler(), bind["address"], bind["port"])
@@ -102,3 +109,21 @@ def start_server(bind, repo_provider, repour_url, adjust_provider):
         elif len(exception_results) == 1:
             raise exception_results[0]
         loop.close()
+
+async def setup_graphite_exporter():
+
+    graphite_server = os.environ.get("GRAPHITE_SERVER", None)
+    graphite_key = os.environ.get("GRAPHITE_KEY", None)
+    graphite_port = os.environ.get("GRAPHITE_PORT", 2003)
+
+    if graphite_server is None or graphite_key is None:
+        logger.warn(
+            "Graphite server (" + str(graphite_server) + ") or Graphite key (" + str(graphite_key) + ") is not defined. Not setting up Monitoring graphite server!")
+        return
+
+    logger.info("Monitoring graphite server setup! Reporting to server: " + graphite_server + ":" + str(graphite_port) + " with prefix: " + str(graphite_key))
+
+
+    gb = GraphiteBridge((graphite_server, graphite_port))
+    gb.start(60.0, prefix = graphite_key)
+

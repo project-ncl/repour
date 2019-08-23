@@ -4,6 +4,15 @@ from urllib.parse import urlparse
 
 from ...config import config
 
+from prometheus_client import Summary
+from prometheus_client import Histogram
+from prometheus_async.aio import time
+
+REQ_TIME = Summary("external_to_internal_req_time", "time spent with external_to_internal endpoint")
+REQ_HISTOGRAM_TIME = Histogram("external_to_internal_req_histogram", "Histogram for external_to_internal endpoint")
+
+@time(REQ_TIME)
+@time(REQ_HISTOGRAM_TIME)
 async def translate(external_to_internal_spec, repo_provider):
 
     external_url = external_to_internal_spec["external_url"]
