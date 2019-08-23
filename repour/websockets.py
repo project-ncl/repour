@@ -2,11 +2,17 @@ import asyncio
 import logging
 import os
 
+from .logs.file_callback_log import get_callback_log_path
+
+# Period to re-read file to see if change happened
+PERIOD = 0.3
+
 logger = logging.getLogger(__name__)
 
 # Global object with key: callback_id and
 # value (asyncio_task, websocket_handler)
 websocket_handlers = {}
+websocket_taillog_workers = {}
 
 async def register(callback_id, task, websocket_handler):
     """ Register a websocket handler with a callback_id and the task where
@@ -27,11 +33,53 @@ async def register(callback_id, task, websocket_handler):
         - None
     """
     global websocket_handlers
+    global websocket_taillog_workers
 
     if callback_id not in websocket_handlers:
         websocket_handlers[callback_id] = [(task, websocket_handler)]
     else:
         websocket_handlers[callback_id].append((task, websocket_handler))
+
+    # create task to tail logs to websocket as new line added to log file
+    if callback_id not in websocket_taillog_workers:
+        websocket_taillog_workers[callback_id] = asyncio.get_event_loop().create_task(setup_tail_job(callback_id))
+    else:
+        # error handling: check on current task and create new one if task is 'done'
+        task = websocket_taillog_workers[callback_id]
+        if task is None or task.done():
+            websocket_taillog_workers[callback_id] = asyncio.get_event_loop().create_task(setup_tail_job(callback_id))
+
+
+async def setup_tail_job(callback_id):
+    """
+    Starts by going to end of logfile of callback_id, then sending any new lines written to the logfile to the websocket clients
+    Infinite loop, so at some point that task has to be explicitly deleted.
+
+    If logfile doesn't exist, just stop
+    """
+
+    path = get_callback_log_path(callback_id)
+
+    if os.path.exists(path):
+        with open(path) as f:
+
+            # seek to end of file
+            f.seek(0, 2)
+
+            while True:
+                line = await readline(f)
+                await send(callback_id, line)
+
+
+async def readline(f):
+    """
+    Helper function to only return when there is a new line written to the file. Otherwise it sleeps for PERIOD seconds
+    """
+    while True:
+        data = f.readline()
+        if data:
+            return data
+        await asyncio.sleep(PERIOD)
 
 
 async def periodic_cleanup():
@@ -47,6 +95,7 @@ async def periodic_cleanup():
         - None
     """
     global websocket_handlers
+    global websocket_taillog_workers
 
     while True:
 
@@ -68,6 +117,18 @@ async def periodic_cleanup():
 
         for callback_id in to_remove_callback_id:
             del websocket_handlers[callback_id]
+
+            if callback_id in websocket_taillog_workers:
+
+                task = websocket_taillog_workers[callback_id]
+
+                # cancel the task to tail first
+                if task is not None:
+                    task.cancel()
+
+                # then delete the key also
+                del websocket_taillog_workers[callback_id]
+
         await asyncio.sleep(30)
 
 
@@ -82,6 +143,7 @@ async def send(callback_id, message):
         - None
     """
     global websocket_handlers
+    global websocket_taillog_workers
 
     if callback_id in websocket_handlers:
         handlers = websocket_handlers[callback_id]
@@ -105,5 +167,15 @@ async def close(callback_id):
         - None
     """
     global websocket_handlers
+    global websocket_taillog_workers
 
     del websocket_handlers[callback_id]
+
+    if callback_id in websocket_taillog_workers:
+
+        task = websocket_taillog_workers[callback_id]
+
+        if task is not None:
+            task.cancel()
+
+        del websocket_taillog_workers[callback_id]

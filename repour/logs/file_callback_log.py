@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 
-CALLBACK_LOGS_PATH = '/tmp/repour-logs-callback'
+CALLBACK_LOGS_PATH = os.environ.get("LOGS_FOLDER", '/tmp/repour-logs-callback')
 
 
 def get_callback_log_path(callback_id):
@@ -39,5 +39,5 @@ class FileCallbackHandler(logging.StreamHandler):
             self.handleError(record)
 
     def _open_callback_file(self, callback_id):
-        path = os.path.join(self.filename, callback_id + ".log")
+        path = get_callback_log_path(callback_id)
         return open(path, self.mode, encoding=self.encoding)

@@ -5,7 +5,6 @@ import os
 import sys
 
 from .logs import file_callback_log
-from .logs import websocket_log
 
 logger = logging.getLogger(__name__)
 
@@ -211,10 +210,6 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
         console_log = logging.StreamHandler()
         console_log.setFormatter(formatter)
         root_logger.addHandler(console_log)
-
-    ws_log = websocket_log.WebsocketLoggerHandler()
-    ws_log.setFormatter(formatter_callback)
-    root_logger.addHandler(ws_log)
 
     callback_id_log = file_callback_log.FileCallbackHandler()
     callback_id_log.setFormatter(formatter_callback)
