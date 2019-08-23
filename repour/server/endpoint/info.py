@@ -7,6 +7,16 @@ from ...scm import git_provider
 from ... import exception
 
 
+from prometheus_client import Summary
+from prometheus_client import Histogram
+from prometheus_async.aio import time
+
+
+REQ_TIME = Summary("info_req_time", "time spent with info endpoint")
+REQ_HISTOGRAM_TIME = Histogram("info_req_histogram", "Histogram for info endpoint")
+
+@time(REQ_TIME)
+@time(REQ_HISTOGRAM_TIME)
 @asyncio.coroutine
 def handle_request(request):
     version = repour.__version__

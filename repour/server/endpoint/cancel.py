@@ -4,8 +4,17 @@ import logging
 
 from aiohttp import web
 
+from prometheus_client import Summary
+from prometheus_client import Histogram
+from prometheus_async.aio import time
+
 logger = logging.getLogger(__name__)
 
+REQ_TIME = Summary("cancel_req_time", "time spent with cancel endpoint")
+REQ_HISTOGRAM_TIME = Histogram("cancel_req_histogram", "Histogram for cancel endpoint")
+
+@time(REQ_TIME)
+@time(REQ_HISTOGRAM_TIME)
 @asyncio.coroutine
 def handle_cancel(request):
 
