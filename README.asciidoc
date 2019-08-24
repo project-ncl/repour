@@ -715,6 +715,44 @@ GitLab integration tests will be executed using the local Docker server. To run 
 1. ensure your vex environment includes `venv/integration-test.txt`
 2. prefix `REPOUR_RUN_IT=1` before the `unittest` command, to set the triggering environment variable. For example: `REPOUR_RUN_IT=1 vex rpo python -m unittest`
 
+
+== Running Repour with multiple replicas
+
+To run Repour with multiple replicas, you have to define a shared folder (defined with env var SHARED_FOLDER) where all the replicas can write / read to.
+
+There are 2 cases to consider when running multiple instances of Repour:
+
+- websocket logging of /clone or /adjust
+- cancel operation
+
+=== Websocket logging
+For the websocket logging, all logs related to the processing of an endpoint is appended into a file in the shared folder with format '<taskid>.log'. Then, any Repour instance that gets the request for live logs via websocket for a particular taskid can look at the shared folder and start sending any logs written to that file.
+
+There is a seperate thread that cleans up log files that haven't been modified in more than 2 days to save space in the shared folder.
+
+=== cancel operation
+When a request to cancel a task comes in, we first check if the task is
+present in the repour server which got the request.
+
+If yes -> cancel that task and report back to the client
+
+If no ->
+- Create an indicator file in a shared location to indicate that we want to
+  cancel a task
+- Verify every PERIOD_CANCEL_LOOP_SLEEP seconds, for up to 10 times, if the
+  indicator file got deleted
+- if yes -> the cancel was successful
+- if no -> cancel was unsuccessful. Delete the indicator file and tell the
+  caller the cancel operation was unsuccessful
+
+- that indicator file is seen by other repour replicas (via the shared
+  location) in the 'start_cancel_loop' - the other repour replicas check
+  their event loop, and if they found and cancelled the task, they
+  delete the indicator file
+
+The 'start_cancel_loop' runs every PERIOD_CANCEL_LOOP_SLEEP seconds to check
+
+
 == Monitoring
 We currently monitor endpoints requests and error by using the Prometheus client, exposing the metrics in the `/metrics` endpoint. We can optionally export the data to Graphite if environment variable `GRAPHITE_SERVER` and `GRAPHITE_KEY`` are defined. `GRAPHITE_KEY` is the prefix for the data, and is usually set to the url of the server.
 
