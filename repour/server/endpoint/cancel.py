@@ -1,6 +1,6 @@
 import asyncio
 import calendar
-import time
+import time as python_time
 import json
 import logging
 import os
@@ -162,7 +162,7 @@ async def remove_old_cancel_indicator_files():
         path = os.path.join(CANCEL_PATH, filename)
 
         epoch_filename = int(os.stat(path).st_ctime)
-        current_epoch = calendar.timegm(time.gmtime())
+        current_epoch = calendar.timegm(python_time.gmtime())
 
         if current_epoch - epoch_filename > 3600:
             logger.warn("Removing old cancel taskid file indicator: " + path)
