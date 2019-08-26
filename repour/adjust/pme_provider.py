@@ -72,13 +72,13 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
     async def get_extra_param_execution_root_name(extra_adjust_parameters):
         """
-        If the parameter 'EXECUTION_ROOT_NAME' is present, the string value should be in format '<group_id>:<artifact_id>'
+        If the parameter 'BREW_BUILD_NAME' is present, the string value should be in format '<group_id>:<artifact_id>'
 
         Return the group_id,artifact_id value.
 
         If the string is in the wrong format or if the parameter is not present, return None,None instead
         """
-        paramsString = extra_adjust_parameters.get("EXECUTION_ROOT_NAME", None)
+        paramsString = extra_adjust_parameters.get("BREW_BUILD_NAME", None)
 
         if paramsString is None:
             return None, None
@@ -87,7 +87,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             if len(result) == 2:
                 return result[0], result[1]
             else:
-                logger.warn('EXECUTION_ROOT_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"')
+                logger.warn('BREW_BUILD_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"')
                 logger.warn('Value provided is: "' + paramsString + '"')
                 return None, None
 
