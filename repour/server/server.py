@@ -12,7 +12,6 @@ from .endpoint import external_to_internal
 from .endpoint import ws
 from ..adjust import adjust
 from .. import clone
-from .. import repo
 from .. import websockets
 from .endpoint import validation
 from ..auth import auth
@@ -37,17 +36,10 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     app = web.Application(loop=loop, middlewares=[auth.providers[auth_provider]] if auth_provider else {})
 
     logger.debug("Adding application resources")
-    app["repo_provider"] = repo.provider_types[repo_provider["type"]](**repo_provider["params"])
 
     external_to_internal_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.external_to_internal, external_to_internal.translate, repour_url)
 
-    if repo_provider["type"] == "modeb":
-        logger.warn("Mode B selected, guarantees rescinded")
-        # pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull_modeb, pull.pull, repour_url)
-        adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust_modeb, adjust.adjust, repour_url)
-    else:
-        # pull_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.pull, pull.pull, repour_url)
-        adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust, adjust.adjust, repour_url)
+    adjust_source = endpoint.validated_json_endpoint(shutdown_callbacks, validation.adjust_modeb, adjust.adjust, repour_url)
 
     logger.debug("Setting up handlers")
     app.router.add_route("GET", "/", info.handle_request)

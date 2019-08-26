@@ -3,7 +3,6 @@ import logging
 from voluptuous import *
 
 from ...adjust import adjust as adjustmodule
-from ... import repo
 
 def mode_b_ify(raw):
     clone = raw.copy()
@@ -175,7 +174,7 @@ server_config_raw = {
         "params": {Extra: object},
     },
     "repo_provider": {
-        "type": Any(*repo.provider_types.keys()),
+        "type": Any(nonempty_str, None),
         "params": {Extra: object},
     },
 }
