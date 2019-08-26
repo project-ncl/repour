@@ -576,10 +576,6 @@ All endpoints that operate in callback mode can be eligible for live logs via we
 
 == Docker Images and Open Shift
 
-There are one docker images defined in this repository:
-
-1. ``Dockerfile``, the main image containing the Repour server.
-
 The docker images can be run in plain Docker or OpenShift. Some less-than-ideal design choices were made to fit the applications into the link:https://docs.openshift.com/enterprise/3.1/creating_images/guidelines.html[OSE-compatible] containers:
 
 * `pid1.py` is the entrypoint of both images, and remains running for the life of the container. It works around the "Docker PID1 Zombie Problem" by reaping adopted children in addition to the primary child defined by its arguments.
