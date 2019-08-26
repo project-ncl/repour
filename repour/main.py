@@ -56,14 +56,10 @@ def run_subcommand(args):
     log_default_level = logging._nameToLevel[config["log"]["level"]]
     configure_logging(log_default_level, config["log"]["path"], args.verbose, args.quiet, args.silent)
 
-    # Mode B
-    if args.mode_b:
-        repo_provider = {
-            "type": "modeb",
-            "params": {},
-        }
-    else:
-        repo_provider = config["repo_provider"]
+    repo_provider = {
+        "type": "modeb",
+        "params": {},
+    }
 
     # Go
     server.start_server(
@@ -93,54 +89,16 @@ def run_container_subcommand(args):
     da_url = required_env("REPOUR_PME_DA_URL", "The REST endpoint required by PME to look up GAVs")
     repour_url = required_env("REPOUR_URL", "Repour's URL")
 
-    # Mode B
-    if args.mode_b:
-        # ssh_user = required_env("REPOUR_SSH_USER", "The SSH username expected by the git server")
-        # os.makedirs(".ssh", mode=0o700, exist_ok=True)
-        # with open(".ssh/config", "w") as f:
-        #     f.write("Host *\n\tUser {ssh_user}\n".format(**locals()))
-        # os.chmod(".ssh/config", 0o600)
-        repo_provider = {
-            "type": "modeb",
-            "params": {},
-        }
-    else:
-        # gitolite uses ssh key auth, will be mounted as OpenShift Secret file in secrets/gitolite/repour.key
-        # https://github.com/kubernetes/kubernetes/blob/master/docs/design/secrets.md#use-case-pod-with-ssh-keys
-        gitolite_host = required_env("REPOUR_GITOLITE_HOST", "The hostname of the repository provider")
+    repo_provider = {
+        "type": "modeb",
+        "params": {},
+    }
 
     if missing_envs:
         print("Missing environment variable(s):")
         for missing_env in missing_envs:
             print("{m[0]} ({m[1]})".format(m=missing_env))
         return 2
-
-    if not args.mode_b:
-        # Read optional env vars
-        gitolite_ssh_port = os.environ.get("REPOUR_GITOLITE_SSH_PORT", "2222")
-        gitolite_ssh_user = os.environ.get("REPOUR_GITOLITE_SSH_USER", "git")
-        gitolite_http_port = os.environ.get("REPOUR_GITOLITE_HTTP_PORT", "8080")
-        gitolite_user = os.environ.get("REPOUR_GITOLITE_USER", "repour")
-
-        gitolite_ssh_url = "ssh://{ssh_user}@{host}:{port}/{user}".format(
-            host=gitolite_host,
-            port=gitolite_ssh_port,
-            ssh_user=gitolite_ssh_user,
-            user=gitolite_user,
-        )
-        gitolite_http_url = "http://{host}:{port}/{user}".format(
-            host=gitolite_host,
-            port=gitolite_http_port,
-            user=gitolite_user,
-        )
-
-        repo_provider = {
-            "type": "gitolite",
-            "params": {
-                "ssh_url": gitolite_ssh_url,
-                "http_url": gitolite_http_url,
-            },
-        }
 
     # Go
     server.start_server(
@@ -191,13 +149,11 @@ def create_argparser():
     run_parser.add_argument("-c", "--config", default="config.yaml", help="Path to the configuration file. Default: config.yaml")
     run_parser.add_argument("-a", "--address", help="Override the bind IP address provided in the config file.")
     run_parser.add_argument("-p", "--port", help="Override the bind port number provided in the config file.")
-    run_parser.add_argument("--mode-b", action="store_true", help="Run the server with client-specified internal repositories")
 
     run_container_desc = "Run the server in a container environment"
     run_container_parser = subparsers.add_parser("run-container", help=run_container_desc)
     run_container_parser.description = run_container_desc
     run_container_parser.set_defaults(func=run_container_subcommand)
-    run_container_parser.add_argument("--mode-b", action="store_true", help="Run the server with client-specified internal repositories")
 
     return parser
 
