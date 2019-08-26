@@ -44,5 +44,4 @@ To make it simple, let's define `x/y/../z` as a list x, y, .., z of keys in the 
 === Additional notes
 
 Not all possible configuration options are yet migrated to use this system.
-You should also take a look at `repour/example-config.yaml`
 

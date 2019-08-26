@@ -146,7 +146,7 @@ def create_argparser():
     run_parser = subparsers.add_parser("run", help=run_desc)
     run_parser.description = run_desc
     run_parser.set_defaults(func=run_subcommand)
-    run_parser.add_argument("-c", "--config", default="config.yaml", help="Path to the configuration file. Default: config.yaml")
+    run_parser.add_argument("-c", "--config", default="config.json", help="Path to the configuration file. Default: config.json")
     run_parser.add_argument("-a", "--address", help="Override the bind IP address provided in the config file.")
     run_parser.add_argument("-p", "--port", help="Override the bind port number provided in the config file.")
 
