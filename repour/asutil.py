@@ -197,3 +197,10 @@ def add_username_url(url, username):
         parsed_list[1] = username + '@' + url_part
 
         return urllib.parse.urlunsplit(parsed_list)
+
+
+def safe_remove_file(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
