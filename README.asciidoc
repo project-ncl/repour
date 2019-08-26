@@ -1,6 +1,6 @@
 = Repour - Archival Code Service
 
-Repour archives source code from many untrusted origins into trusted git repositories. It supports SCMs like link:https://git-scm.com/[git], link:https://www.mercurial-scm.org/[hg], and link:https://subversion.apache.org/[svn], as well as archive formats link:http://www.libarchive.org/[like tar and zip]. Tools like link:https://github.com/release-engineering/pom-manipulation-ext[PME] can optionally be applied as ``adjust``ments, and the results archived alongside the unmodified sources.
+Repour archives source code from many untrusted origins into trusted git repositories. It supports https://git-scm.com/[git]. Tools like link:https://github.com/release-engineering/pom-manipulation-ext[PME] can optionally be applied as ``adjust``ments, and the results archived alongside the unmodified sources.
 
 Why the name "Repour"? First, it contains the common short word for "repository" ("repo"); second, the action of "repouring" could be used to describe what the program does to the repositories.
 
