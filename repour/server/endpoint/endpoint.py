@@ -162,7 +162,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             except exception.DescribedError as e:
                 status = 400
                 traceback_id, obj = described_error_to_obj(e)
-                ERROR_VALIDATION_JSON_COUNTER.inc()
+                ERROR_RESPONSE_400_COUNTER.inc()
                 logger.error("Failed ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
                 log_traceback_multi_line()
             except Exception as e:
