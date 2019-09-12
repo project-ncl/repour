@@ -19,33 +19,19 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
     async def get_result_data(work_dir, group_id=None, artifact_id=None, results_file=None):
 
-        raw_result_data = "{}"
         if results_file:
-            results_file_path = results_file
+            result_file_path_manipulation = results_file
         else:
-            result_file_path = work_dir + "/target/pom-manip-ext-result.json"
+            result_file_path_pom_manip = work_dir + "/target/pom-manip-ext-result.json"
+            result_file_path_manipulation = work_dir + "/target/manipulation.json"
 
-        if os.path.isfile(result_file_path):
-            with open(result_file_path, "r") as file:
-                raw_result_data = file.read()
+        if os.path.isfile(result_file_path_manipulation):
+            with open(result_file_path_manipulation, "r") as file:
+                return parse_pme_result_manipulation_format(work_dir, pme_parameters, file.read(), group_id, artifact_id)
 
-        logger.info('Got PME result data "{raw_result_data}".'.format(**locals()))
-        pme_result = json.loads(raw_result_data)
-
-        if group_id is not None and artifact_id is not None:
-            logger.warn("Overriding the groupId of the result to: " + group_id)
-            pme_result['VersioningState']['executionRootModified']['groupId'] = group_id
-
-            logger.warn("Overriding the artifactId of the result to: " + artifact_id)
-            pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
-
-        try:
-            pme_result["RemovedRepositories"] = util.get_removed_repos(work_dir, pme_parameters)
-        except FileNotFoundError as e:
-            logger.error('File for removed repositories could not be found')
-            logger.error(str(e))
-
-        return pme_result
+        elif os.path.isfile(result_file_path_pom_manip):
+            with open(result_file_path_pom_manip, "r") as file:
+                return await parse_pme_result_pom_manip_ext_result_format(work_dir, pme_parameters, file.read(), group_id, artifact_id)
 
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
@@ -249,3 +235,51 @@ async def create_pme_result_file(repo_dir):
 
     with open(result_file_path, 'w') as outfile:
         json.dump(pme_result, outfile)
+
+
+def parse_pme_result_manipulation_format(work_dir, pme_parameters, raw_result_data, group_id, artifact_id):
+
+    logger.info('Got PME result data for manipulation.json: "{raw_result_data}".'.format(**locals()))
+    data = json.loads(raw_result_data)
+
+    pme_result = {'VersioningState': {'executionRootModified': {}}}
+
+    if group_id is not None and artifact_id is not None:
+        logger.warn("Overriding the groupId of the result to: " + group_id)
+        pme_result['VersioningState']['executionRootModified']['groupId'] = group_id
+
+        logger.warn("Overriding the artifactId of the result to: " + artifact_id)
+        pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
+
+    else:
+        pme_result['VersioningState']['executionRootModified']['groupId'] = data["executionRoot"]["groupId"]
+        pme_result['VersioningState']['executionRootModified']['artifactId'] = data["executionRoot"]["artifactId"]
+        pme_result['VersioningState']['executionRootModified']['version'] = data["executionRoot"]["version"]
+
+    try:
+        pme_result["RemovedRepositories"] = util.get_removed_repos(work_dir, pme_parameters)
+    except FileNotFoundError as e:
+        logger.error('File for removed repositories could not be found')
+        logger.error(str(e))
+
+    return pme_result
+
+
+def parse_pme_result_pom_manip_ext_result_format(work_dir, pme_parameters, raw_result_data, group_id, artifact_id):
+    logger.info('Got PME result data for pom-manip-ext-result.json: "{raw_result_data}".'.format(**locals()))
+    pme_result = json.loads(raw_result_data)
+
+    if group_id is not None and artifact_id is not None:
+        logger.warn("Overriding the groupId of the result to: " + group_id)
+        pme_result['VersioningState']['executionRootModified']['groupId'] = group_id
+
+        logger.warn("Overriding the artifactId of the result to: " + artifact_id)
+        pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
+
+    try:
+        pme_result["RemovedRepositories"] = util.get_removed_repos(work_dir, pme_parameters)
+    except FileNotFoundError as e:
+        logger.error('File for removed repositories could not be found')
+        logger.error(str(e))
+
+    return pme_result
