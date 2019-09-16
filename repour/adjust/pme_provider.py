@@ -31,7 +31,7 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         elif os.path.isfile(result_file_path_pom_manip):
             with open(result_file_path_pom_manip, "r") as file:
-                return await parse_pme_result_pom_manip_ext_result_format(work_dir, pme_parameters, file.read(), group_id, artifact_id)
+                return parse_pme_result_pom_manip_ext_result_format(work_dir, pme_parameters, file.read(), group_id, artifact_id)
 
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
