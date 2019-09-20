@@ -23,13 +23,12 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
     get_result_data = get_result_data if get_result_data is not None else get_result_data_default
 
     @asyncio.coroutine
-    def adjust(repo_dir, extra_adjust_parameters, adjust_result):
+    def adjust(repo_dir, extra_adjust_parameters, adjust_result, env=None):
         nonlocal execution_name
         logger.info('Executing "{execution_name}" using (sub)process adjust provider as "{cmd}".'.format(**locals()))
         log_executable_info(cmd)
         filled_cmd = [p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p for p in cmd]
 
-        env = None
         stdout = None
         try:
             stdout = yield from expect_ok(
