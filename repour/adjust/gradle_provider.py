@@ -64,19 +64,19 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
         jvm_version = get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
-            JAVA_HOME = 'JAVA_HOME=/usr/lib/jvm/java-' + jvm_version + '-openjdk'
-            cmd = [JAVA_HOME]
+            env = {'JAVA_HOME': '/usr/lib/jvm/java-' + jvm_version + '-openjdk'}
+            logger.info("Specifying JAVA_HOME: " + env['JAVA_HOME'])
         else:
-            cmd = []
+            env = None
 
-        cmd = cmd + [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
+        cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
                "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
 
         result = await process_provider.get_process_provider(EXECUTION_NAME,
                                                              cmd,
                                                              get_result_data=get_result_data,
                                                              send_log=True,
-                                                             results_file=MANIPULATION_FILE_NAME)(work_dir, extra_adjust_parameters, adjust_result)
+                                                             results_file=MANIPULATION_FILE_NAME)(work_dir, extra_adjust_parameters, adjust_result, env=env)
 
         adjust_result["adjustType"] = result["adjustType"]
         adjust_result["resultData"] = result["resultData"]
