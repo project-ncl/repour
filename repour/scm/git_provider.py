@@ -50,10 +50,14 @@ def git_provider():
     async def checkout(dir, ref, force=False):
 
         # Checkout tag or branch or commit-id
-        cmd=["git", "checkout", ref]
+        cmd=["git", "checkout"]
 
         if force:
             cmd.append("-f")
+
+        cmd.append(ref)
+        # See NCL-5173 why we need to add '--' at the end
+        cmd.append('--')
 
         try:
             await expect_ok(
