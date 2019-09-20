@@ -169,9 +169,12 @@ def get_gav_from_pom(pom_xml_file):
     tree = ET.parse(pom_xml_file)
     root = tree.getroot()
 
-    namespace = root.tag.split('}')[0].strip('{')
+    if '{' in root.tag and '}' in root.tag:
+        namespace_search = '{{{}}}'.format(root.tag.split('}')[0].strip('{'))
+    else:
+        namespace_search = ''
 
-    parent = root.find('{{{}}}parent'.format(namespace))
+    parent = root.find(namespace_search + 'parent')
     parent_group_id = None
     parent_version = None
 
@@ -179,8 +182,9 @@ def get_gav_from_pom(pom_xml_file):
     # Docs concerning how inheritance of groupId and version from parent
     if parent is not None:
 
-        parent_group_id_elem = parent.find('{{{}}}groupId'.format(namespace))
-        parent_version_elem = parent.find('{{{}}}version'.format(namespace))
+
+        parent_group_id_elem = parent.find(namespace_search + 'groupId')
+        parent_version_elem = parent.find(namespace_search + 'version')
 
         if parent_group_id_elem is not None:
             parent_group_id = parent_group_id_elem.text
@@ -188,7 +192,7 @@ def get_gav_from_pom(pom_xml_file):
         if parent_version_elem is not None:
             parent_version = parent_version_elem.text
 
-    group_id_elem = root.find('{{{}}}groupId'.format(namespace))
+    group_id_elem = root.find(namespace_search + 'groupId')
 
     if group_id_elem is not None:
         group_id = group_id_elem.text
@@ -200,14 +204,14 @@ def get_gav_from_pom(pom_xml_file):
     else:
         raise Exception("Could not find the groupId in the pom.xml")
 
-    artif_id_elem = root.find('{{{}}}artifactId'.format(namespace))
+    artif_id_elem = root.find(namespace_search + 'artifactId')
 
     if artif_id_elem is not None:
         artif_id = artif_id_elem.text
     else:
         raise Exception("Could not find the artifactId in the pom.xml")
 
-    version_elem  = root.find('{{{}}}version'.format(namespace))
+    version_elem  = root.find(namespace_search + 'version')
 
     if version_elem is not None:
         version = version_elem.text
