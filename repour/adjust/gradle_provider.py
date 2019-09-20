@@ -17,6 +17,7 @@ EXECUTION_NAME = "GRADLE"
 INIT_SCRIPT_FILE_NAME = "analyzer-init.gradle"
 MANIPULATION_FILE_NAME = "manipulation.json"
 
+REPOUR_JAVA_KEY = "-DRepour_Java="
 
 def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=None, timestamp=None):
 
@@ -60,6 +61,14 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             live_log=True
         )
 
+        jvm_version = get_jvm_from_extra_parameters(extra_parameters)
+
+        if jvm_version:
+            env = {'JAVA_HOME': '/usr/lib/jvm/java-' + jvm_version + '-openjdk'}
+            logger.info("Specifying JAVA_HOME: " + env['JAVA_HOME'])
+        else:
+            env = None
+
         cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
                "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
 
@@ -67,7 +76,7 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
                                                              cmd,
                                                              get_result_data=get_result_data,
                                                              send_log=True,
-                                                             results_file=MANIPULATION_FILE_NAME)(work_dir, extra_adjust_parameters, adjust_result)
+                                                             results_file=MANIPULATION_FILE_NAME)(work_dir, extra_adjust_parameters, adjust_result, env=env)
 
         adjust_result["adjustType"] = result["adjustType"]
         adjust_result["resultData"] = result["resultData"]
@@ -140,3 +149,16 @@ def get_command_gradle(work_dir):
         command_gradle = './gradlew'
 
     return command_gradle
+
+
+def get_jvm_from_extra_parameters(extra_parameters):
+    """
+    If repour JVM option specified, return the option value. Otherwise return None
+    """
+
+    for parameter in extra_parameters:
+
+        if REPOUR_JAVA_KEY in parameter:
+            return parameter.replace(REPOUR_JAVA_KEY, '')
+    else:
+        return None
