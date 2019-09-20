@@ -17,6 +17,7 @@ EXECUTION_NAME = "GRADLE"
 INIT_SCRIPT_FILE_NAME = "analyzer-init.gradle"
 MANIPULATION_FILE_NAME = "manipulation.json"
 
+REPOUR_JAVA_KEY = "-DRepour_Java="
 
 def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=None, timestamp=None):
 
@@ -60,7 +61,15 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             live_log=True
         )
 
-        cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
+        jvm_version = get_jvm_from_extra_parameters(extra_parameters)
+
+        if jvm_version:
+            JAVA_HOME = 'JAVA_HOME=/usr/lib/jvm/java-' + jvm_version + '-openjdk'
+            cmd = [JAVA_HOME]
+        else:
+            cmd = []
+
+        cmd = cmd + [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
                "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
 
         result = await process_provider.get_process_provider(EXECUTION_NAME,
@@ -140,3 +149,16 @@ def get_command_gradle(work_dir):
         command_gradle = './gradlew'
 
     return command_gradle
+
+
+def get_jvm_from_extra_parameters(extra_parameters):
+    """
+    If repour JVM option specified, return the option value. Otherwise return None
+    """
+
+    for parameter in extra_parameters:
+
+        if REPOUR_JAVA_KEY in parameter:
+            return parameter.replace(REPOUR_JAVA_KEY, '')
+    else:
+        return None
