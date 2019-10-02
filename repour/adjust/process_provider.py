@@ -24,7 +24,7 @@ def get_process_provider(execution_name, cmd, get_result_data=None, log_context_
     async def adjust(repo_dir, extra_adjust_parameters, adjust_result, env=None):
         # TODO: Why 'adjust_result' is ignored?
         nonlocal execution_name
-        logger.info('Executing "{execution_name}" using (sub)process adjust provider as "{cmd}".'.format(**locals()))
+        logger.info('Executing "{execution_name}" using (sub)process adjust provider as: '.format(**locals()) + ' '.join(cmd))
         log_executable_info(cmd)
         filled_cmd = [p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p for p in cmd]
 
