@@ -44,9 +44,6 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
         work_dir = os.path.join(work_dir, subfolder)
 
         logger.info("Adjusting in {}".format(work_dir))
-        logger.info("Copying Gradle init file from '{}'".format(init_file_path))
-        shutil.copy2(init_file_path, os.path.join(
-            work_dir, INIT_SCRIPT_FILE_NAME))
 
         logger.info("Getting Gradle version...")
 
@@ -70,7 +67,7 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             env = None
 
         cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
-               "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
+               "--init-script", init_file_path, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
 
         result = await process_provider.get_process_provider(EXECUTION_NAME,
                                                              cmd,
