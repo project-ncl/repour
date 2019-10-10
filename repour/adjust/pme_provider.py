@@ -105,11 +105,19 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         extra_parameters, subfolder = yield from util.get_extra_parameters(extra_adjust_parameters)
 
+        jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
+
+        if jvm_version:
+            location = '/usr/lib/jvm/java-' + jvm_version + '-openjdk/bin/'
+            logger.info("Specifying java path: " + location)
+        else:
+            location = ''
+
         # readjust the repo_dir to run PME from the folder where the root pom.xml is located
         # See: PRODTASKS-361
         repo_dir = os.path.join(repo_dir, subfolder)
 
-        cmd = ["java", "-jar", pme_jar_path] \
+        cmd = [location + "java", "-jar", pme_jar_path] \
               + pme_parameters + temp_build_parameters + extra_parameters
 
         logger.info('Executing "' + execution_name + '" using "pme" adjust provider '

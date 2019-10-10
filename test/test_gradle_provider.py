@@ -23,14 +23,3 @@ class TestGradleProvider(unittest.TestCase):
 
         no_gradlew_folder.cleanup()
 
-    def test_get_jvm_from_extra_parameters(self):
-
-        extra_params = ['-DRepour_Java=1.8.0', 'not appropriate']
-        jvm = gradle_provider.get_jvm_from_extra_parameters(extra_params)
-
-        self.assertEqual('1.8.0', jvm)
-
-        extra_params = ['not really', 'not appropriate']
-
-        jvm_not_specified = gradle_provider.get_jvm_from_extra_parameters(extra_params)
-        self.assertEqual(None, jvm_not_specified)

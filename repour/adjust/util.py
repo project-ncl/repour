@@ -10,6 +10,7 @@ from .. import exception
 
 logger = logging.getLogger(__name__)
 
+REPOUR_JAVA_KEY = "-DRepour_Java="
 
 def get_removed_repos(work_dir, parameters):
     """
@@ -127,3 +128,16 @@ def get_extra_parameters(extra_adjust_parameters):
             subfolder = options.file.replace("pom.xml", "")
 
         return remaining_args, subfolder
+
+
+def get_jvm_from_extra_parameters(extra_parameters):
+    """
+    If repour JVM option specified, return the option value. Otherwise return None
+    """
+
+    for parameter in extra_parameters:
+
+        if REPOUR_JAVA_KEY in parameter:
+            return parameter.replace(REPOUR_JAVA_KEY, '')
+    else:
+        return None
