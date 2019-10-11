@@ -45,6 +45,7 @@ def get_removed_repos(work_dir, parameters):
                 logger.info(
                     'File %s does not exist. It seems no repositories were removed', filepath)
 
+    logger.info("Removed repos are: " + str(result))
     return result
 
 
