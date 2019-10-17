@@ -6,11 +6,15 @@ import re
 
 from xml.dom import minidom
 
+from .. import asutil
 from .. import exception
 
 logger = logging.getLogger(__name__)
 
 REPOUR_JAVA_KEY = "-DRepour_Java="
+
+stdout_options = asutil.process_stdout_options
+stderr_options = asutil.process_stderr_options
 
 def get_removed_repos(work_dir, parameters):
     """
@@ -142,3 +146,24 @@ def get_jvm_from_extra_parameters(extra_parameters):
             return parameter.replace(REPOUR_JAVA_KEY, '')
     else:
         return None
+
+@asyncio.coroutine
+def print_java_version(java_bin_dir = ''):
+
+    if java_bin_dir and java_bin_dir.endswith('/'):
+        command = java_bin_dir + 'java'
+    elif java_bin_dir:
+        command = java_bin_dir +'/java'
+    else:
+        command = 'java'
+
+    expect_ok = asutil.expect_ok_closure()
+    output = yield from expect_ok(
+        cmd=[command, "-version"],
+        desc="Failed getting Java version",
+        cwd='.',
+        stdout=stdout_options["text"],
+        stderr=stderr_options["stdout"],
+        print_cmd=True
+    )
+    logger.info(output) 

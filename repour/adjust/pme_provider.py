@@ -113,6 +113,8 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         else:
             location = ''
 
+        yield from util.print_java_version(java_bin_dir=location)
+
         # readjust the repo_dir to run PME from the folder where the root pom.xml is located
         # See: PRODTASKS-361
         repo_dir = os.path.join(repo_dir, subfolder)
