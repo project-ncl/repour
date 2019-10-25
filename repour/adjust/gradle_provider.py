@@ -54,13 +54,6 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
 
         command_gradle = get_command_gradle(work_dir)
 
-        yield from expect_ok(
-            cmd=[command_gradle, "--version"],
-            desc="Failed getting Gradle version",
-            cwd=work_dir,
-            live_log=True
-        )
-
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
@@ -68,6 +61,14 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             logger.info("Specifying JAVA_HOME: " + env['JAVA_HOME'])
         else:
             env = None
+
+        yield from expect_ok(
+            cmd=[command_gradle, "--version"],
+            desc="Failed getting Gradle version",
+            cwd=work_dir,
+            live_log=True,
+            env=env
+        )
 
         cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
                "--init-script", INIT_SCRIPT_FILE_NAME, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
