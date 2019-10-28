@@ -772,6 +772,14 @@ The metrics monitored are:
 - CPU, memory, GC
   * Covers saturation
 
+== Kafka logging
+Repour can send logs to a Kafka server if and only if the appropriate settings
+are defined as env variables:
+
+- REPOUR_KAFKA_SERVER (format <host>:<port>)
+- REPOUR_KAFKA_TOPIC
+- REPOUR_KAFKA_CAFILE (location of the ca file to talk to kafka)
+
 == License
 
 The content of this repository is released under the ASL 2.0, as provided in the LICENSE file. See the NOTICE file for the copyright statement and a list of contributors. By submitting a "pull request" or otherwise contributing to this repository, you agree to license your contribution under the license identified above.

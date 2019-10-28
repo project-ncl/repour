@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 
+from kafka_logger.handlers import KafkaLoggingHandler
 from .logs import file_callback_log
 
 logger = logging.getLogger(__name__)
@@ -12,11 +13,21 @@ class ContextLogRecord(logging.LogRecord):
     no_context_found = "NoContext"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        task = asyncio.Task.current_task()
+        if self.has_event_loop():
+            task = asyncio.Task.current_task()
+        else:
+            task = None
         if task is not None:
             self.log_context = getattr(task, "log_context", self.no_context_found)
         else:
             self.log_context = self.no_context_found
+
+    def has_event_loop(self):
+        try:
+            asyncio.get_event_loop()
+            return True
+        except RuntimeError:
+            return False
 
 def override(config, config_coords, args, arg_name):
     if getattr(args, arg_name, None) is not None:
@@ -65,7 +76,11 @@ def run_container_subcommand(args):
     from .server import server
 
     # Log to stdout/stderr only (no file)
-    configure_logging(logging.INFO)
+    kafka_server = os.environ.get("REPOUR_KAFKA_SERVER")
+    kafka_topic = os.environ.get("REPOUR_KAFKA_TOPIC")
+    kafka_cafile = os.environ.get("REPOUR_KAFKA_CAFILE")
+
+    configure_logging(logging.INFO, kafka_server=kafka_server, kafka_topic=kafka_topic, kafka_cafile=kafka_cafile)
 
     # Read required config from env vars, most of it is hardcoded though
     missing_envs = []
@@ -186,7 +201,7 @@ def create_argparser():
 
     return parser
 
-def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count=0, silent=False):
+def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count=0, silent=False, kafka_server=None, kafka_topic=None, kafka_cafile=None):
     logging.setLogRecordFactory(ContextLogRecord)
 
     formatter = logging.Formatter(
@@ -220,6 +235,17 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
 
     log_level = default_level + (10 * quiet_count) - (10 * verbose_count)
     root_logger.setLevel(log_level)
+
+    if kafka_server and kafka_topic and kafka_cafile:
+        logger.info("Setting up Kafka logging handler")
+        # we only care if you fail, kafka
+        logger_kafka = logging.getLogger("kafka")
+        logger_kafka.setLevel(logging.ERROR)
+
+        kafka_handler_obj = KafkaLoggingHandler(kafka_server,
+                                                kafka_topic,
+                                                ssl_cafile=kafka_cafile)
+        root_logger.addHandler(kafka_handler_obj)
 
 def load_config(config_path):
     import yaml
