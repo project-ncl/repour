@@ -9,6 +9,17 @@ def get_callback_log_path(callback_id):
     return os.path.join(CALLBACK_LOGS_PATH, callback_id + '.log')
 
 
+def has_event_loop():
+    """ If another thread (e.g kafka) is writing a log, the file_callback_log will be invoked inside that thread. In that case,
+    there is no event loop in that other thread and we need to know this
+    """
+    try:
+        asyncio.get_event_loop()
+        return True
+    except RuntimeError:
+        return False
+
+
 class FileCallbackHandler(logging.StreamHandler):
     """
     Handler that logs into {directory}/{callback_id}.log
@@ -28,7 +39,10 @@ class FileCallbackHandler(logging.StreamHandler):
 
     def emit(self, record):
         try:
-            task = asyncio.Task.current_task()
+            if (has_event_loop()):
+                task = asyncio.Task.current_task()
+            else:
+                task = None
 
             if task is not None:
                 callback_id = getattr(task, "callback_id", None)
