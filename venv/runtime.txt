@@ -11,3 +11,5 @@ prometheus_client==0.4.1
 
 # 17.5.0 should be compatible with aiohttp 2.2.0
 prometheus_async==17.5.0
+
+kafka-logging-handler==0.2.3

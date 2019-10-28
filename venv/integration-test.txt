@@ -1,2 +1,4 @@
 docker-py==1.5.0
 requests==2.8.1
+
+kafka-logging-handler==0.2.3
