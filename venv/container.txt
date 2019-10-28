@@ -5,3 +5,5 @@ pyyaml==5.1.2
 
 prometheus_client==0.7.1
 prometheus_async==19.2.0
+
+kafka-logging-handler==0.2.3
