@@ -53,16 +53,6 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
 
         command_gradle = get_command_gradle(work_dir)
 
-        output = yield from expect_ok(
-            cmd=[command_gradle, "--version"],
-            desc="Failed getting Gradle version",
-            cwd=work_dir,
-            stdout=stdout_options["text"],
-            stderr=stderr_options["stdout"],
-            print_cmd=True
-        )
-        logger.info(output)
-
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
@@ -70,6 +60,17 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             logger.info("Specifying JAVA_HOME: " + env['JAVA_HOME'])
         else:
             env = None
+
+        output = yield from expect_ok(
+            cmd=[command_gradle, "--version"],
+            desc="Failed getting Gradle version",
+            cwd=work_dir,
+            stdout=stdout_options["text"],
+            stderr=stderr_options["stdout"],
+            print_cmd=True,
+            env=env
+        )
+        logger.info(output)
 
         if 'JAVA_HOME' in env:
             yield from util.print_java_version(java_bin_dir=env['JAVA_HOME'])
