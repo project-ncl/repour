@@ -3,3 +3,4 @@
 *.log
 /config.yaml
 .idea/
+repour.egg-info/
