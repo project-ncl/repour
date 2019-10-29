@@ -618,18 +618,29 @@ docker run --volume "/tmp/secrets:/mnt/secrets:z" --user="$UID" -d --link repour
 - Subversion (optional, for svn support)
 - Docker 1.7.1+ (optional, for integration tests)
 
-==== Setup the virtual environment with vex
+==== Poetry setup
+Install `poetry` in your machine.
 
-1. Install vex for the current user with `pip3 install --user vex`
-2. Ensure `$PATH` includes `$HOME/.local/bin`
-3. Install the required C libraries with system package manager. On Fedora: `dnf install python3-devel python3-Cython libyaml-devel`
-4. `vex -m --python python3.4 rpo pip install -r venv/runtime.txt`
-5. Optionally: `vex rpo pip install -r venv/integration-test.txt`
+To install all the dependencies, run:
+[source,bash]
+poetry install --dev
 
-===== Recreating the virtual environment
+To add a new dependency:
+[source,bash]
+poetry add <dependency>
 
-1. Delete the old environment with `vex -r rpo true`
-2. Rerun the `vex` `pip install` commands
+To update to latest versions:
+[source,bash]
+poetry update
+
+To get a (virtualenv) shell with the dependencies installed:
+[source,bash]
+poetry shell
+
+To run a command inside the virtualenv with the dependencies installed:
+[source,bash]
+poetry run 'python3 ...'
+
 
 ==== Configure
 

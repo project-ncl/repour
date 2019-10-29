@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "Repour"
+version = "2.0.0"
+description = "Repour"
+authors = ["Alex Szczuczko <alex@szc.ca>",
+           "Jakub Senko <jsenko@redhat.com>",
+           "Dustin Kut Moy Cheung <dcheung@redhat.com>"]
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+aiohttp = "^3.6"
+voluptuous = "^0.11.7"
+python-jose = "^3.0"
+pyyaml = "^5.1"
+prometheus_client = "^0.7.1"
+prometheus_async = "^19.2"
+kafka-logging-handler = "^0.2.3"
+
+[tool.poetry.dev-dependencies]
+black = "=19.10b0"
+flake8 = "^3.7"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
