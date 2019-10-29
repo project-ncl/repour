@@ -5,12 +5,15 @@ import os
 import sys
 
 from kafka_logger.handlers import KafkaLoggingHandler
+
 from .logs import file_callback_log
 
 logger = logging.getLogger(__name__)
 
+
 class ContextLogRecord(logging.LogRecord):
     no_context_found = "NoContext"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.has_event_loop():
@@ -29,19 +32,26 @@ class ContextLogRecord(logging.LogRecord):
         except RuntimeError:
             return False
 
+
 def override(config, config_coords, args, arg_name):
     if getattr(args, arg_name, None) is not None:
+
         def resolve_leaf_dict(parent_dict, leaf_coords):
             if len(leaf_coords) == 1:
                 return parent_dict
             return resolve_leaf_dict(parent_dict[leaf_coords[0]], leaf_coords[1:])
+
         d = resolve_leaf_dict(config, config_coords)
-        logger.debug("Overriding config/{} with arg {}".format("/".join(config_coords), arg_name))
+        logger.debug(
+            "Overriding config/{} with arg {}".format("/".join(config_coords), arg_name)
+        )
         d[config_coords[-1]] = getattr(args, arg_name)
+
 
 #
 # Subcommands
 #
+
 
 def run_subcommand(args):
     from .server import server
@@ -54,12 +64,11 @@ def run_subcommand(args):
 
     # Logging
     log_default_level = logging._nameToLevel[config["log"]["level"]]
-    configure_logging(log_default_level, config["log"]["path"], args.verbose, args.quiet, args.silent)
+    configure_logging(
+        log_default_level, config["log"]["path"], args.verbose, args.quiet, args.silent
+    )
 
-    repo_provider = {
-        "type": "modeb",
-        "params": {},
-    }
+    repo_provider = {"type": "modeb", "params": {}}
 
     # Go
     server.start_server(
@@ -67,6 +76,7 @@ def run_subcommand(args):
         repo_provider=repo_provider,
         adjust_provider=config["adjust_provider"],
     )
+
 
 def run_container_subcommand(args):
     from .server import server
@@ -76,23 +86,29 @@ def run_container_subcommand(args):
     kafka_topic = os.environ.get("REPOUR_KAFKA_TOPIC")
     kafka_cafile = os.environ.get("REPOUR_KAFKA_CAFILE")
 
-    configure_logging(logging.INFO, kafka_server=kafka_server, kafka_topic=kafka_topic, kafka_cafile=kafka_cafile)
+    configure_logging(
+        logging.INFO,
+        kafka_server=kafka_server,
+        kafka_topic=kafka_topic,
+        kafka_cafile=kafka_cafile,
+    )
 
     # Read required config from env vars, most of it is hardcoded though
     missing_envs = []
+
     def required_env(name, desc):
         val = os.environ.get(name, None)
         # Val should not be empty or None
         if not val:
             missing_envs.append((name, desc))
         return val
-    da_url = required_env("REPOUR_PME_DA_URL", "The REST endpoint required by PME to look up GAVs")
+
+    da_url = required_env(
+        "REPOUR_PME_DA_URL", "The REST endpoint required by PME to look up GAVs"
+    )
     repour_url = required_env("REPOUR_URL", "Repour's URL")
 
-    repo_provider = {
-        "type": "modeb",
-        "params": {},
-    }
+    repo_provider = {"type": "modeb", "params": {}}
 
     if missing_envs:
         print("Missing environment variable(s):")
@@ -102,19 +118,19 @@ def run_container_subcommand(args):
 
     # Go
     server.start_server(
-        bind={
-            "address": None,
-            "port": 7331,
-        },
-        repo_provider = repo_provider,
-        repour_url = repour_url,
-        adjust_provider = {
+        bind={"address": None, "port": 7331},
+        repo_provider=repo_provider,
+        repour_url=repour_url,
+        adjust_provider={
             "type": "subprocess",
             "params": {
                 "description": "PME",
                 "cmd": [
-                    "java", "-jar", os.path.join(os.getcwd(), "pom-manipulation-cli.jar"),
-                    "-s", "/home/repour/settings.xml",
+                    "java",
+                    "-jar",
+                    os.path.join(os.getcwd(), "pom-manipulation-cli.jar"),
+                    "-s",
+                    "/home/repour/settings.xml",
                     "-DrestMaxSize=30",
                     "-DrestURL=" + da_url,
                     "-DversionIncrementalSuffix=redhat",
@@ -124,21 +140,41 @@ def run_container_subcommand(args):
                     "-DrepoRemovalBackup=repositories-backup.xml",
                 ],
                 "log_context_option": "--log-context",
-                "send_log": False, # enable when PNC central logging is ready
+                "send_log": False,  # enable when PNC central logging is ready
             },
         },
     )
+
 
 #
 # General
 #
 
+
 def create_argparser():
     parser = argparse.ArgumentParser(description="Run repour server in various modes")
-    parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase logging verbosity one level, repeatable.")
-    parser.add_argument("-q", "--quiet", action="count", default=0, help="Decrease logging verbosity one level, repeatable.")
-    parser.add_argument("-s", "--silent", action="store_true", help="Do not log to stdio.")
-    parser.add_argument("-l", "--log", help="Override the path for the log file provided in the config file.")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase logging verbosity one level, repeatable.",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="count",
+        default=0,
+        help="Decrease logging verbosity one level, repeatable.",
+    )
+    parser.add_argument(
+        "-s", "--silent", action="store_true", help="Do not log to stdio."
+    )
+    parser.add_argument(
+        "-l",
+        "--log",
+        help="Override the path for the log file provided in the config file.",
+    )
 
     subparsers = parser.add_subparsers()
 
@@ -146,18 +182,43 @@ def create_argparser():
     run_parser = subparsers.add_parser("run", help=run_desc)
     run_parser.description = run_desc
     run_parser.set_defaults(func=run_subcommand)
-    run_parser.add_argument("-c", "--config", default="config.json", help="Path to the configuration file. Default: config.json")
-    run_parser.add_argument("-a", "--address", help="Override the bind IP address provided in the config file.")
-    run_parser.add_argument("-p", "--port", help="Override the bind port number provided in the config file.")
+    run_parser.add_argument(
+        "-c",
+        "--config",
+        default="config.json",
+        help="Path to the configuration file. Default: config.json",
+    )
+    run_parser.add_argument(
+        "-a",
+        "--address",
+        help="Override the bind IP address provided in the config file.",
+    )
+    run_parser.add_argument(
+        "-p",
+        "--port",
+        help="Override the bind port number provided in the config file.",
+    )
 
     run_container_desc = "Run the server in a container environment"
-    run_container_parser = subparsers.add_parser("run-container", help=run_container_desc)
+    run_container_parser = subparsers.add_parser(
+        "run-container", help=run_container_desc
+    )
     run_container_parser.description = run_container_desc
     run_container_parser.set_defaults(func=run_container_subcommand)
 
     return parser
 
-def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count=0, silent=False, kafka_server=None, kafka_topic=None, kafka_cafile=None):
+
+def configure_logging(
+    default_level,
+    log_path=None,
+    verbose_count=0,
+    quiet_count=0,
+    silent=False,
+    kafka_server=None,
+    kafka_topic=None,
+    kafka_cafile=None,
+):
     logging.setLogRecordFactory(ContextLogRecord)
 
     formatter = logging.Formatter(
@@ -166,8 +227,7 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
     )
 
     formatter_callback = logging.Formatter(
-        fmt="{asctime} [{levelname}] {name}:{lineno} {message}",
-        style="{",
+        fmt="{asctime} [{levelname}] {name}:{lineno} {message}", style="{"
     )
 
     root_logger = logging.getLogger()
@@ -198,25 +258,29 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
         logger_kafka = logging.getLogger("kafka")
         logger_kafka.setLevel(logging.ERROR)
 
-        kafka_handler_obj = KafkaLoggingHandler(kafka_server,
-                                                kafka_topic,
-                                                ssl_cafile=kafka_cafile)
+        kafka_handler_obj = KafkaLoggingHandler(
+            kafka_server, kafka_topic, ssl_cafile=kafka_cafile
+        )
         root_logger.addHandler(kafka_handler_obj)
+
 
 def load_config(config_path):
     import yaml
     from . import validation
 
     config_dir = os.path.dirname(config_path)
+
     def config_relative(loader, node):
         value = loader.construct_scalar(node)
         return os.path.abspath(os.path.join(config_dir, value))
+
     yaml.add_constructor("!config_relative", config_relative)
 
     with open(config_path, "r") as f:
         config = yaml.load(f)
 
     return validation.server_config(config)
+
 
 def main():
     # Args

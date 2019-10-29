@@ -4,15 +4,17 @@ import os
 import shlex
 import tempfile
 
-from . import process_provider
 from .. import exception
+from . import process_provider
 
 logger = logging.getLogger(__name__)
 
-def get_project_manipulator_provider(execution_name, jar_path, default_parameters, specific_indy_group, timestamp):
 
+def get_project_manipulator_provider(
+    execution_name, jar_path, default_parameters, specific_indy_group, timestamp
+):
     async def get_result_data(work_dir, results_file=None):
-        
+
         raw_result_data = "{}"
         if results_file:
             results_file_path = results_file
@@ -26,30 +28,37 @@ def get_project_manipulator_provider(execution_name, jar_path, default_parameter
             # delete results file afterwards
             os.remove(results_file_path)
 
-        logger.info('Got project manipulator result data "{raw_result_data}".'.format(**locals()))
+        logger.info(
+            'Got project manipulator result data "{raw_result_data}".'.format(
+                **locals()
+            )
+        )
 
         result_data = json.loads(raw_result_data)
 
-        result_data['RemovedRepositories'] = []
+        result_data["RemovedRepositories"] = []
 
         return result_data
-
 
     async def get_extra_parameters(extra_adjust_parameters):
         """
         Get the extra CUSTOM_PROJECT_MANIPULATOR_PARAMETERS parameters from PNC
         """
-        subfolder = ''
+        subfolder = ""
 
-        paramsString = extra_adjust_parameters.get("CUSTOM_PROJECT_MANIPULATOR_PARAMETERS", None)
+        paramsString = extra_adjust_parameters.get(
+            "CUSTOM_PROJECT_MANIPULATOR_PARAMETERS", None
+        )
         if paramsString is None:
             return []
         else:
             params = shlex.split(paramsString)
             for p in params:
                 if p[0] != "-":
-                    desc = ('Parameters that do not start with dash "-" are not allowed. '
-                            + 'Found "{p}" in "{params}".'.format(**locals()))
+                    desc = (
+                        'Parameters that do not start with dash "-" are not allowed. '
+                        + 'Found "{p}" in "{params}".'.format(**locals())
+                    )
                     raise exception.AdjustCommandError(desc, [], 10, stderr=desc)
 
             return params
@@ -60,7 +69,9 @@ def get_project_manipulator_provider(execution_name, jar_path, default_parameter
         temp_build_parameters = []
 
         if timestamp:
-            temp_build_parameters.append("-DversionIncrementalSuffix=" + timestamp + "-redhat")
+            temp_build_parameters.append(
+                "-DversionIncrementalSuffix=" + timestamp + "-redhat"
+            )
 
         if specific_indy_group:
             temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
@@ -69,21 +80,29 @@ def get_project_manipulator_provider(execution_name, jar_path, default_parameter
 
         filename = tempfile.NamedTemporaryFile(delete=False).name
 
-        cmd = ["java", "-jar", jar_path] + default_parameters + temp_build_parameters + extra_parameters + \
-              ['--result=' + filename]
+        cmd = (
+            ["java", "-jar", jar_path]
+            + default_parameters
+            + temp_build_parameters
+            + extra_parameters
+            + ["--result=" + filename]
+        )
 
-        logger.info('Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals()))
+        logger.info(
+            'Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals())
+        )
 
-        res = await process_provider.get_process_provider(execution_name,
-                                                     cmd,
-                                                     get_result_data=get_result_data,
-                                                     send_log=True,
-                                                     results_file=filename) \
-            (work_dir, extra_adjust_parameters, adjust_result)
+        res = await process_provider.get_process_provider(
+            execution_name,
+            cmd,
+            get_result_data=get_result_data,
+            send_log=True,
+            results_file=filename,
+        )(work_dir, extra_adjust_parameters, adjust_result)
 
         # TODO: need to detect when it is disabled and grab the version otherwise
 
-        adjust_result['resultData'] = res['resultData']
+        adjust_result["resultData"] = res["resultData"]
 
         return res
 
@@ -105,9 +124,11 @@ async def get_version_from_result(data):
     - data: :dict:
     """
     try:
-        version = data['version']
+        version = data["version"]
         return version
-    except  Exception as e:
-        logger.error("Couldn't extract Project Manipulator result version from JSON file")
+    except Exception as e:
+        logger.error(
+            "Couldn't extract Project Manipulator result version from JSON file"
+        )
         logger.error(e)
         return None

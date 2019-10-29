@@ -1,8 +1,8 @@
 import unittest
 
+import repour.server.endpoint.validation as validation
 import voluptuous
 
-import repour.server.endpoint.validation as validation
 
 class TestPrimitives(unittest.TestCase):
     def test_nonempty_str(self):
@@ -66,95 +66,62 @@ class TestPrimitives(unittest.TestCase):
         with self.assertRaises(voluptuous.MatchInvalid):
             validation.name_str(False)
 
+
 class TestAdjust(unittest.TestCase):
     def test_adjust(self):
-        valid = {
-            "name": "someproject",
-            "ref": "2.2.11.Final",
-        }
+        valid = {"name": "someproject", "ref": "2.2.11.Final"}
         self.assertEqual(valid, validation.adjust(valid))
 
         with self.assertRaises(voluptuous.MultipleInvalid):
             validation.adjust({})
         with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.adjust({
-                "name": "someproject",
-            })
+            validation.adjust({"name": "someproject"})
         with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.adjust({
-                "ref": "2.2.11.Final",
-            })
+            validation.adjust({"ref": "2.2.11.Final"})
         with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.adjust({
-                "name": "someproject",
-                "ref": "",
-            })
+            validation.adjust({"name": "someproject", "ref": ""})
         with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.adjust({
-                "name": "",
-                "ref": "2.2.11.Final",
-            })
+            validation.adjust({"name": "", "ref": "2.2.11.Final"})
         with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.adjust({
-                "name": "someproject",
-                "ref": "2.2.11.Final",
-                "asd": "123",
-            })
+            validation.adjust(
+                {"name": "someproject", "ref": "2.2.11.Final", "asd": "123"}
+            )
 
     def test_callback(self):
         valid = {
             "name": "someproject",
             "ref": "2.2.11.Final",
-            "callback": {
-                "url": "http://localhost/asd"
-            },
+            "callback": {"url": "http://localhost/asd"},
         }
         self.assertEqual(valid, validation.adjust(valid))
         valid = {
             "name": "someproject",
             "ref": "2.2.11.Final",
-            "callback": {
-                "url": "http://localhost/asd",
-                "method": "POST",
-            },
+            "callback": {"url": "http://localhost/asd", "method": "POST"},
         }
         self.assertEqual(valid, validation.adjust(valid))
         valid = {
             "name": "someproject",
             "ref": "2.2.11.Final",
-            "callback": {
-                "url": "http://localhost/asd",
-                "method": "PUT",
-            },
+            "callback": {"url": "http://localhost/asd", "method": "PUT"},
         }
         self.assertEqual(valid, validation.adjust(valid))
         with self.assertRaises(voluptuous.MultipleInvalid):
-            validation.adjust({
-                "name": "someproject",
-                "ref": "2.2.11.Final",
-                "callback": {
-                    "url": "http://localhost/asd",
-                    "method": "GET",
-                },
-            })
+            validation.adjust(
+                {
+                    "name": "someproject",
+                    "ref": "2.2.11.Final",
+                    "callback": {"url": "http://localhost/asd", "method": "GET"},
+                }
+            )
+
 
 class TestServerConfig(unittest.TestCase):
     def test_server_config(self):
         valid = {
-            "log": {
-                "level": "ERROR",
-                "path": "/home/repour/server.log",
-            },
-            "bind": {
-                "address": None,
-                "port": 80,
-            },
-            "adjust_provider": {
-                "type": "subprocess",
-                "params": {
-                    "cmd": ["/bin/true"],
-                },
-            },
+            "log": {"level": "ERROR", "path": "/home/repour/server.log"},
+            "bind": {"address": None, "port": 80},
+            "adjust_provider": {"type": "subprocess", "params": {"cmd": ["/bin/true"]}},
             "repo_provider": {
                 "type": "gitlab",
                 "params": {

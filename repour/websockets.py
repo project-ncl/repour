@@ -4,7 +4,6 @@ import os
 
 from .logs.file_callback_log import get_callback_log_path
 
-
 # Period to re-read file to see if change happened
 PERIOD = 0.3
 
@@ -14,6 +13,7 @@ logger = logging.getLogger(__name__)
 # value (asyncio_task, websocket_handler)
 websocket_handlers = {}
 websocket_taillog_workers = {}
+
 
 async def register(callback_id, task, websocket_handler):
     """ Register a websocket handler with a callback_id and the task where
@@ -43,12 +43,16 @@ async def register(callback_id, task, websocket_handler):
 
     # create task to tail logs to websocket as new line added to log file
     if callback_id not in websocket_taillog_workers:
-        websocket_taillog_workers[callback_id] = asyncio.get_event_loop().create_task(setup_tail_job(callback_id))
+        websocket_taillog_workers[callback_id] = asyncio.get_event_loop().create_task(
+            setup_tail_job(callback_id)
+        )
     else:
         # error handling: check on current task and create new one if task is 'done'
         task = websocket_taillog_workers[callback_id]
         if task is None or task.done():
-            websocket_taillog_workers[callback_id] = asyncio.get_event_loop().create_task(setup_tail_job(callback_id))
+            websocket_taillog_workers[
+                callback_id
+            ] = asyncio.get_event_loop().create_task(setup_tail_job(callback_id))
 
 
 async def setup_tail_job(callback_id):

@@ -1,14 +1,12 @@
 import logging
 import os
 
-from . import asutil
-from . import exception
+from prometheus_async.aio import time
+from prometheus_client import Histogram, Summary
+
+from . import asutil, exception
 from .config import config
 from .scm import git_provider
-
-from prometheus_client import Summary
-from prometheus_client import Histogram
-from prometheus_async.aio import time
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +19,12 @@ expect_ok = asutil.expect_ok_closure(exception.CommandError)
 git = git_provider.git_provider()
 
 REQ_TIME = Summary("clone_req_time", "time spent with clone endpoint")
-REQ_HISTOGRAM_TIME = Histogram("clone_req_histogram", "Histogram for clone endpoint", buckets=[1, 10, 60, 120, 300, 600, 900, 1200, 1500, 1800, 3600])
+REQ_HISTOGRAM_TIME = Histogram(
+    "clone_req_histogram",
+    "Histogram for clone endpoint",
+    buckets=[1, 10, 60, 120, 300, 600, 900, 1200, 1500, 1800, 3600],
+)
+
 
 async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origin"):
     """ This function is used when we want to sync a repository with another one
@@ -38,7 +41,9 @@ async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origi
         - origin_remote: remote that was cloned from
     """
 
-    isRefBranch = await git["is_branch"](work_dir, ref, remote=origin_remote)  # if ref is a branch, we don't have to create one
+    isRefBranch = await git["is_branch"](
+        work_dir, ref, remote=origin_remote
+    )  # if ref is a branch, we don't have to create one
     isRefTag = await git["is_tag"](work_dir, ref)
 
     if isRefBranch:
@@ -61,7 +66,9 @@ async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origi
             await git["add_tag"](work_dir, tag_name)
             await git["push"](work_dir, remote, tag_name)
         else:
-            logger.info("Tag already exists in internal repository. Not pushing anything")
+            logger.info(
+                "Tag already exists in internal repository. Not pushing anything"
+            )
 
 
 @time(REQ_TIME)
@@ -70,7 +77,11 @@ async def clone(clonespec, repo_provider):
     if clonespec["type"] in scm_types:
         internal = await scm_types[clonespec["type"]](clonespec)
     else:
-        raise exception.CloneError("Type '{clonespec[type]}' not supported for 'clone' operation.".format(**locals()))
+        raise exception.CloneError(
+            "Type '{clonespec[type]}' not supported for 'clone' operation.".format(
+                **locals()
+            )
+        )
     return internal
 
 
@@ -80,14 +91,24 @@ async def clone_git(clonespec):
         c = await config.get_configuration()
         git_user = c.get("git_username")
 
-        new_internal_repo = await check_new_internal_repo(asutil.add_username_url(clonespec["targetRepoUrl"], git_user))
-        logger.info("The internal repository considered new? => " + str(new_internal_repo))
+        new_internal_repo = await check_new_internal_repo(
+            asutil.add_username_url(clonespec["targetRepoUrl"], git_user)
+        )
+        logger.info(
+            "The internal repository considered new? => " + str(new_internal_repo)
+        )
 
         # NCL-4255: if ref provided and internal repository is not 'new', sync the ref only
         if "ref" in clonespec and clonespec["ref"] and not new_internal_repo:
             await git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
-            await git["checkout"](clone_dir, clonespec["ref"], force=True)  # Checkout ref
-            await git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
+            await git["checkout"](
+                clone_dir, clonespec["ref"], force=True
+            )  # Checkout ref
+            await git["add_remote"](
+                clone_dir,
+                "target",
+                asutil.add_username_url(clonespec["targetRepoUrl"], git_user),
+            )  # Add target remote
 
             ref = clonespec["ref"]
             await push_sync_changes(clone_dir, ref, "target")
@@ -95,13 +116,20 @@ async def clone_git(clonespec):
             # Sync everything if ref not specified or internal repository is new
             # From: https://stackoverflow.com/a/7216269/2907906
             logger.info("Syncing everything")
-            await git["clone_mirror"](clone_dir + "/.git", clonespec["originRepoUrl"])  # Clone origin
+            await git["clone_mirror"](
+                clone_dir + "/.git", clonespec["originRepoUrl"]
+            )  # Clone origin
             await git["disable_bare_repository"](clone_dir)
             await git["reset_hard"](clone_dir)
-            await git["add_remote"](clone_dir, "target", asutil.add_username_url(clonespec["targetRepoUrl"], git_user))  # Add target remote
+            await git["add_remote"](
+                clone_dir,
+                "target",
+                asutil.add_username_url(clonespec["targetRepoUrl"], git_user),
+            )  # Add target remote
             await git["push_all"](clone_dir, "target", tags_also=True)
 
         return clonespec
+
 
 async def check_new_internal_repo(git_url):
     """
@@ -116,9 +144,8 @@ async def check_new_internal_repo(git_url):
         if len(tags) > 0:
             return False
         else:
-            branches =  await git["list_branches"](temp_dir)
+            branches = await git["list_branches"](temp_dir)
             return len(branches) == 0
 
-scm_types = {
-    "git": clone_git,
-}
+
+scm_types = {"git": clone_git}

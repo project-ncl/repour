@@ -1,6 +1,6 @@
-from aiohttp import web
-
 import asyncio
+
+from aiohttp import web
 
 from ... import websockets
 
@@ -12,7 +12,7 @@ async def handle_socket(request):
         Request: ws://<link>/ws/<callback_id>
     """
 
-    callback_id = request.match_info['callback_id']
+    callback_id = request.match_info["callback_id"]
     ws_obj = web.WebSocketResponse(autoping=True)
 
     await ws_obj.prepare(request)

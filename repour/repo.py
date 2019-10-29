@@ -1,5 +1,5 @@
-import collections
 import base64
+import collections
 import hashlib
 import json
 import logging
@@ -9,14 +9,14 @@ import urllib.parse
 
 import aiohttp
 
-from . import asutil
-from . import exception
+from . import asutil, exception
 
 logger = logging.getLogger(__name__)
 
 #
 # Utility
 #
+
 
 async def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
     resp = None
@@ -29,10 +29,13 @@ async def _retry_with_auth(action, auth, reauth_status=401, retry_count=1):
         else:
             break
     else:
-        e = await exception.RepoHttpClientError.from_response("Repository provider authentication failed", resp)
+        e = await exception.RepoHttpClientError.from_response(
+            "Repository provider authentication failed", resp
+        )
         raise e
 
     return resp
+
 
 expect_ok = asutil.expect_ok_closure(exception.RepoCommandError)
 
@@ -42,8 +45,9 @@ RepoUrls = collections.namedtuple("RepoUrls", ["readwrite", "readonly"])
 # Repo operations
 #
 
+
 def repo_gerrit(api_url, username, password, new_repo_owners):
-    session = aiohttp.ClientSession() #pylint: disable=no-member
+    session = aiohttp.ClientSession()  # pylint: disable=no-member
 
     def es(o):
         return json.dumps(obj=o, ensure_ascii=False)
@@ -56,6 +60,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
     realm = ""
     ncount = 0
     nonce = ""
+
     def authorization_value(method, path):
         nonlocal ncount
         ncount += 1
@@ -77,7 +82,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
             "cnonce": cnonce,
             "response": response,
         }
-        return "Digest " + ",".join('{}={}'.format(k,es(v)) for k,v in parts.items())
+        return "Digest " + ",".join("{}={}".format(k, es(v)) for k, v in parts.items())
 
     async def get_url(spec, create=True, tried_auth=False):
         repo_name = spec["name"]
@@ -89,10 +94,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
 
         clone_url = api_url + "/projects/" + encoded_repo_name
         if not create:
-            return RepoUrls(
-                readwrite=clone_url,
-                readonly=TODO,
-            )
+            return RepoUrls(readwrite=clone_url, readonly=TODO)
 
         resp = await session.put(
             auth_url,
@@ -114,10 +116,7 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
         )
         # Project was created or already exists
         if resp.status in [201, 412]:
-            return RepoUrls(
-                readwrite=clone_url,
-                readonly=TODO,
-            )
+            return RepoUrls(readwrite=clone_url, readonly=TODO)
 
         # (Re)authenticate
         elif not tried_auth and resp.status == 401:
@@ -140,15 +139,18 @@ def repo_gerrit(api_url, username, password, new_repo_owners):
             await get_url(repo_name, True)
 
         else:
-            raise exception.RepoError("Project creation unsuccessful, status {}".format(resp.status))
+            raise exception.RepoError(
+                "Project creation unsuccessful, status {}".format(resp.status)
+            )
 
     return get_url
+
 
 def repo_gitlab(root_url, ssh_root_url, group, username, password):
     api_url = root_url + "/api/v3"
     auth_url = root_url + "/oauth/token"
 
-    session = aiohttp.ClientSession() #pylint: disable=no-member
+    session = aiohttp.ClientSession()  # pylint: disable=no-member
 
     access_token = ""
 
@@ -161,15 +163,15 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Accept": "application/json",
             },
-            data=urllib.parse.urlencode({
-                "grant_type": "password",
-                "username": username,
-                "password": password,
-            }).encode("utf-8"),
+            data=urllib.parse.urlencode(
+                {"grant_type": "password", "username": username, "password": password}
+            ).encode("utf-8"),
         )
         try:
             if resp.status // 100 != 2:
-                e = await exception.RepoHttpClientError.from_response("GitLab credentials not accepted", resp)
+                e = await exception.RepoHttpClientError.from_response(
+                    "GitLab credentials not accepted", resp
+                )
                 raise e
 
             data = await resp.json()
@@ -185,9 +187,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                 "Accept": "application/json",
                 "Authorization": "Bearer " + access_token,
             },
-            data=urllib.parse.urlencode({
-                "search": name,
-            }).encode("utf-8"),
+            data=urllib.parse.urlencode({"search": name}).encode("utf-8"),
         )
         return resp
 
@@ -199,11 +199,9 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                 "Accept": "application/json",
                 "Authorization": "Bearer " + access_token,
             },
-            data=urllib.parse.urlencode({
-                "name": name,
-                "namespace_id": group["id"],
-                "visibility_level": 20,
-            }).encode("utf-8"),
+            data=urllib.parse.urlencode(
+                {"name": name, "namespace_id": group["id"], "visibility_level": 20}
+            ).encode("utf-8"),
         )
         return resp
 
@@ -212,10 +210,7 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
     # extract the path portion only.
     def path_to_urls(path_with_namespace):
         suffix = "/{path_with_namespace}.git".format(**locals())
-        repo_url = RepoUrls(
-            readwrite=ssh_root_url + suffix,
-            readonly=root_url + suffix,
-        )
+        repo_url = RepoUrls(readwrite=ssh_root_url + suffix, readonly=root_url + suffix)
         return repo_url
 
     async def get_url(spec, create=True):
@@ -233,12 +228,13 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         # search.
 
         resp = await _retry_with_auth(
-            action=lambda: search_project(repo_name),
-            auth=new_token,
+            action=lambda: search_project(repo_name), auth=new_token
         )
         try:
             if resp.status // 100 != 2:
-                e = await exception.RepoHttpClientError.from_response("Unable to search for existing projects", resp)
+                e = await exception.RepoHttpClientError.from_response(
+                    "Unable to search for existing projects", resp
+                )
                 raise e
             else:
                 projects = await resp.json()
@@ -248,14 +244,15 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
         for project in projects:
             if project["name"] == repo_name:
                 repo_url = path_to_urls(project["path_with_namespace"])
-                logger.debug("Returning existing GitLab repo at {repo_url}".format(**locals()))
+                logger.debug(
+                    "Returning existing GitLab repo at {repo_url}".format(**locals())
+                )
                 break
         else:
             # Project doesn't exist
             if create:
                 resp = await _retry_with_auth(
-                    action=lambda: create_project(repo_name),
-                    auth=new_token,
+                    action=lambda: create_project(repo_name), auth=new_token
                 )
                 try:
                     if resp.status == 400:
@@ -263,13 +260,21 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                             data = await resp.json()
                         except Exception:
                             data = {}
-                        if "has already been taken" in data.get("message", {}).get("name", []):
+                        if "has already been taken" in data.get("message", {}).get(
+                            "name", []
+                        ):
                             # Repo with name=repo_name already exists
                             # (interleaving with another create probably), so
                             # search again.
-                            logger.info("Recovering from GitLab create interleaving for {repo_name}".format(**locals()))
+                            logger.info(
+                                "Recovering from GitLab create interleaving for {repo_name}".format(
+                                    **locals()
+                                )
+                            )
                             repo_url = await get_url(repo_name, create=False)
-                        elif "has already been taken" in data.get("message", {}).get("path", []):
+                        elif "has already been taken" in data.get("message", {}).get(
+                            "path", []
+                        ):
                             e = await exception.RepoHttpClientError.from_response(
                                 desc="The path for the given name has already been allocated to a different project",
                                 response=resp,
@@ -277,32 +282,49 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
                             )
                             raise e
                         else:
-                            e = await exception.RepoHttpClientError.from_response("Unable to create project", resp, data)
+                            e = await exception.RepoHttpClientError.from_response(
+                                "Unable to create project", resp, data
+                            )
                             raise e
                     elif resp.status // 100 != 2:
-                        e = await exception.RepoHttpClientError.from_response("Unable to create project", resp)
+                        e = await exception.RepoHttpClientError.from_response(
+                            "Unable to create project", resp
+                        )
                         raise e
                     else:
                         project = await resp.json()
                         repo_url = path_to_urls(project["path_with_namespace"])
-                        logger.info("Created new GitLab repo at {repo_url}".format(**locals()))
+                        logger.info(
+                            "Created new GitLab repo at {repo_url}".format(**locals())
+                        )
                 finally:
                     resp.close()
             else:
-                raise exception.RepoError("Repo {repo_name} does not exist".format(**locals()))
+                raise exception.RepoError(
+                    "Repo {repo_name} does not exist".format(**locals())
+                )
         return repo_url
 
     return get_url
 
+
 def repo_gitolite(ssh_url, http_url):
-    logger.info("Using gitolite repository provider, SSH: {ssh_url} HTTP: {http_url}".format(**locals()))
-    name_pattern = re.compile(r'^[0-9a-zA-Z][-0-9a-zA-Z._@/+]*$')
+    logger.info(
+        "Using gitolite repository provider, SSH: {ssh_url} HTTP: {http_url}".format(
+            **locals()
+        )
+    )
+    name_pattern = re.compile(r"^[0-9a-zA-Z][-0-9a-zA-Z._@/+]*$")
 
     async def get_url(spec, create=True):
         repo_name = spec["name"]
         match = name_pattern.match(repo_name)
         if not match:
-            raise exception.RepoError("Repo name '{repo_name}' does not match pattern '{name_pattern.pattern}'".format(**locals()))
+            raise exception.RepoError(
+                "Repo name '{repo_name}' does not match pattern '{name_pattern.pattern}'".format(
+                    **locals()
+                )
+            )
 
         encoded_name = urllib.parse.quote(repo_name)
         repo_url = RepoUrls(
@@ -314,10 +336,16 @@ def repo_gitolite(ssh_url, http_url):
             return repo_url
 
         # Gitolite will create-on-push if required
-        logger.info("Using gitolite repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(**locals()))
+        logger.info(
+            "Using gitolite repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(
+                **locals()
+            )
+        )
 
         return repo_url
+
     return get_url
+
 
 def repo_local(root_url):
     logger.info("Using local repository provider, root: {root_url}".format(**locals()))
@@ -334,35 +362,48 @@ def repo_local(root_url):
             query=None,
             fragment=None,
         ).geturl()
-        repo_url = RepoUrls(
-            readwrite=_repo_url,
-            readonly=_repo_url,
-        )
+        repo_url = RepoUrls(readwrite=_repo_url, readonly=_repo_url)
 
         if not create:
             return repo_url
 
         if os.path.exists(repo_path):
-            logger.info("Returning existing local repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(**locals()))
+            logger.info(
+                "Returning existing local repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(
+                    **locals()
+                )
+            )
         else:
             await expect_ok(
                 cmd=["git", "init", "--bare", repo_path],
                 desc="Could not create local repo with git",
             )
-            logger.info("Created new local repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(**locals()))
+            logger.info(
+                "Created new local repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(
+                    **locals()
+                )
+            )
 
         return repo_url
+
     return get_url
 
+
 def repo_modeb():
-    logger.warn("Using Mode B repository provider (client-specified repositories)".format(**locals()))
+    logger.warn(
+        "Using Mode B repository provider (client-specified repositories)".format(
+            **locals()
+        )
+    )
 
     async def get_url(spec, create=True):
         return RepoUrls(
             readwrite=spec["internal_url"]["readwrite"],
             readonly=spec["internal_url"]["readonly"],
         )
+
     return get_url
+
 
 #
 # Supported

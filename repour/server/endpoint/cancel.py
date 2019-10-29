@@ -1,33 +1,31 @@
 import asyncio
 import calendar
-import time as python_time
 import json
 import logging
 import os
-
-from repour import asutil
+import time as python_time
 
 from aiohttp import web
-
-from prometheus_client import Summary
-from prometheus_client import Histogram
 from prometheus_async.aio import time
+from prometheus_client import Histogram, Summary
+from repour import asutil
 
 REQ_TIME = Summary("cancel_req_time", "time spent with cancel endpoint")
 REQ_HISTOGRAM_TIME = Histogram("cancel_req_histogram", "Histogram for cancel endpoint")
 
 PERIOD_CANCEL_LOOP_SLEEP = 0.5
 
-SHARED_PATH_PREFOLDER = os.environ.get("SHARED_FOLDER", '/tmp')
+SHARED_PATH_PREFOLDER = os.environ.get("SHARED_FOLDER", "/tmp")
 CANCEL_PATH = os.path.join(SHARED_PATH_PREFOLDER, "cancel-notify")
 
 logger = logging.getLogger(__name__)
+
 
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
 async def handle_cancel(request):
 
-    task_id_to_cancel = request.match_info['task_id']
+    task_id_to_cancel = request.match_info["task_id"]
     logger.info("Cancel request obtained: " + str(task_id_to_cancel))
 
     if not task_id_to_cancel:
@@ -41,14 +39,20 @@ async def handle_cancel(request):
         task_id_dict[task_id_to_cancel].cancel()
         cancelled_tasks = True
     else:
-        cancelled_tasks = await check_if_other_repour_replicas_cancelled(task_id_to_cancel)
+        cancelled_tasks = await check_if_other_repour_replicas_cancelled(
+            task_id_to_cancel
+        )
 
     if cancelled_tasks:
-        response = await success_response("Tasks with task_id: " + str(task_id_to_cancel) + " cancelled")
+        response = await success_response(
+            "Tasks with task_id: " + str(task_id_to_cancel) + " cancelled"
+        )
         return response
     else:
         # if we are here, the task id wasn't found
-        response = await bad_response("task id " + str(task_id_to_cancel) + " not found!")
+        response = await bad_response(
+            "task id " + str(task_id_to_cancel) + " not found!"
+        )
         return response
 
 
@@ -57,12 +61,7 @@ async def bad_response(error_message):
     response = web.Response(
         status=400,
         content_type="application/json",
-        text=json.dumps(
-            obj=[{
-                "error_message": error_message,
-            }],
-            ensure_ascii=False,
-        ),
+        text=json.dumps(obj=[{"error_message": error_message}], ensure_ascii=False),
     )
     return response
 
@@ -74,12 +73,7 @@ async def success_response(message):
     response = web.Response(
         status=200,
         content_type="application/json",
-        text=json.dumps(
-            obj=[{
-                "message": message,
-            }],
-            ensure_ascii=False,
-        ),
+        text=json.dumps(obj=[{"message": message}], ensure_ascii=False),
     )
     return response
 
@@ -118,11 +112,13 @@ async def start_cancel_loop():
             for filename in cancel_files:
                 # format is <task_id>.cancel
                 if filename.endswith(".cancel"):
-                    task_id_to_cancel = filename.replace('.cancel', '')
+                    task_id_to_cancel = filename.replace(".cancel", "")
 
                     if task_id_to_cancel in task_id_dict:
 
-                        logger.info("From cancel loop: cancelling task: " + task_id_to_cancel)
+                        logger.info(
+                            "From cancel loop: cancelling task: " + task_id_to_cancel
+                        )
 
                         task_id_dict[task_id_to_cancel].cancel()
                         os.remove(os.path.join(CANCEL_PATH, filename))
@@ -136,7 +132,7 @@ async def check_if_other_repour_replicas_cancelled(task_id):
     cancel_indicator_filename = os.path.join(CANCEL_PATH, task_id + ".cancel")
 
     if not os.path.exists(cancel_indicator_filename):
-        f = open(cancel_indicator_filename, 'w')
+        f = open(cancel_indicator_filename, "w")
         f.close()
 
     for _ in range(10):
@@ -151,6 +147,7 @@ async def check_if_other_repour_replicas_cancelled(task_id):
     logger.warn("No other repour replicas cancelled task: " + task_id + ". Giving up!")
     os.remove(cancel_indicator_filename)
     return False
+
 
 async def remove_old_cancel_indicator_files():
     """ In case there are old cancel indicator files that are present and wasn't cleaned up properly, delete them

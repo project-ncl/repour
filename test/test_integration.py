@@ -11,16 +11,17 @@ import unittest
 import urllib.parse
 import warnings
 
+import repour.server.endpoint.validation as validation
 import yaml
 
 try:
     import docker
     import requests
-    deps_available=True
-except ImportError:
-    deps_available=False
 
-import repour.server.endpoint.validation as validation
+    deps_available = True
+except ImportError:
+    deps_available = False
+
 
 # Only run integration tests if able and requested
 run_integration_tests = deps_available and "REPOUR_RUN_IT" in os.environ
@@ -29,19 +30,21 @@ run_integration_tests = deps_available and "REPOUR_RUN_IT" in os.environ
 # Utils
 #
 
-def wait_in_logs(client, container, target_text):
-    log = client.logs(
-        container=container,
-        stream=True,
 
-    )
+def wait_in_logs(client, container, target_text):
+    log = client.logs(container=container, stream=True)
 
     for raw_line in log:
         line = raw_line.decode("utf-8")
         if target_text in line:
             break
     else:
-        raise Exception("Container exited before target text '{target_text}' was found".format(**locals()))
+        raise Exception(
+            "Container exited before target text '{target_text}' was found".format(
+                **locals()
+            )
+        )
+
 
 #
 # Tests
@@ -69,7 +72,9 @@ if run_integration_tests:
                     tag=tag,
                 ):
                     pass
-                assert b"Successfully built" in logline, "Build of image {tag} failed".format(**locals())
+                assert (
+                    b"Successfully built" in logline
+                ), "Build of image {tag} failed".format(**locals())
 
             repour_it_image = "repour_integration_test"
             build_image("Dockerfile", repour_it_image)
@@ -95,11 +100,8 @@ if run_integration_tests:
                     detach=True,
                     host_config=cls.client.create_host_config(
                         binds={
-                            cls.config_dir.name: {
-                                "bind": "/mnt/secrets",
-                                "mode": "z",
-                            }
-                        },
+                            cls.config_dir.name: {"bind": "/mnt/secrets", "mode": "z"}
+                        }
                     ),
                     user=key_owner,
                 )["Id"]
@@ -107,19 +109,18 @@ if run_integration_tests:
                 cls.client.start(git_container)
                 cls.git_container = git_container
                 wait_in_logs(cls.client, git_container, "==> Ready")
-                git_hostname = cls.client.inspect_container(git_container)["NetworkSettings"]["IPAddress"]
+                git_hostname = cls.client.inspect_container(git_container)[
+                    "NetworkSettings"
+                ]["IPAddress"]
 
                 # Create/start Repour
                 repour_container = cls.client.create_container(
                     image=repour_it_image,
                     detach=True,
                     host_config=cls.client.create_host_config(
-                        links={ git_container: "git" },
+                        links={git_container: "git"},
                         binds={
-                            cls.config_dir.name: {
-                                "bind": "/mnt/secrets",
-                                "mode": "z",
-                            }
+                            cls.config_dir.name: {"bind": "/mnt/secrets", "mode": "z"}
                         },
                     ),
                     # Note that the forced UID change activates au.py, so
@@ -129,14 +130,16 @@ if run_integration_tests:
                     environment={
                         "REPOUR_GITOLITE_HOST": git_hostname,
                         "REPOUR_PME_DA_URL": da_url,
-                    }
+                    },
                 )["Id"]
                 cls.containers.append(repour_container)
                 cls.client.start(repour_container)
                 cls.repour_container = repour_container
                 wait_in_logs(cls.client, repour_container, "Server started on socket")
-                repour_hostname = cls.client.inspect_container(repour_container)["NetworkSettings"]["IPAddress"]
-                cls.repour_api_url="http://{repour_hostname}:7331".format(**locals())
+                repour_hostname = cls.client.inspect_container(repour_container)[
+                    "NetworkSettings"
+                ]["IPAddress"]
+                cls.repour_api_url = "http://{repour_hostname}:7331".format(**locals())
 
                 cls.requests_session = requests.Session()
 
@@ -147,10 +150,7 @@ if run_integration_tests:
                 for container in cls.containers:
                     print(cls.client.logs(container).decode("utf-8"))
                     print()
-                    cls.client.remove_container(
-                        container=container,
-                        force=True,
-                    )
+                    cls.client.remove_container(container=container, force=True)
                 cls.config_dir.cleanup()
                 raise
 
@@ -162,10 +162,7 @@ if run_integration_tests:
                 print()
 
             for container in cls.containers:
-                cls.client.remove_container(
-                    container=container,
-                    force=True,
-                )
+                cls.client.remove_container(container=container, force=True)
             cls.config_dir.cleanup()
 
         def run(self, result=None):
@@ -180,11 +177,16 @@ if run_integration_tests:
         def check_clone(self, url, tag, expected_files=[]):
             with tempfile.TemporaryDirectory() as repo_dir:
                 try:
-                    subprocess.check_output(["git", "clone", "--branch", tag, "--", url, repo_dir], stderr=subprocess.STDOUT)
+                    subprocess.check_output(
+                        ["git", "clone", "--branch", tag, "--", url, repo_dir],
+                        stderr=subprocess.STDOUT,
+                    )
                 except subprocess.CalledProcessError as e:
                     print(e.output)
                 for expected_file in expected_files:
                     self.assertTrue(
                         expr=os.path.exists(os.path.join(repo_dir, expected_file)),
-                        msg="{expected_file} does not exist in internal repository".format(**locals()),
+                        msg="{expected_file} does not exist in internal repository".format(
+                            **locals()
+                        ),
                     )
