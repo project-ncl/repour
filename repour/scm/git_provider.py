@@ -4,8 +4,7 @@ import os
 import re
 import subprocess
 
-from .. import asutil
-from .. import exception
+from .. import asutil, exception
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +16,14 @@ expect_ok = asutil.expect_ok_closure(exception.CommandError)
 # The same method names are expected to be implemented by other providers.
 #
 
+
 def git_provider():
     async def disable_bare_repository(dir):
         await expect_ok(
             cmd=["git", "config", "--bool", "core.bare", "false"],
             cwd=dir,
             desc="Could not disable bare repository",
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def reset_hard(dir):
@@ -31,40 +31,36 @@ def git_provider():
             cmd=["git", "reset", "--hard"],
             cwd=dir,
             desc="Could not reset hard",
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def clone_deep(dir, url):
 
-        desc="Could not clone {} with git.".format(url)
+        desc = "Could not clone {} with git.".format(url)
 
         if "github.com" in url:
-            desc +=  " " +  private_github_error_msg(url)
+            desc += " " + private_github_error_msg(url)
 
-        await expect_ok(
-            cmd=["git", "clone", "--", url, dir],
-            desc=desc,
-            print_cmd=True
-        )
+        await expect_ok(cmd=["git", "clone", "--", url, dir], desc=desc, print_cmd=True)
 
     async def checkout(dir, ref, force=False):
 
         # Checkout tag or branch or commit-id
-        cmd=["git", "checkout"]
+        cmd = ["git", "checkout"]
 
         if force:
             cmd.append("-f")
 
         cmd.append(ref)
         # See NCL-5173 why we need to add '--' at the end
-        cmd.append('--')
+        cmd.append("--")
 
         try:
             await expect_ok(
                 cmd=cmd,
                 cwd=dir,
                 desc="Could not checkout ref {ref} with git".format(**locals()),
-                print_cmd=True
+                print_cmd=True,
             )
         except exception.CommandError as e:
             e.exit_code = 10
@@ -72,44 +68,52 @@ def git_provider():
 
     async def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
 
-        desc="Could not clone {} with git.".format(url)
+        desc = "Could not clone {} with git.".format(url)
 
         if "github.com" in url:
-            desc +=  " " +  private_github_error_msg(url)
+            desc += " " + private_github_error_msg(url)
 
         await expect_ok(
-            cmd=["git", "clone", "--branch", branch_or_tag, "--depth", "1", "--", url, dir],
+            cmd=[
+                "git",
+                "clone",
+                "--branch",
+                branch_or_tag,
+                "--depth",
+                "1",
+                "--",
+                url,
+                dir,
+            ],
             desc=desc,
             stderr=None,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def clone_checkout_branch_tag_deep(dir, url, branch_or_tag):
 
-        desc="Could not clone {} with git.".format(url)
+        desc = "Could not clone {} with git.".format(url)
 
         if "github.com" in url:
-            desc +=  " " +  private_github_error_msg(url)
+            desc += " " + private_github_error_msg(url)
 
         await expect_ok(
             cmd=["git", "clone", "--branch", branch_or_tag, "--", url, dir],
             desc=desc,
             stderr=None,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def clone(dir, url):
 
-        desc="Could not clone {} with git.".format(url)
+        desc = "Could not clone {} with git.".format(url)
 
         if "github.com" in url:
-            desc +=  " " +  private_github_error_msg(url)
+            desc += " " + private_github_error_msg(url)
 
         try:
             await expect_ok(
-                cmd=["git", "clone", "--", url, dir],
-                desc=desc,
-                print_cmd=True
+                cmd=["git", "clone", "--", url, dir], desc=desc, print_cmd=True
             )
         except exception.CommandError as e:
             e.exit_code = 10
@@ -120,13 +124,10 @@ def git_provider():
         desc = "Could not clone mirror {} with git.".format(url)
 
         if "github.com" in url:
-            desc +=  " " +  private_github_error_msg(url)
-
+            desc += " " + private_github_error_msg(url)
 
         await expect_ok(
-            cmd=["git", "clone", "--mirror", "--", url, dir],
-            desc=desc,
-            print_cmd=True
+            cmd=["git", "clone", "--mirror", "--", url, dir], desc=desc, print_cmd=True
         )
 
     async def add_tag(dir, name):
@@ -134,7 +135,7 @@ def git_provider():
             cmd=["git", "tag", name],
             cwd=dir,
             desc="Could not add tag {} with git.".format(name),
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def remove_remote(dir, name):
@@ -142,15 +143,17 @@ def git_provider():
             cmd=["git", "remote", "remove", name],
             cwd=dir,
             desc="Could not remove remote {} with git.".format(name),
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def rename_remote(dir, old_name, new_name):
         await expect_ok(
             cmd=["git", "remote", "rename", old_name, new_name],
             cwd=dir,
-            desc="Could not remove rename remote '{}' to '{}'".format(old_name, new_name),
-            print_cmd=True
+            desc="Could not remove rename remote '{}' to '{}'".format(
+                old_name, new_name
+            ),
+            print_cmd=True,
         )
 
     async def add_remote(dir, name, url):
@@ -158,7 +161,7 @@ def git_provider():
             cmd=["git", "remote", "add", name, url, "--"],
             cwd=dir,
             desc="Could not add remote {} with git.".format(url),
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def does_sha_exist(dir, ref):
@@ -167,7 +170,7 @@ def git_provider():
                 cmd=["git", "cat-file", "-e", ref + "^{commit}"],
                 cwd=dir,
                 desc="Ignore this.",
-                print_cmd=True
+                print_cmd=True,
             )
             return True
         except Exception as e:
@@ -183,7 +186,7 @@ def git_provider():
                 cmd=["git", "show-branch", "remotes/" + remote + "/" + ref],
                 cwd=dir,
                 desc="Ignore this.",
-                print_cmd=True
+                print_cmd=True,
             )
             return True
         except Exception as e:
@@ -195,7 +198,7 @@ def git_provider():
                 cmd=["git", "show-ref", "--quiet", "--tags", ref, "--"],
                 cwd=dir,
                 desc="Ignore this.",
-                print_cmd=True
+                print_cmd=True,
             )
             return True
         except Exception as e:
@@ -206,7 +209,7 @@ def git_provider():
             cmd=["git", "branch", name, "--"],
             cwd=dir,
             desc="Could not add branch {} with git.".format(name),
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def push_force(dir, remote, branch_or_tag):  # Warning! --force
@@ -225,8 +228,10 @@ def git_provider():
             await expect_ok(
                 cmd=cmd,
                 cwd=dir,
-                desc="Could not push branch or tag '{}' to remote '{}' with git".format(branch_or_tag, remote),
-                print_cmd=True
+                desc="Could not push branch or tag '{}' to remote '{}' with git".format(
+                    branch_or_tag, remote
+                ),
+                print_cmd=True,
             )
         except exception.CommandError as e:
             e.exit_code = 10
@@ -236,14 +241,13 @@ def git_provider():
 
         cmd = ["git", "push", "--all"]
 
-
         cmd.extend([remote, "--"])
 
         await expect_ok(
             cmd=cmd,
             cwd=dir,
             desc="Could not push all to remote '{}' with git".format(remote),
-            print_cmd=True
+            print_cmd=True,
         )
 
         if tags_also:
@@ -252,11 +256,13 @@ def git_provider():
                 cmd=cmd_tag,
                 cwd=dir,
                 desc="Could not push all tags to remote '{}' with git".format(remote),
-                print_cmd=True
+                print_cmd=True,
             )
 
     # TODO merge with above
-    async def push_with_tags(dir, branch, config_git_user, remote="origin", tryAtomic=True):
+    async def push_with_tags(
+        dir, branch, config_git_user, remote="origin", tryAtomic=True
+    ):
         """
         Warning: Atomic push is supported since git version 2.4.
         If the atomic push is not supported by git client OR repository provider,
@@ -275,7 +281,9 @@ def git_provider():
                 options = ["--follow-tags", remote, branch]
                 failure_push_msg = "tag+branch"
 
-            process = subprocess.Popen(["git", "config", "remote.%s.url" % remote], stdout=subprocess.PIPE)
+            process = subprocess.Popen(
+                ["git", "config", "remote.%s.url" % remote], stdout=subprocess.PIPE
+            )
             url_value = process.communicate()[0].decode("utf-8").strip()
 
             scmurl_regex = re.compile("^.*://([^@]+)@.*$")
@@ -287,44 +295,55 @@ def git_provider():
 
             await expect_ok(
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + options,
-                desc="Could not" + (" atomic" if atomic else "") + " push " + failure_push_msg + " with git. Make sure user '" + git_user + "' has push permissions to this repository",
+                desc="Could not"
+                + (" atomic" if atomic else "")
+                + " push "
+                + failure_push_msg
+                + " with git. Make sure user '"
+                + git_user
+                + "' has push permissions to this repository",
                 stderr=None,
                 cwd=dir,
-                print_cmd=True
+                print_cmd=True,
             )
 
         ver = await version()
         doAtomic = tryAtomic if versionGreaterEqualsThan(ver, [2, 4]) else False
         if tryAtomic and not doAtomic:
-            logger.warn("Cannot perform atomic push. It is not supported in this git version " + '.'.join(
-                [str(e) for e in ver]))
+            logger.warn(
+                "Cannot perform atomic push. It is not supported in this git version "
+                + ".".join([str(e) for e in ver])
+            )
 
         try:
             await do(doAtomic)
         except exception.CommandError as e:
             if "support" in e.stderr:
-                logger.warn("The repository provider does not support atomic push. "
-                            "There is a risk of tag/branch inconsistency.")
+                logger.warn(
+                    "The repository provider does not support atomic push. "
+                    "There is a risk of tag/branch inconsistency."
+                )
                 await do(False)
-            elif "Updates were rejected because the tag already exists in the remote" in e.stderr:
-                logger.info("git push failed because tag already exists. There is no need to worry")
+            elif (
+                "Updates were rejected because the tag already exists in the remote"
+                in e.stderr
+            ):
+                logger.info(
+                    "git push failed because tag already exists. There is no need to worry"
+                )
             else:
                 e.exit_code = 10
                 raise
 
     async def init(dir):
-        await expect_ok(
-            cmd=["git", "init"],
-            cwd=dir,
-            desc="Could not re-init with git",
-        )
+        await expect_ok(cmd=["git", "init"], cwd=dir, desc="Could not re-init with git")
 
     async def set_user_name(dir, name):
         await expect_ok(
             cmd=["git", "config", "--local", "user.name", name],
             desc="Could not set committer name with git",
             cwd=dir,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def set_user_email(dir, email):
@@ -332,7 +351,7 @@ def git_provider():
             cmd=["git", "config", "--local", "user.email", email],
             desc="Could not set committer email with git",
             cwd=dir,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def commit(dir, commit_message, commit_date=None):
@@ -347,7 +366,7 @@ def git_provider():
             desc="Could not commit files with git",
             env=env,
             cwd=dir,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def rev_parse(dir, rev="HEAD"):
@@ -355,7 +374,7 @@ def git_provider():
             cmd=["git", "rev-parse", rev],
             desc="Could not get " + rev + " commitid with git",
             stdout="single",
-            cwd=dir
+            cwd=dir,
         )
         return res
 
@@ -364,7 +383,7 @@ def git_provider():
             cmd=["git", "checkout", "--orphan" if orphan else "-b", branch_name],
             desc="Could not create branch with git",
             cwd=dir,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def add_all(dir):
@@ -372,7 +391,7 @@ def git_provider():
             cmd=["git", "add", "-A"],
             desc="Could not add files with git",
             cwd=dir,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def fetch_tags(dir, remote="origin"):
@@ -381,7 +400,7 @@ def git_provider():
                 cmd=["git", "fetch", remote, "--tags"],
                 desc="Could not fetch tags with git",
                 cwd=dir,
-                print_cmd=True
+                print_cmd=True,
             )
         except exception.CommandError as e:
             e.exit_code = 10
@@ -393,7 +412,7 @@ def git_provider():
                 cmd=["git", "fetch"],
                 desc="Could not fetch tags with git",
                 cwd=dir,
-                print_cmd=True
+                print_cmd=True,
             )
         except exception.CommandError as e:
             e.exit_code = 10
@@ -404,7 +423,7 @@ def git_provider():
             cmd=["git", "branch", "-d", branch_name],
             desc="Could not delete temporary branch with git",
             cwd=dir,
-            print_cmd=True
+            print_cmd=True,
         )
 
     async def tag_annotated(dir, tag_name, message, ok_if_exists=False):
@@ -413,11 +432,11 @@ def git_provider():
                 cmd=["git", "tag", "-a", "-m", message, tag_name],
                 desc="Could not add tag with git",
                 cwd=dir,
-                print_cmd=True
+                print_cmd=True,
             )
         except exception.CommandError as e:
             if ("already exists" in e.stderr) and ok_if_exists:
-                pass # ok
+                pass  # ok
             else:
                 raise e
 
@@ -426,11 +445,11 @@ def git_provider():
         Get the tree SHA from current index
         """
         tree_sha = await expect_ok(
-                cmd=["git", "write-tree"],
-                desc="Couldn't get the commit tree with git",
-                stdout="text",
-                cwd=dir,
-                print_cmd=True
+            cmd=["git", "write-tree"],
+            desc="Couldn't get the commit tree with git",
+            stdout="text",
+            cwd=dir,
+            print_cmd=True,
         )
         return tree_sha.strip()
 
@@ -439,6 +458,7 @@ def git_provider():
         Return the tag for a particular tree SHA
         Return None if no such tag exists
         """
+
         def get_tag_name(temp_tags):
             """
             temp_tags is in format: '(tag: <tag1>, <tag2>, <tag3> ...)'
@@ -447,12 +467,12 @@ def git_provider():
             We use '%d' to get the refname since there are no support for %D in
             git 1.8.3, the version we use in RHEL 7
             """
-            if 'tag:' in temp_tags:
+            if "tag:" in temp_tags:
                 temp_tags = temp_tags.strip()
                 # Remove beginning and ending '(' ')'
-                if temp_tags.startswith('('):
+                if temp_tags.startswith("("):
                     temp_tags = temp_tags[1:]
-                if temp_tags.endswith(')'):
+                if temp_tags.endswith(")"):
                     temp_tags = temp_tags[:-1]
 
                 comma_delimited_tags = re.sub(r"^.*tag:", "", temp_tags.strip()).strip()
@@ -464,18 +484,25 @@ def git_provider():
             data = await expect_ok(
                 # separate the tree SHA and the tag information with '::'
                 # output is <tree_sha>:: (tag: <tag1>, <tag2>, ...)
-                cmd=["git", "--no-pager", "log", "--tags", "--no-walk", '--pretty="%T::%d"'],
+                cmd=[
+                    "git",
+                    "--no-pager",
+                    "log",
+                    "--tags",
+                    "--no-walk",
+                    '--pretty="%T::%d"',
+                ],
                 desc="Couldn't get the tree hash / tag relationship via git log",
                 stdout="lines",
                 cwd=dir,
-                print_cmd=True
+                print_cmd=True,
             )
             # Each line contains information about a tree sha, and the tag(s) pointing to it indirectly
             for item in data:
                 # For some reason the text from 'expect_ok' are in quotes. Remove it
-                item = item.replace('"', '')
+                item = item.replace('"', "")
 
-                temp_tree_sha, temp_tags = item.split('::')
+                temp_tree_sha, temp_tags = item.split("::")
 
                 if temp_tree_sha.strip() == tree_sha.strip():
                     return get_tag_name(temp_tags)
@@ -490,11 +517,11 @@ def git_provider():
     async def get_commit_from_tag_name(repo_dir, tag_name):
 
         commit = await expect_ok(
-                cmd=["git", "rev-list", "-n", "1", tag_name],
-                desc="Couldn't get the commit from tag with git",
-                stdout="text",
-                cwd=repo_dir,
-                print_cmd=True
+            cmd=["git", "rev-list", "-n", "1", tag_name],
+            desc="Couldn't get the commit from tag with git",
+            stdout="text",
+            cwd=repo_dir,
+            print_cmd=True,
         )
 
         return commit.strip()
@@ -534,11 +561,11 @@ def git_provider():
         out = await expect_ok(
             cmd=["git", "--version"],
             desc="Could not find out git version.",
-            stdout=asutil.process_stdout_options["text"]
+            stdout=asutil.process_stdout_options["text"],
         )
         regex = r"git\ version\ (?P<res>([0-9]+\.)*[0-9]+)"
         match = re.search(regex, out)
-        if (match):
+        if match:
             return [int(e) for e in match.group("res").split(".")]
         else:
             raise Exception("Unexpected output of 'git --version': " + str(out))
@@ -568,32 +595,39 @@ def git_provider():
         returns: string with proper message to tell the user what to do
         """
         try:
-            github_user = os.environ['PRIVATE_GITHUB_USER']
+            github_user = os.environ["PRIVATE_GITHUB_USER"]
         except KeyError:
             # if environment variable not specified
             logger.warn("PRIVATE_GITHUB_USER environment variable not specified!")
             github_user = None
 
         if github_user:
-            further_desc = "If the Github repository is a private repository, you need to add the Github user " + \
-                           "'{user}' with read-permissions to '{url}'".format(user=github_user, url=url)
+            further_desc = (
+                "If the Github repository is a private repository, you need to add the Github user "
+                + "'{user}' with read-permissions to '{url}'".format(
+                    user=github_user, url=url
+                )
+            )
         else:
-            further_desc = "If the Github repository is a private repository, you need to add a Github user " + \
-                           "with read-permissions to '{url}'. Please email the Newcastle mailing list for more information".format(url=url)
+            further_desc = (
+                "If the Github repository is a private repository, you need to add a Github user "
+                + "with read-permissions to '{url}'. Please email the Newcastle mailing list for more information".format(
+                    url=url
+                )
+            )
 
         return further_desc
-
 
     async def list_tags(dir):
         """
         Returns list of tags
         """
         tags = await expect_ok(
-                cmd=["git", "tag"],
-                desc="Couldn't get the list of tags",
-                stdout="text",
-                cwd=dir,
-                print_cmd=True
+            cmd=["git", "tag"],
+            desc="Couldn't get the list of tags",
+            stdout="text",
+            cwd=dir,
+            print_cmd=True,
         )
         return list(filter(None, [a.strip() for a in tags.split("\n")]))
 
@@ -602,11 +636,11 @@ def git_provider():
         Returns list of branches
         """
         branches = await expect_ok(
-                cmd=["git", "branch", "-a"],
-                desc="Couldn't get the list of branches",
-                stdout="text",
-                cwd=dir,
-                print_cmd=True
+            cmd=["git", "branch", "-a"],
+            desc="Couldn't get the list of branches",
+            stdout="text",
+            cwd=dir,
+            print_cmd=True,
         )
         return list(filter(None, [a.strip() for a in branches.split("\n")]))
 
@@ -649,5 +683,5 @@ def git_provider():
         "reset_hard": reset_hard,
         "does_sha_exist": does_sha_exist,
         "list_branches": list_branches,
-        "list_tags": list_tags
+        "list_tags": list_tags,
     }

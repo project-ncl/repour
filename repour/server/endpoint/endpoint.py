@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import concurrent.futures as cfutures
 import hashlib
 import json
 import logging
@@ -8,28 +9,35 @@ import traceback
 
 import aiohttp
 import voluptuous
-import concurrent.futures as cfutures
 from aiohttp import web
+from prometheus_async.aio import time
+from prometheus_client import Counter, Histogram, Summary
 
 from ... import exception
-from . import validation
 from ...config import config
 from ...logs import file_callback_log
+from . import validation
 
 logger = logging.getLogger(__name__)
 
-from prometheus_client import Counter
-from prometheus_client import Summary
-from prometheus_client import Histogram
-from prometheus_async.aio import time
 
-ERROR_VALIDATION_JSON_COUNTER = Counter('error_validation_json_counter', 'User sent bad JSON requests that failed validation')
-ERROR_RESPONSE_400_COUNTER = Counter('error_response_400_counter', 'App returned 400 status')
-ERROR_RESPONSE_500_COUNTER = Counter('error_response_500_counter', 'App returned 500 status')
-ERROR_CALLBACK_COUNTER = Counter('error_callback_counter', 'Errors calling callback url')
+ERROR_VALIDATION_JSON_COUNTER = Counter(
+    "error_validation_json_counter",
+    "User sent bad JSON requests that failed validation",
+)
+ERROR_RESPONSE_400_COUNTER = Counter(
+    "error_response_400_counter", "App returned 400 status"
+)
+ERROR_RESPONSE_500_COUNTER = Counter(
+    "error_response_500_counter", "App returned 500 status"
+)
+ERROR_CALLBACK_COUNTER = Counter(
+    "error_callback_counter", "Errors calling callback url"
+)
 
 REQ_TIME = Summary("callback_time", "time spent with calling callback")
 REQ_HISTOGRAM_TIME = Histogram("callback_histogram", "Histogram for calling callback")
+
 
 def create_log_context_id():
     return "repour-" + base64.b32encode(os.urandom(20)).decode("ascii").lower()
@@ -89,10 +97,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         try:
             spec = await request.json()
         except ValueError:
-            logger.error("Rejected {method} {path}: body is not parsable as json".format(
-                method=request.method,
-                path=request.path,
-            ))
+            logger.error(
+                "Rejected {method} {path}: body is not parsable as json".format(
+                    method=request.method, path=request.path
+                )
+            )
 
             rejected_data = await request.text()
 
@@ -103,11 +112,13 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 status=400,
                 content_type="application/json",
                 text=json.dumps(
-                    obj=[{
-                        "error_message": "expected json",
-                        "error_type": "json parsability",
-                        "path": [],
-                    }],
+                    obj=[
+                        {
+                            "error_message": "expected json",
+                            "error_type": "json parsability",
+                            "path": [],
+                        }
+                    ],
                     ensure_ascii=False,
                 ),
             )
@@ -115,10 +126,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             validator(spec)
         except voluptuous.MultipleInvalid as x:
 
-            logger.error("Rejected {method} {path}: body failed input validation".format(
-                method=request.method,
-                path=request.path,
-            ))
+            logger.error(
+                "Rejected {method} {path}: body failed input validation".format(
+                    method=request.method, path=request.path
+                )
+            )
 
             ERROR_VALIDATION_JSON_COUNTER.inc()
 
@@ -127,16 +139,13 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             return web.Response(
                 status=400,
                 content_type="application/json",
-                text=json.dumps(
-                    obj=[e.__dict__ for e in x.errors],
-                    ensure_ascii=False,
-                ),
+                text=json.dumps(obj=[e.__dict__ for e in x.errors], ensure_ascii=False),
             )
-        logger.info("Accepted {method} {path}: {params}".format(
-            method=request.method,
-            path=request.path,
-            params=spec,
-        ))
+        logger.info(
+            "Accepted {method} {path}: {params}".format(
+                method=request.method, path=request.path, params=spec
+            )
+        )
 
         try:
             validation.callback(spec)
@@ -146,7 +155,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             callback_mode = True
 
         # Set the task_id if provided in the request
-        task_id = spec.get('taskId', None)
+        task_id = spec.get("taskId", None)
         if task_id:
             asyncio.Task.current_task().task_id = task_id
 
@@ -162,14 +171,21 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 status = 400
                 traceback_id, obj = described_error_to_obj(e)
                 ERROR_RESPONSE_400_COUNTER.inc()
-                logger.error("Failed ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
+                logger.error(
+                    "Failed ({e.__class__.__name__}), traceback hash: {traceback_id}".format(
+                        **locals()
+                    )
+                )
                 log_traceback_multi_line()
             except Exception as e:
                 status = 500
                 traceback_id, obj = exception_to_obj(e)
                 ERROR_RESPONSE_500_COUNTER.inc()
                 logger.error(
-                    "Internal failure ({e.__class__.__name__}), traceback hash: {traceback_id}".format(**locals()))
+                    "Internal failure ({e.__class__.__name__}), traceback hash: {traceback_id}".format(
+                        **locals()
+                    )
+                )
                 log_traceback_multi_line()
             else:
                 status = 200
@@ -190,10 +206,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             async def do_callback(callback_spec):
                 status, obj = await do_call()
 
-                obj["callback"] = {
-                    "status": status,
-                    "id": callback_id,
-                }
+                obj["callback"] = {"status": status, "id": callback_id}
 
                 logger.info("Callback data: {}".format(obj))
 
@@ -203,20 +216,26 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                     try:
                         # TODO refactor this into auth.py, we cannot use middleware for callbacks
                         headers = {}
-                        auth_provider = c.get('auth', {}).get('provider', None)
-                        if auth_provider == 'oauth2_jwt' and request.headers.get('Authorization', None):
-                            auth_header = {'Authorization': request.headers['Authorization']}
-                            logger.debug('Authorization enabled, adding header to callback: ' + str(auth_header))
+                        auth_provider = c.get("auth", {}).get("provider", None)
+                        if auth_provider == "oauth2_jwt" and request.headers.get(
+                            "Authorization", None
+                        ):
+                            auth_header = {
+                                "Authorization": request.headers["Authorization"]
+                            }
+                            logger.debug(
+                                "Authorization enabled, adding header to callback: "
+                                + str(auth_header)
+                            )
                             headers.update(auth_header)
 
                         resp = await client_session.request(
                             callback_spec.get("method", "POST"),
                             callback_spec["url"],
                             headers=headers,
-                            data=json.dumps(
-                                obj=obj,
-                                ensure_ascii=False,
-                            ).encode("utf-8")
+                            data=json.dumps(obj=obj, ensure_ascii=False).encode(
+                                "utf-8"
+                            ),
                         )
                     except Exception as e:
                         ERROR_CALLBACK_COUNTER.inc()
@@ -225,7 +244,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                                 ename=e.__class__.__name__,
                                 backoff=backoff,
                                 max_attempts=max_attempts,
-                            ))
+                            )
+                        )
                         logger.error(e)
                         resp = None
                     return resp
@@ -238,7 +258,9 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                     if resp is not None:
                         logger.info(
                             "Unable to send result of callback, status {resp.status}, attempt {backoff}/{max_attempts}".format(
-                                **locals()))
+                                **locals()
+                            )
+                        )
 
                     sleep_period = 2 ** backoff
                     logger.debug("Sleeping for {sleep_period}".format(**locals()))
@@ -247,7 +269,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                     backoff += 1
 
                     if backoff > max_attempts:
-                        logger.error("Giving up on callback after {max_attempts} attempts".format(**locals()))
+                        logger.error(
+                            "Giving up on callback after {max_attempts} attempts".format(
+                                **locals()
+                            )
+                        )
                         break
 
                     resp = await send_result()
@@ -255,12 +281,16 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 if backoff <= max_attempts:
                     logger.info("Callback result sent successfully")
 
-            logger.info("Creating callback task {callback_id}, returning ID now".format(**locals()))
+            logger.info(
+                "Creating callback task {callback_id}, returning ID now".format(
+                    **locals()
+                )
+            )
             callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
             callback_task.log_context = log_context
             callback_task.callback_id = callback_id
             # Set the task_id if provided in the request
-            task_id = spec.get('taskId', None)
+            task_id = spec.get("taskId", None)
             if task_id:
                 callback_task.task_id = task_id
 
@@ -268,7 +298,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             obj = {
                 "callback": {
                     "id": callback_id,
-                    "websocket": "ws://" + repour_url + "/callback/" + callback_id
+                    "websocket": "ws://" + repour_url + "/callback/" + callback_id,
                 }
             }
 
@@ -278,10 +308,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         response = web.Response(
             status=status,
             content_type="application/json",
-            text=json.dumps(
-                obj=obj,
-                ensure_ascii=False,
-            ),
+            text=json.dumps(obj=obj, ensure_ascii=False),
         )
         return response
 

@@ -4,16 +4,15 @@ import os
 import tempfile
 import types
 import unittest
+from test import util
 
 import aiohttp
 import aiohttp.web
-
 import repour.asutil
 import repour.exception
 
-from test import util
-
 loop = asyncio.get_event_loop()
+
 
 class TestDownload(unittest.TestCase):
     foo_bar = io.BytesIO(b"just read the instructions")
@@ -23,9 +22,7 @@ class TestDownload(unittest.TestCase):
         util.setup_http(
             cls=cls,
             loop=loop,
-            routes=[
-                ("GET", "/foo_bar", util.http_write_handler(cls.foo_bar))
-            ],
+            routes=[("GET", "/foo_bar", util.http_write_handler(cls.foo_bar))],
         )
 
     @classmethod
@@ -35,6 +32,7 @@ class TestDownload(unittest.TestCase):
     @staticmethod
     def fake_resp(suggest_filename=None):
         first_call = True
+
         async def fake_read(l):
             nonlocal first_call
             first_call = False
@@ -44,12 +42,13 @@ class TestDownload(unittest.TestCase):
             headers = {}
         else:
             headers = {
-                aiohttp.hdrs.CONTENT_DISPOSITION: 'attachment; filename="{}"'.format(suggest_filename),
+                aiohttp.hdrs.CONTENT_DISPOSITION: 'attachment; filename="{}"'.format(
+                    suggest_filename
+                )
             }
 
         return types.SimpleNamespace(
-            content=types.SimpleNamespace(read=fake_read),
-            headers=headers,
+            content=types.SimpleNamespace(read=fake_read), headers=headers
         )
 
     def test_content_disposition(self):
@@ -63,10 +62,13 @@ class TestDownload(unittest.TestCase):
     def test_download(self):
         buf = io.BytesIO()
 
-        filename = loop.run_until_complete(repour.asutil.download(self.url + "/foo_bar", buf))
+        filename = loop.run_until_complete(
+            repour.asutil.download(self.url + "/foo_bar", buf)
+        )
 
         self.assertEqual(buf.getvalue(), self.foo_bar.getvalue())
         self.assertEqual(filename, "foo_bar")
+
 
 class TestTemporaryDirectory(unittest.TestCase):
     def write_test_file(self, root):
@@ -86,6 +88,7 @@ class TestTemporaryDirectory(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.write_test_file(d)
         self.assertFalse(os.path.exists(d))
+
 
 class TestExpectOk(unittest.TestCase):
     b = b"just testing\ncongenital optimist\n"
@@ -110,12 +113,20 @@ class TestExpectOk(unittest.TestCase):
 
         with self.assertRaises(repour.exception.PullCommandError) as cm:
             ret = loop.run_until_complete(expect_ok(["git", "clone"], stderr=None))
-            self.assertIn(cm.exception.stderr, "You must specify a repository to clone.")
+            self.assertIn(
+                cm.exception.stderr, "You must specify a repository to clone."
+            )
             self.assertEqual(cm.exception.stdout, "")
         self.assertIsNone(ret)
 
     def test_stdout(self):
         expect_ok = repour.asutil.expect_ok_closure()
 
-        self.assertEqual(loop.run_until_complete(expect_ok(["printf", self.t], stdout="data")), self.b)
-        self.assertEqual(loop.run_until_complete(expect_ok(["printf", self.t], stdout="single")), self.l[0])
+        self.assertEqual(
+            loop.run_until_complete(expect_ok(["printf", self.t], stdout="data")),
+            self.b,
+        )
+        self.assertEqual(
+            loop.run_until_complete(expect_ok(["printf", self.t], stdout="single")),
+            self.l[0],
+        )

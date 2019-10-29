@@ -12,6 +12,7 @@ import sys
 # - Exits after the child exists
 # - Kills/reaps everything before exiting
 
+
 def kill_all(pid2, timeout=5):
     pid2_status = None
     # SIGTERM everything but us
@@ -19,6 +20,7 @@ def kill_all(pid2, timeout=5):
     # Setup SIGALRM timeout
     def handle_timeout(signum, frame):
         raise TimeoutError()
+
     prev_handler = signal.signal(signal.SIGALRM, handle_timeout)
     signal.alarm(timeout)
     # Reap all children
@@ -32,6 +34,7 @@ def kill_all(pid2, timeout=5):
         signal.alarm(0)
         signal.signal(signal.SIGALRM, prev_handler)
     return pid2_status
+
 
 def reap_children(pid2, reap_all):
     pid2_status = None
@@ -55,14 +58,17 @@ def reap_children(pid2, reap_all):
                     more_children = False
     return pid2_status
 
+
 def forward_signals_to(pid):
     def forward_handler(signum, frame):
         try:
             os.kill(pid, signum)
         except ProcessLookupError:
             pass
+
     for signum in [signal.SIGTERM, signal.SIGINT]:
         signal.signal(signum, forward_handler)
+
 
 def spawn_pid2(cmd):
     pid2_status = None
@@ -77,8 +83,10 @@ def spawn_pid2(cmd):
         pid2_term_status = kill_all(pid2)
     return pid2_term_status or pid2_status
 
+
 def main():
     sys.exit(spawn_pid2(sys.argv[1:]))
+
 
 if __name__ == "__main__":
     main()

@@ -6,13 +6,14 @@ import time
 
 from repour import asutil
 
-SHARED_PATH_PREFOLDER = os.environ.get("SHARED_FOLDER", '/tmp')
+SHARED_PATH_PREFOLDER = os.environ.get("SHARED_FOLDER", "/tmp")
 CALLBACK_LOGS_PATH = os.path.join(SHARED_PATH_PREFOLDER, "repour-logs-callback")
 
 logger = logging.getLogger(__name__)
 
+
 def get_callback_log_path(callback_id):
-    return os.path.join(CALLBACK_LOGS_PATH, callback_id + '.log')
+    return os.path.join(CALLBACK_LOGS_PATH, callback_id + ".log")
 
 
 def has_event_loop():
@@ -30,7 +31,10 @@ class FileCallbackHandler(logging.StreamHandler):
     """
     Handler that logs into {directory}/{callback_id}.log
     """
-    def __init__(self, directory=CALLBACK_LOGS_PATH, mode='a', encoding=None, delay=None):
+
+    def __init__(
+        self, directory=CALLBACK_LOGS_PATH, mode="a", encoding=None, delay=None
+    ):
         if os.path.exists(directory):
             if not os.path.isdir(directory):
                 raise Exception(directory + " is not a directory! Can't log there")
@@ -45,11 +49,10 @@ class FileCallbackHandler(logging.StreamHandler):
 
     def emit(self, record):
         try:
-            if (has_event_loop()):
+            if has_event_loop():
                 task = asyncio.Task.current_task()
             else:
                 task = None
-
 
             if task is not None:
                 callback_id = getattr(task, "callback_id", None)

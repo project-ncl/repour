@@ -2,11 +2,9 @@ import argparse
 import logging
 import os
 import re
-
 from xml.dom import minidom
 
-from .. import exception
-from .. import asutil
+from .. import asutil, exception
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +12,7 @@ REPOUR_JAVA_KEY = "-DRepour_Java="
 
 stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
+
 
 def get_removed_repos(work_dir, parameters):
     """
@@ -28,15 +27,24 @@ def get_removed_repos(work_dir, parameters):
         if m is not None:
             filepath = os.path.join(work_dir, m.group(1))
             logger.debug(
-                'Files and folders in the work directory:\n  %s', os.listdir(work_dir))
+                "Files and folders in the work directory:\n  %s", os.listdir(work_dir)
+            )
 
             if os.path.exists(filepath):
                 tree = minidom.parse(filepath)
                 for repo_elem in tree.getElementsByTagName("repository"):
-                    repo = {"releases": True, "snapshots": True,
-                            "name": "", "id": "", "url": ""}
+                    repo = {
+                        "releases": True,
+                        "snapshots": True,
+                        "name": "",
+                        "id": "",
+                        "url": "",
+                    }
                     for enabled_elem in repo_elem.getElementsByTagName("enabled"):
-                        if enabled_elem.parentNode.localName in ["releases", "snapshots"]:
+                        if enabled_elem.parentNode.localName in [
+                            "releases",
+                            "snapshots",
+                        ]:
                             bool_value = enabled_elem.childNodes[0].data == "true"
                             repo[enabled_elem.parentNode.localName] = bool_value
                     for tag in ["id", "name", "url"]:
@@ -47,7 +55,9 @@ def get_removed_repos(work_dir, parameters):
                 break
             else:
                 logger.info(
-                    'File %s does not exist. It seems no repositories were removed', filepath)
+                    "File %s does not exist. It seems no repositories were removed",
+                    filepath,
+                )
 
     logger.info("Removed repos are: " + str(result))
     return result
@@ -59,7 +69,7 @@ def is_temp_build(adjustspec):
 
         return: :bool: whether temp build feature enabled or not
     """
-    key = 'tempBuild'
+    key = "tempBuild"
     if (key in adjustspec) and adjustspec[key] is True:
         return True
     else:
@@ -83,7 +93,7 @@ def get_temp_build_timestamp(adjustspec):
 
         Otherwise it will return None
     """
-    temp_build_timestamp_key = 'tempBuildTimestamp'
+    temp_build_timestamp_key = "tempBuildTimestamp"
     temp_build_timestamp = None
 
     temp_build_enabled = is_temp_build(adjustspec)
@@ -95,8 +105,7 @@ def get_temp_build_timestamp(adjustspec):
         temp_build_timestamp = "temporary"
 
     if temp_build_enabled:
-        logger.info("Temp build timestamp set to: " +
-                    str(temp_build_timestamp))
+        logger.info("Temp build timestamp set to: " + str(temp_build_timestamp))
         return temp_build_timestamp
     else:
         return None
@@ -113,7 +122,7 @@ def get_extra_parameters(extra_adjust_parameters):
     Returns: tuple<list<string>, string>: list of params(minus the --file option), and folder where to run PME
     If '--file' option not used, the folder will be an empty string
     """
-    subfolder = ''
+    subfolder = ""
 
     paramsString = extra_adjust_parameters.get("CUSTOM_PME_PARAMETERS", None)
     if paramsString is None:
@@ -138,26 +147,27 @@ def get_jvm_from_extra_parameters(extra_parameters):
     for parameter in extra_parameters:
 
         if REPOUR_JAVA_KEY in parameter:
-            return parameter.replace(REPOUR_JAVA_KEY, '')
+            return parameter.replace(REPOUR_JAVA_KEY, "")
     else:
-        return None 
+        return None
 
-async def print_java_version(java_bin_dir = ''):
 
-    if java_bin_dir and java_bin_dir.endswith('/'):
-        command = java_bin_dir + 'java'
+async def print_java_version(java_bin_dir=""):
+
+    if java_bin_dir and java_bin_dir.endswith("/"):
+        command = java_bin_dir + "java"
     elif java_bin_dir:
-        command = java_bin_dir +'/java'
+        command = java_bin_dir + "/java"
     else:
-        command = 'java'
-    
+        command = "java"
+
     expect_ok = asutil.expect_ok_closure()
     output = await expect_ok(
         cmd=[command, "-version"],
         desc="Failed getting Java version",
-        cwd='.',
+        cwd=".",
         stdout=stdout_options["text"],
         stderr=stderr_options["stdout"],
-        print_cmd=True
+        print_cmd=True,
     )
     logger.info(output)

@@ -12,10 +12,13 @@ from . import exception
 logger = logging.getLogger(__name__)
 subprocess_logger = logging.getLogger(__name__ + ".stderr")
 
+
 def _find_filename(url, resp):
     # Filename should be url basename, or Content-Disposition header if it exists
     if aiohttp.hdrs.CONTENT_DISPOSITION in resp.headers:
-        cd_params = aiohttp.multipart.parse_content_disposition(resp.headers[aiohttp.hdrs.CONTENT_DISPOSITION])[1]
+        cd_params = aiohttp.multipart.parse_content_disposition(
+            resp.headers[aiohttp.hdrs.CONTENT_DISPOSITION]
+        )[1]
         cd_filename = aiohttp.multipart.content_disposition_filename(cd_params)
     else:
         cd_filename = None
@@ -24,6 +27,7 @@ def _find_filename(url, resp):
         return os.path.basename(urllib.parse.urlparse(url).path)
     else:
         return cd_filename
+
 
 async def download(url, stream):
     loop = asyncio.get_event_loop()
@@ -49,9 +53,11 @@ async def download(url, stream):
 
     return filename
 
+
 async def rmtree(dir_path, ignore_errors=False, loop=None):
     loop = asyncio.get_event_loop() if loop is None else loop
     await loop.run_in_executor(None, lambda: shutil.rmtree(dir_path, ignore_errors))
+
 
 class TemporaryDirectory(object):
     def __init__(self, suffix="", prefix="tmp", loop=None):
@@ -67,6 +73,7 @@ class TemporaryDirectory(object):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.loop.create_task(rmtree(self.name, ignore_errors=True, loop=self.loop))
 
+
 def _convert_bytes(b, mode):
     if mode == "text":
         return b.decode("utf-8")
@@ -79,24 +86,25 @@ def _convert_bytes(b, mode):
     else:
         return None
 
+
 # TODO values are for backwards comp., replace with enum
 process_stdout_options = {
     "ignore": "send",
-    "capture": "capture", # ???
-    "text":"text", # see _convert_bytes
-    "lines":"lines",
-    "single":"single",
-    "data":"data",
+    "capture": "capture",  # ???
+    "text": "text",  # see _convert_bytes
+    "lines": "lines",
+    "single": "single",
+    "data": "data",
 }
 
 process_stderr_options = {
     "log": "log",
     "log_on_error": "log_on_error",
-    "stdout": "stdout"
+    "stdout": "stdout",
 }
 
-def expect_ok_closure(exc_type=exception.CommandError):
 
+def expect_ok_closure(exc_type=exception.CommandError):
     async def print_live_log(process):
         """
         Known issues: it doesn't really process stderr, it assumes stderr is redirected
@@ -108,7 +116,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
         while True:
             data = await process.stdout.readline()
             decoded = data.decode()
-            if decoded == '':
+            if decoded == "":
                 # that means we reached EOF and process stopped
                 break
             else:
@@ -116,10 +124,19 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 logger.info(decoded_stripped)
                 stdout_data_ary.append(decoded_stripped)
 
-        stdout_text = '\n'.join(stdout_data_ary)
+        stdout_text = "\n".join(stdout_data_ary)
         return stdout_text, stderr_text
 
-    async def expect_ok(cmd, desc="", env=None, stdout=None, stderr="log_on_error", cwd=None, live_log=False, print_cmd=False):
+    async def expect_ok(
+        cmd,
+        desc="",
+        env=None,
+        stdout=None,
+        stderr="log_on_error",
+        cwd=None,
+        live_log=False,
+        print_cmd=False,
+    ):
         if env is None:
             sub_env = None
         else:
@@ -133,11 +150,15 @@ def expect_ok_closure(exc_type=exception.CommandError):
         p = await asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.DEVNULL,
-            stdout=None if stdout == process_stdout_options["ignore"] else asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT if stderr == process_stderr_options["stdout"] else asyncio.subprocess.PIPE,
+            stdout=None
+            if stdout == process_stdout_options["ignore"]
+            else asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+            if stderr == process_stderr_options["stdout"]
+            else asyncio.subprocess.PIPE,
             env=sub_env,
             cwd=cwd,
-            limit=100*1024*1024
+            limit=100 * 1024 * 1024
         )
 
         if live_log:
@@ -145,10 +166,16 @@ def expect_ok_closure(exc_type=exception.CommandError):
             await p.wait()
         else:
             stdout_data, stderr_data = await p.communicate()
-            stderr_text = "" if stderr_data is None else _convert_bytes(stderr_data, "text")
-            stdout_text = "" if stdout_data is None else _convert_bytes(stdout_data, "text")
+            stderr_text = (
+                "" if stderr_data is None else _convert_bytes(stderr_data, "text")
+            )
+            stdout_text = (
+                "" if stdout_data is None else _convert_bytes(stdout_data, "text")
+            )
 
-        if stderr_text != "" and (stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)):
+        if stderr_text != "" and (
+            stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)
+        ):
             for line in stderr_text.split("\n"):
                 if line != "":
                     subprocess_logger.error(line)
@@ -166,7 +193,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 return None
             else:
                 if live_log:
-                    return stdout_text.split('\n')
+                    return stdout_text.split("\n")
                 else:
                     return _convert_bytes(stdout_data, stdout)
 
@@ -194,7 +221,7 @@ def add_username_url(url, username):
         parsed_list = list(parsed)
         # first item is the protocol, second is the url name
         url_part = parsed_list[1]
-        parsed_list[1] = username + '@' + url_part
+        parsed_list[1] = username + "@" + url_part
 
         return urllib.parse.urlunsplit(parsed_list)
 

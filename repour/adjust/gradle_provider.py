@@ -3,12 +3,10 @@ import logging
 import os
 import shutil
 import subprocess
-
 from string import Template
 
-from . import process_provider
-from . import util
 from .. import asutil
+from . import process_provider, util
 
 logger = logging.getLogger(__name__)
 
@@ -20,27 +18,31 @@ MANIPULATION_FILE_NAME = "manipulation.json"
 stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
 
-def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=None, timestamp=None):
 
+def get_gradle_provider(
+    init_file_path, default_parameters, specific_indy_group=None, timestamp=None
+):
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         """Generate the manipulation.json file with information about aligned versions"""
 
         if not os.path.exists(init_file_path):
             raise Exception(
-                "The Gradle init file '{}' does not exist - are you sure you provided the correct path in configuration?".format(init_file_path))
+                "The Gradle init file '{}' does not exist - are you sure you provided the correct path in configuration?".format(
+                    init_file_path
+                )
+            )
 
         temp_build_parameters = []
 
         if timestamp:
             temp_build_parameters.append(
-                "-DversionIncrementalSuffix=" + timestamp + "-redhat")
+                "-DversionIncrementalSuffix=" + timestamp + "-redhat"
+            )
 
         if specific_indy_group:
-            temp_build_parameters.append(
-                "-DrestRepositoryGroup=" + specific_indy_group)
+            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
 
-        extra_parameters, subfolder = util.get_extra_parameters(
-            extra_adjust_parameters)
+        extra_parameters, subfolder = util.get_extra_parameters(extra_adjust_parameters)
 
         work_dir = os.path.join(work_dir, subfolder)
 
@@ -55,8 +57,8 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
-            env = {'JAVA_HOME': '/usr/lib/jvm/java-' + jvm_version + '-openjdk'}
-            logger.info("Specifying JAVA_HOME: " + env['JAVA_HOME'])
+            env = {"JAVA_HOME": "/usr/lib/jvm/java-" + jvm_version + "-openjdk"}
+            logger.info("Specifying JAVA_HOME: " + env["JAVA_HOME"])
         else:
             env = None
 
@@ -67,23 +69,39 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             stdout=stdout_options["text"],
             stderr=stderr_options["stdout"],
             print_cmd=True,
-            env=env
+            env=env,
         )
         logger.info(output)
 
-        if 'JAVA_HOME' in env:
-            await util.print_java_version(java_bin_dir = env['JAVA_HOME'] + "/bin")
+        if "JAVA_HOME" in env:
+            await util.print_java_version(java_bin_dir=env["JAVA_HOME"] + "/bin")
         else:
             await util.print_java_version()
 
-        cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
-               "--init-script", init_file_path, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
+        cmd = (
+            [
+                command_gradle,
+                "--info",
+                "--console",
+                "plain",
+                "--no-daemon",
+                "--stacktrace",
+                "--init-script",
+                init_file_path,
+                "generateAlignmentMetadata",
+            ]
+            + default_parameters
+            + temp_build_parameters
+            + extra_parameters
+        )
 
-        result = await process_provider.get_process_provider(EXECUTION_NAME,
-                                                             cmd,
-                                                             get_result_data=get_result_data,
-                                                             send_log=True,
-                                                             results_file=MANIPULATION_FILE_NAME)(work_dir, extra_adjust_parameters, adjust_result, env=env)
+        result = await process_provider.get_process_provider(
+            EXECUTION_NAME,
+            cmd,
+            get_result_data=get_result_data,
+            send_log=True,
+            results_file=MANIPULATION_FILE_NAME,
+        )(work_dir, extra_adjust_parameters, adjust_result, env=env)
 
         adjust_result["adjustType"] = result["adjustType"]
         adjust_result["resultData"] = result["resultData"]
@@ -113,32 +131,43 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
                 "executionRootModified": {
                     "groupId": None,
                     "artifactId": None,
-                    "version": None
+                    "version": None,
                 }
             },
-            "RemovedRepositories": []
+            "RemovedRepositories": [],
         }
 
         manipulation_file_path = os.path.join(work_dir, MANIPULATION_FILE_NAME)
 
         logger.info(
-            "Reading '{}' file with alignment result".format(manipulation_file_path))
+            "Reading '{}' file with alignment result".format(manipulation_file_path)
+        )
 
         if not os.path.exists(manipulation_file_path):
-            raise Exception("Expected generated alignment file '{}' does not exist".format(
-                manipulation_file_path))
+            raise Exception(
+                "Expected generated alignment file '{}' does not exist".format(
+                    manipulation_file_path
+                )
+            )
 
         with open(manipulation_file_path, "r") as f:
             result = json.load(f)
-            template["VersioningState"]["executionRootModified"]["groupId"] = result["group"]
-            template["VersioningState"]["executionRootModified"]["artifactId"] = result["name"]
-            template["VersioningState"]["executionRootModified"]["version"] = result["version"]
+            template["VersioningState"]["executionRootModified"]["groupId"] = result[
+                "group"
+            ]
+            template["VersioningState"]["executionRootModified"]["artifactId"] = result[
+                "name"
+            ]
+            template["VersioningState"]["executionRootModified"]["version"] = result[
+                "version"
+            ]
 
         try:
             template["RemovedRepositories"] = util.get_removed_repos(
-                work_dir, default_parameters)
+                work_dir, default_parameters
+            )
         except FileNotFoundError as e:
-            logger.error('File for removed repositories could not be found')
+            logger.error("File for removed repositories could not be found")
             logger.error(str(e))
 
         return template
@@ -149,10 +178,10 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
 def get_command_gradle(work_dir):
 
     # Use system gradle
-    command_gradle = 'gradle'
+    command_gradle = "gradle"
 
     # If gradlew present, use it instead
-    if os.path.isfile(os.path.join(work_dir, './gradlew')):
-        command_gradle = './gradlew'
+    if os.path.isfile(os.path.join(work_dir, "./gradlew")):
+        command_gradle = "./gradlew"
 
     return command_gradle

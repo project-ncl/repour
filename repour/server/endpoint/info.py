@@ -1,16 +1,17 @@
 import os
-import repour
 import sys
-from aiohttp import web
-from ...scm import git_provider
-from ... import exception
 
-from prometheus_client import Summary
-from prometheus_client import Histogram
+import repour
+from aiohttp import web
 from prometheus_async.aio import time
+from prometheus_client import Histogram, Summary
+
+from ... import exception
+from ...scm import git_provider
 
 REQ_TIME = Summary("info_req_time", "time spent with info endpoint")
 REQ_HISTOGRAM_TIME = Histogram("info_req_histogram", "Histogram for info endpoint")
+
 
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
@@ -31,6 +32,4 @@ async def handle_request(request):
     """
 
     html_text = html_text.format(version, git_sha)
-    return web.Response(text='' + html_text, content_type="text/html")
-
-
+    return web.Response(text="" + html_text, content_type="text/html")

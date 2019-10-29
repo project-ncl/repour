@@ -16,11 +16,17 @@ git = git_provider.git_provider()
 
 
 async def setup_commiter(expect_ok, repo_dir):
-    await git["set_user_name"](repo_dir, c.get("scm", {}).get("git", {}).get("user.name", "Repour"))
-    await git["set_user_email"](repo_dir, c.get("scm", {}).get("git", {}).get("user.email", "<>"))
+    await git["set_user_name"](
+        repo_dir, c.get("scm", {}).get("git", {}).get("user.name", "Repour")
+    )
+    await git["set_user_email"](
+        repo_dir, c.get("scm", {}).get("git", {}).get("user.email", "<>")
+    )
 
 
-async def fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date="1970-01-01 00:00:00 +0000"):
+async def fixed_date_commit(
+    expect_ok, repo_dir, commit_message, commit_date="1970-01-01 00:00:00 +0000"
+):
     # To maintain an identical commitid for identical trees, use a fixed author/commit date.
     await git["commit"](repo_dir, commit_message, commit_date)
     head_commitid = await git["rev_parse"](repo_dir)
@@ -28,7 +34,9 @@ async def fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date="19
 
 
 async def normal_date_commit(expect_ok, repo_dir, commit_message):
-    commit_id = await fixed_date_commit(expect_ok, repo_dir, commit_message, commit_date=None)
+    commit_id = await fixed_date_commit(
+        expect_ok, repo_dir, commit_message, commit_date=None
+    )
     return commit_id
 
 
@@ -60,9 +68,19 @@ async def push_with_tags(expect_ok, repo_dir, branch_name):
 # on the current ref, without making the new commit
 #
 
-async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operation_description, orphan=False,
-                          no_change_ok=False, force_continue_on_no_changes=False, real_commit_time=False,
-                          specific_tag_name=None):
+
+async def push_new_dedup_branch(
+    expect_ok,
+    repo_dir,
+    repo_url,
+    operation_name,
+    operation_description,
+    orphan=False,
+    no_change_ok=False,
+    force_continue_on_no_changes=False,
+    real_commit_time=False,
+    specific_tag_name=None,
+):
     # There are a few priorities for reference names:
     #   - Amount of information in the name itself
     #   - Length
@@ -98,11 +116,19 @@ async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, o
     # we are here either if we are not using real_commit_time or if we couldn't
     # find the tag using the tree SHA
     if tag_name is None:
-        logger.info("No existing commit/tag with changes to commit ispresent. Creating new commit/tag")
-        tag_name = await commit_push_tag(expect_ok, repo_dir,
-                                              operation_name, operation_description,
-                                              no_change_ok, force_continue_on_no_changes,
-                                              real_commit_time, specific_tag_name)
+        logger.info(
+            "No existing commit/tag with changes to commit ispresent. Creating new commit/tag"
+        )
+        tag_name = await commit_push_tag(
+            expect_ok,
+            repo_dir,
+            operation_name,
+            operation_description,
+            no_change_ok,
+            force_continue_on_no_changes,
+            real_commit_time,
+            specific_tag_name,
+        )
 
         commit = await git["get_commit_from_tag_name"](repo_dir, tag_name)
     else:
@@ -119,17 +145,20 @@ async def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, o
         return {
             "tag": tag_name,
             "commit": commit,
-            "url": {
-                "readwrite": repo_url.readwrite,
-                "readonly": repo_url.readonly,
-            },
+            "url": {"readwrite": repo_url.readwrite, "readonly": repo_url.readonly},
         }
 
-async def commit_push_tag(expect_ok, repo_dir,
-                    operation_name, operation_description,
-                    no_change_ok, force_continue_on_no_changes,
-                    real_commit_time,
-                    specific_tag_name=None):
+
+async def commit_push_tag(
+    expect_ok,
+    repo_dir,
+    operation_name,
+    operation_description,
+    no_change_ok,
+    force_continue_on_no_changes,
+    real_commit_time,
+    specific_tag_name=None,
+):
     try:
         if real_commit_time:
             commit_id = await normal_date_commit(expect_ok, repo_dir, "Repour")
@@ -153,19 +182,33 @@ async def commit_push_tag(expect_ok, repo_dir,
     # Check if tag name already exists, if so, modify tag name to <tag>-{commitid}
     does_tag_exist = await git["is_tag"](repo_dir, tag_name)
 
-    shorthand_commit_id = commit_id[:8] # only show first 8 chars of commit id
+    shorthand_commit_id = commit_id[:8]  # only show first 8 chars of commit id
 
     if does_tag_exist:
-        logger.info("Tag {0} already exists! Changing it to {0}-{1}".format(tag_name, shorthand_commit_id))
+        logger.info(
+            "Tag {0} already exists! Changing it to {0}-{1}".format(
+                tag_name, shorthand_commit_id
+            )
+        )
         tag_name = "{0}-{1}".format(tag_name, shorthand_commit_id)
     elif c.get("mode", "prod") == "devel":
         # NCL-4120: if devel mode activated create tag with format: <tag>-<commitid> all the time
         # reason is to avoid conflict between official internal git repository and test git repository when we try to sync from official internal to test git
-        logger.info("Repour Devel mode activated! Changing tag to {0}-{1} to avoid conflict between internal git repositories".format(tag_name, shorthand_commit_id))
+        logger.info(
+            "Repour Devel mode activated! Changing tag to {0}-{1} to avoid conflict between internal git repositories".format(
+                tag_name, shorthand_commit_id
+            )
+        )
         tag_name = "{0}-{1}".format(tag_name, shorthand_commit_id)
 
     try:
-        await annotated_tag(expect_ok, repo_dir, tag_name, operation_description, ok_if_exists=force_continue_on_no_changes)
+        await annotated_tag(
+            expect_ok,
+            repo_dir,
+            tag_name,
+            operation_description,
+            ok_if_exists=force_continue_on_no_changes,
+        )
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
             # No changes were made

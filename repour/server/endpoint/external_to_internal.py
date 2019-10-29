@@ -1,15 +1,18 @@
 import re
-
 from urllib.parse import urlparse
+
+from prometheus_async.aio import time
+from prometheus_client import Histogram, Summary
 
 from ...config import config
 
-from prometheus_client import Summary
-from prometheus_client import Histogram
-from prometheus_async.aio import time
+REQ_TIME = Summary(
+    "external_to_internal_req_time", "time spent with external_to_internal endpoint"
+)
+REQ_HISTOGRAM_TIME = Histogram(
+    "external_to_internal_req_histogram", "Histogram for external_to_internal endpoint"
+)
 
-REQ_TIME = Summary("external_to_internal_req_time", "time spent with external_to_internal endpoint")
-REQ_HISTOGRAM_TIME = Histogram("external_to_internal_req_histogram", "Histogram for external_to_internal endpoint")
 
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
@@ -19,12 +22,10 @@ async def translate(external_to_internal_spec, repo_provider):
 
     internal_url = await translate_external_to_internal(external_url)
 
-    result = {
-        "external_url": external_url,
-        "internal_url": internal_url
-    }
+    result = {"external_url": external_url, "internal_url": internal_url}
 
     return result
+
 
 async def translate_external_to_internal(external_git_url):
     """ Logic from original maitai code to do this: found in GitUrlParser.java#generateInternalGitRepoName """
@@ -42,20 +43,20 @@ async def translate_external_to_internal(external_git_url):
     scheme = result.scheme
     path = result.path
 
-    acceptable_schemes = ['https', 'git', 'git+ssh', 'ssh']
+    acceptable_schemes = ["https", "git", "git+ssh", "ssh"]
 
-    if scheme == '':
+    if scheme == "":
         raise Exception("Scheme in url is empty! Error!")
 
     if scheme not in acceptable_schemes:
         raise Exception("Scheme '{0}' not accepted!'".format(scheme))
 
-    path_parts = path.split('/')
+    path_parts = path.split("/")
 
     repository = None
 
     if path_parts[-1]:
-        repository = re.sub(r'\.git$', '', path_parts[-1])
+        repository = re.sub(r"\.git$", "", path_parts[-1])
 
     organization = None
 

@@ -4,12 +4,13 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-
-import repour.asgit
-import repour.adjust.adjust
 from test import util
 
+import repour.adjust.adjust
+import repour.asgit
+
 loop = asyncio.get_event_loop()
+
 
 class TestAdjust(unittest.TestCase):
     @classmethod
@@ -22,7 +23,9 @@ class TestAdjust(unittest.TestCase):
             f.write("Hello")
 
         util.quiet_check_call(["git", "add", "-A"], cwd=cls.origin_git.readwrite)
-        util.quiet_check_call(["git", "commit", "-m", "Pull"], cwd=cls.origin_git.readwrite)
+        util.quiet_check_call(
+            ["git", "commit", "-m", "Pull"], cwd=cls.origin_git.readwrite
+        )
 
         # Convert to bare
         os.remove(os.path.join(cls.origin_git.readwrite, "asd.txt"))
@@ -30,7 +33,10 @@ class TestAdjust(unittest.TestCase):
         for fn in os.listdir(git_dir):
             shutil.move(os.path.join(git_dir, fn), cls.origin_git.readwrite)
         os.rmdir(git_dir)
-        util.quiet_check_call(["git", "config", "--bool", "core.bare", "true"], cwd=cls.origin_git.readwrite)
+        util.quiet_check_call(
+            ["git", "config", "--bool", "core.bare", "true"],
+            cwd=cls.origin_git.readwrite,
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -45,11 +51,10 @@ class TestAdjust(unittest.TestCase):
         async def repo_provider(p, create):
             return self.origin_git
 
-        d = loop.run_until_complete(repour.adjust.adjust.adjust(
-            adjustspec={
-                "name": "test",
-                "ref": "master",
-            },
-            repo_provider=repo_provider
-        ))
-        self.assertRegex(d["tag"], r'^[0-9a-zA-Z-]+$')
+        d = loop.run_until_complete(
+            repour.adjust.adjust.adjust(
+                adjustspec={"name": "test", "ref": "master"},
+                repo_provider=repo_provider,
+            )
+        )
+        self.assertRegex(d["tag"], r"^[0-9a-zA-Z-]+$")

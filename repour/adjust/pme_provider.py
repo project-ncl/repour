@@ -1,23 +1,29 @@
 import json
 import logging
 import os
-import shlex
 import re
-
+import shlex
 import xml.etree.ElementTree as ET
-
-from . import process_provider
-from . import util
-from .. import exception
 from xml.dom import minidom
+
+from .. import exception
+from . import process_provider, util
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: NCL-3503: Finish implementation once the other components are figured out
-def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_logs=False, specific_indy_group=None, timestamp=None):
-
-    async def get_result_data(work_dir, group_id=None, artifact_id=None, results_file=None):
+def get_pme_provider(
+    execution_name,
+    pme_jar_path,
+    pme_parameters,
+    output_to_logs=False,
+    specific_indy_group=None,
+    timestamp=None,
+):
+    async def get_result_data(
+        work_dir, group_id=None, artifact_id=None, results_file=None
+    ):
 
         if results_file:
             result_file_path_manipulation = results_file
@@ -27,12 +33,15 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
 
         if os.path.isfile(result_file_path_manipulation):
             with open(result_file_path_manipulation, "r") as file:
-                return parse_pme_result_manipulation_format(work_dir, pme_parameters, file.read(), group_id, artifact_id)
+                return parse_pme_result_manipulation_format(
+                    work_dir, pme_parameters, file.read(), group_id, artifact_id
+                )
 
         elif os.path.isfile(result_file_path_pom_manip):
             with open(result_file_path_pom_manip, "r") as file:
-                return parse_pme_result_pom_manip_ext_result_format(work_dir, pme_parameters, file.read(), group_id, artifact_id)
-
+                return parse_pme_result_pom_manip_ext_result_format(
+                    work_dir, pme_parameters, file.read(), group_id, artifact_id
+                )
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
         """
@@ -69,14 +78,15 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         if paramsString is None:
             return None, None
         else:
-            result = paramsString.split(':')
+            result = paramsString.split(":")
             if len(result) == 2:
                 return result[0], result[1]
             else:
-                logger.warn('BREW_BUILD_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"')
+                logger.warn(
+                    'BREW_BUILD_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"'
+                )
                 logger.warn('Value provided is: "' + paramsString + '"')
                 return None, None
-
 
     async def adjust(repo_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
@@ -84,7 +94,9 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         temp_build_parameters = []
 
         if timestamp:
-            temp_build_parameters.append("-DversionIncrementalSuffix=" + timestamp + "-redhat")
+            temp_build_parameters.append(
+                "-DversionIncrementalSuffix=" + timestamp + "-redhat"
+            )
 
         if specific_indy_group:
             temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
@@ -94,28 +106,39 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
-            location = '/usr/lib/jvm/java-' + jvm_version + '-openjdk/bin/'
+            location = "/usr/lib/jvm/java-" + jvm_version + "-openjdk/bin/"
             logger.info("Specifying java path: " + location)
         else:
-            location = ''
+            location = ""
 
-        await util.print_java_version(java_bin_dir = location)
+        await util.print_java_version(java_bin_dir=location)
 
         # readjust the repo_dir to run PME from the folder where the root pom.xml is located
         # See: PRODTASKS-361
         repo_dir = os.path.join(repo_dir, subfolder)
 
-        cmd = [location + "java", "-jar", pme_jar_path] \
-              + pme_parameters + temp_build_parameters + extra_parameters
+        cmd = (
+            [location + "java", "-jar", pme_jar_path]
+            + pme_parameters
+            + temp_build_parameters
+            + extra_parameters
+        )
 
-        logger.info('Executing "' + execution_name + '" using "pme" adjust provider '
-                    + '(delegating to "process" provider). Command is "{cmd}".'.format(**locals()))
+        logger.info(
+            'Executing "'
+            + execution_name
+            + '" using "pme" adjust provider '
+            + '(delegating to "process" provider). Command is "{cmd}".'.format(
+                **locals()
+            )
+        )
 
-        res = await process_provider.get_process_provider(execution_name,
-                                                     cmd,
-                                                     get_result_data=get_result_data,
-                                                     send_log=output_to_logs) \
-            (repo_dir, extra_adjust_parameters, adjust_result)
+        res = await process_provider.get_process_provider(
+            execution_name,
+            cmd,
+            get_result_data=get_result_data,
+            send_log=output_to_logs,
+        )(repo_dir, extra_adjust_parameters, adjust_result)
 
         pme_disabled = is_pme_disabled_via_extra_parameters(extra_adjust_parameters)
 
@@ -123,12 +146,18 @@ def get_pme_provider(execution_name, pme_jar_path, pme_parameters, output_to_log
             logger.warning("PME is disabled via extra parameters")
             await create_pme_result_file(repo_dir)
 
-        override_group_id, override_artifact_id = await get_extra_param_execution_root_name(extra_adjust_parameters)
+        (
+            override_group_id,
+            override_artifact_id,
+        ) = await get_extra_param_execution_root_name(extra_adjust_parameters)
 
-        adjust_result['resultData'] = await get_result_data(repo_dir, override_group_id, override_artifact_id)
+        adjust_result["resultData"] = await get_result_data(
+            repo_dir, override_group_id, override_artifact_id
+        )
         return res
 
     return adjust
+
 
 async def get_version_from_pme_result(pme_result):
     """
@@ -150,9 +179,9 @@ async def get_version_from_pme_result(pme_result):
     - pme_result: :dict:
     """
     try:
-        version = pme_result['VersioningState']['executionRootModified']['version']
+        version = pme_result["VersioningState"]["executionRootModified"]["version"]
         return version
-    except  Exception as e:
+    except Exception as e:
         logger.error("Couldn't extract PME result version from JSON file")
         logger.error(e)
         return None
@@ -163,12 +192,12 @@ async def get_gav_from_pom(pom_xml_file):
     tree = ET.parse(pom_xml_file)
     root = tree.getroot()
 
-    if '{' in root.tag and '}' in root.tag:
-        namespace_search = '{{{}}}'.format(root.tag.split('}')[0].strip('{'))
+    if "{" in root.tag and "}" in root.tag:
+        namespace_search = "{{{}}}".format(root.tag.split("}")[0].strip("{"))
     else:
-        namespace_search = ''
+        namespace_search = ""
 
-    parent = root.find(namespace_search + 'parent')
+    parent = root.find(namespace_search + "parent")
     parent_group_id = None
     parent_version = None
 
@@ -176,9 +205,8 @@ async def get_gav_from_pom(pom_xml_file):
     # Docs concerning how inheritance of groupId and version from parent
     if parent is not None:
 
-
-        parent_group_id_elem = parent.find(namespace_search + 'groupId')
-        parent_version_elem = parent.find(namespace_search + 'version')
+        parent_group_id_elem = parent.find(namespace_search + "groupId")
+        parent_version_elem = parent.find(namespace_search + "version")
 
         if parent_group_id_elem is not None:
             parent_group_id = parent_group_id_elem.text
@@ -186,7 +214,7 @@ async def get_gav_from_pom(pom_xml_file):
         if parent_version_elem is not None:
             parent_version = parent_version_elem.text
 
-    group_id_elem = root.find(namespace_search + 'groupId')
+    group_id_elem = root.find(namespace_search + "groupId")
 
     if group_id_elem is not None:
         group_id = group_id_elem.text
@@ -198,14 +226,14 @@ async def get_gav_from_pom(pom_xml_file):
     else:
         raise Exception("Could not find the groupId in the pom.xml")
 
-    artif_id_elem = root.find(namespace_search + 'artifactId')
+    artif_id_elem = root.find(namespace_search + "artifactId")
 
     if artif_id_elem is not None:
         artif_id = artif_id_elem.text
     else:
         raise Exception("Could not find the artifactId in the pom.xml")
 
-    version_elem  = root.find(namespace_search + 'version')
+    version_elem = root.find(namespace_search + "version")
 
     if version_elem is not None:
         version = version_elem.text
@@ -239,7 +267,7 @@ async def create_pme_result_file(repo_dir):
             "executionRootModified": {
                 "groupId": group_id,
                 "artifactId": artifact_id,
-                "version": version
+                "version": version,
             }
         }
     }
@@ -247,53 +275,79 @@ async def create_pme_result_file(repo_dir):
     if not os.path.exists(result_file_folder):
         os.makedirs(result_file_folder)
 
-    with open(result_file_path, 'w') as outfile:
+    with open(result_file_path, "w") as outfile:
         json.dump(pme_result, outfile)
 
 
-def parse_pme_result_manipulation_format(work_dir, pme_parameters, raw_result_data, group_id, artifact_id):
+def parse_pme_result_manipulation_format(
+    work_dir, pme_parameters, raw_result_data, group_id, artifact_id
+):
 
-    logger.info('Got PME result data for manipulation.json: "{raw_result_data}".'.format(**locals()))
+    logger.info(
+        'Got PME result data for manipulation.json: "{raw_result_data}".'.format(
+            **locals()
+        )
+    )
     data = json.loads(raw_result_data)
 
-    pme_result = {'VersioningState': {'executionRootModified': {}}}
+    pme_result = {"VersioningState": {"executionRootModified": {}}}
 
     if group_id is not None and artifact_id is not None:
         logger.warn("Overriding the groupId of the result to: " + group_id)
-        pme_result['VersioningState']['executionRootModified']['groupId'] = group_id
+        pme_result["VersioningState"]["executionRootModified"]["groupId"] = group_id
 
         logger.warn("Overriding the artifactId of the result to: " + artifact_id)
-        pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
+        pme_result["VersioningState"]["executionRootModified"][
+            "artifactId"
+        ] = artifact_id
 
     else:
-        pme_result['VersioningState']['executionRootModified']['groupId'] = data["executionRoot"]["groupId"]
-        pme_result['VersioningState']['executionRootModified']['artifactId'] = data["executionRoot"]["artifactId"]
-        pme_result['VersioningState']['executionRootModified']['version'] = data["executionRoot"]["version"]
+        pme_result["VersioningState"]["executionRootModified"]["groupId"] = data[
+            "executionRoot"
+        ]["groupId"]
+        pme_result["VersioningState"]["executionRootModified"]["artifactId"] = data[
+            "executionRoot"
+        ]["artifactId"]
+        pme_result["VersioningState"]["executionRootModified"]["version"] = data[
+            "executionRoot"
+        ]["version"]
 
     try:
-        pme_result["RemovedRepositories"] = util.get_removed_repos(work_dir, pme_parameters)
+        pme_result["RemovedRepositories"] = util.get_removed_repos(
+            work_dir, pme_parameters
+        )
     except FileNotFoundError as e:
-        logger.error('File for removed repositories could not be found')
+        logger.error("File for removed repositories could not be found")
         logger.error(str(e))
 
     return pme_result
 
 
-def parse_pme_result_pom_manip_ext_result_format(work_dir, pme_parameters, raw_result_data, group_id, artifact_id):
-    logger.info('Got PME result data for pom-manip-ext-result.json: "{raw_result_data}".'.format(**locals()))
+def parse_pme_result_pom_manip_ext_result_format(
+    work_dir, pme_parameters, raw_result_data, group_id, artifact_id
+):
+    logger.info(
+        'Got PME result data for pom-manip-ext-result.json: "{raw_result_data}".'.format(
+            **locals()
+        )
+    )
     pme_result = json.loads(raw_result_data)
 
     if group_id is not None and artifact_id is not None:
         logger.warn("Overriding the groupId of the result to: " + group_id)
-        pme_result['VersioningState']['executionRootModified']['groupId'] = group_id
+        pme_result["VersioningState"]["executionRootModified"]["groupId"] = group_id
 
         logger.warn("Overriding the artifactId of the result to: " + artifact_id)
-        pme_result['VersioningState']['executionRootModified']['artifactId'] =  artifact_id
+        pme_result["VersioningState"]["executionRootModified"][
+            "artifactId"
+        ] = artifact_id
 
     try:
-        pme_result["RemovedRepositories"] = util.get_removed_repos(work_dir, pme_parameters)
+        pme_result["RemovedRepositories"] = util.get_removed_repos(
+            work_dir, pme_parameters
+        )
     except FileNotFoundError as e:
-        logger.error('File for removed repositories could not be found')
+        logger.error("File for removed repositories could not be found")
         logger.error(str(e))
 
     return pme_result

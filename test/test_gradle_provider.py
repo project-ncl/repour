@@ -1,10 +1,11 @@
 import asyncio
 import tempfile
 import unittest
+
 import repour.adjust.gradle_provider as gradle_provider
 
-class TestGradleProvider(unittest.TestCase):
 
+class TestGradleProvider(unittest.TestCase):
     def test_gradle_command(self):
 
         f = tempfile.TemporaryDirectory()
@@ -16,9 +17,10 @@ class TestGradleProvider(unittest.TestCase):
         self.assertEqual("./gradlew", gradle_provider.get_command_gradle(f.name))
         f.cleanup()
 
-
         no_gradlew_folder = tempfile.TemporaryDirectory()
 
-        self.assertEqual("gradle", gradle_provider.get_command_gradle(no_gradlew_folder.name))
+        self.assertEqual(
+            "gradle", gradle_provider.get_command_gradle(no_gradlew_folder.name)
+        )
 
         no_gradlew_folder.cleanup()

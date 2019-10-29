@@ -1,10 +1,12 @@
 import asyncio
 import json
 
+
 class DescribedError(Exception):
     def __init__(self, desc):
         super().__init__(desc)
         self.desc = desc
+
 
 class CommandError(DescribedError):
     def __init__(self, desc, cmd, exit_code, stdout=None, stderr=None):
@@ -13,6 +15,7 @@ class CommandError(DescribedError):
         self.exit_code = exit_code
         self.stdout = stdout
         self.stderr = stderr
+
 
 class HttpClientError(DescribedError):
     @classmethod
@@ -36,29 +39,38 @@ class HttpClientError(DescribedError):
         self.status = status
         self.body = body
 
+
 class PullError(DescribedError):
     pass
+
 
 class CloneError(DescribedError):
     pass
 
+
 class PullCommandError(PullError, CommandError):
     pass
+
 
 class CloneCommandError(CloneError, CommandError):
     pass
 
+
 class RepoError(DescribedError):
     pass
+
 
 class RepoCommandError(RepoError, CommandError):
     pass
 
+
 class RepoHttpClientError(RepoError, HttpClientError):
     pass
 
+
 class AdjustError(DescribedError):
     pass
+
 
 class AdjustCommandError(AdjustError, CommandError):
     pass
