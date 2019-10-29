@@ -641,9 +641,9 @@ To run a command inside the virtualenv with the dependencies installed:
 [source,bash]
 poetry run 'python3 ...'
 
-To run pre-commit checks, run:
+To run pre-commit checks and test, run:
 [source,bash]
-pre-commit run --all-files
+tox
 
 ==== Configure
 

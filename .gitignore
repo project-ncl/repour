@@ -4,3 +4,4 @@
 /config.yaml
 .idea/
 repour.egg-info/
+.tox/
