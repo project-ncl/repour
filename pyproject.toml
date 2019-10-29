@@ -18,8 +18,26 @@ prometheus_async = "^19.2"
 kafka-logging-handler = "^0.2.3"
 
 [tool.poetry.dev-dependencies]
-pre-commit = "^1.20"
+tox = "^3.14"
 
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+skipsdist = True
+# envlist=py36,py37,py38
+
+[testenv]
+skip_install = true
+# install pytest in the virtualenv where commands will be executed
+deps =
+    pytest
+    pre-commit
+commands =
+    poetry install -vvv
+    pre-commit run --all-files --show-diff-on-failure
+    poetry run pytest test/
+"""
