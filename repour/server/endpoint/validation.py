@@ -3,6 +3,7 @@ import logging
 from voluptuous import *
 
 from ...adjust import adjust as adjustmodule
+from ... import repo
 
 
 def mode_b_ify(raw):
@@ -137,6 +138,9 @@ server_config_raw = {
     "log": {"path": nonempty_str, "level": Any(*logging._nameToLevel.keys())},
     "bind": {"address": Any(nonempty_str, None), "port": port_num},
     "adjust_provider": {"type": Any(nonempty_str, None), "params": {Extra: object}},
-    "repo_provider": {"type": Any(nonempty_str, None), "params": {Extra: object}},
+    "repo_provider": {
+        "type": Any(*repo.provider_types.keys()),
+        "params": {Extra: object},
+    },
 }
 server_config = Schema(server_config_raw, required=True, extra=False)

@@ -6,7 +6,7 @@ import prometheus_async.aio as aio
 from aiohttp import web
 from prometheus_client.bridge.graphite import GraphiteBridge
 
-from .. import clone, websockets
+from .. import clone, repo, websockets
 from ..adjust import adjust
 from ..auth import auth
 from ..config import config
@@ -33,6 +33,9 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     )
 
     logger.debug("Adding application resources")
+    app["repo_provider"] = repo.provider_types[repo_provider["type"]](
+        **repo_provider["params"]
+    )
 
     external_to_internal_source = endpoint.validated_json_endpoint(
         shutdown_callbacks,
