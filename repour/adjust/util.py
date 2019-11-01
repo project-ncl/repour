@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import logging
 import os
 import re
@@ -171,3 +172,13 @@ async def print_java_version(java_bin_dir=""):
         print_cmd=True,
     )
     logger.info(output)
+
+
+async def generate_user_context():
+    """ For now, returns a string of key=value,key=value """
+    current_task = asyncio.Task.current_task()
+    return "log-user-id={},log-request-context={},log-process-context={}".format(
+        current_task.log_user_id,
+        current_task.log_request_context,
+        current_task.log_process_context,
+    )

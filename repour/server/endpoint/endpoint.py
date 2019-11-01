@@ -8,6 +8,7 @@ import os
 import traceback
 
 import aiohttp
+import asyncio
 import voluptuous
 from aiohttp import web
 from prometheus_async.aio import time
@@ -89,9 +90,16 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         if log_context == "":
             log_context = create_log_context_id()
 
+        log_user_id = request.headers.get("log-user-id", "").strip()
+        log_request_context = request.headers.get("log-request-context", "").strip()
+        log_process_context = request.headers.get("log-process-context", "").strip()
+
         callback_id = create_callback_id()
 
         asyncio.Task.current_task().log_context = log_context
+        asyncio.Task.current_task().log_user_id = log_user_id
+        asyncio.Task.current_task().log_request_context = log_request_context
+        asyncio.Task.current_task().log_process_context = log_process_context
         asyncio.Task.current_task().callback_id = callback_id
 
         try:
@@ -216,6 +224,9 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                     try:
                         # TODO refactor this into auth.py, we cannot use middleware for callbacks
                         headers = {}
+
+                        current_task = asyncio.Task.current_task()
+
                         auth_provider = c.get("auth", {}).get("provider", None)
                         if auth_provider == "oauth2_jwt" and request.headers.get(
                             "Authorization", None
@@ -223,11 +234,17 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             auth_header = {
                                 "Authorization": request.headers["Authorization"]
                             }
+                            context_headers = {
+                                "log-user-id": current_task.log_user_id,
+                                "log-request-context": current_task.log_request_context,
+                                "log-process-context": current_task.log_process_context,
+                            }
                             logger.debug(
                                 "Authorization enabled, adding header to callback: "
                                 + str(auth_header)
                             )
                             headers.update(auth_header)
+                            headers.update(context_headers)
 
                         resp = await client_session.request(
                             callback_spec.get("method", "POST"),
@@ -288,6 +305,9 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             )
             callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
             callback_task.log_context = log_context
+            callback_task.log_user_id = log_user_id
+            callback_task.log_request_context = log_request_context
+            callback_task.log_process_context = log_process_context
             callback_task.callback_id = callback_id
             # Set the task_id if provided in the request
             task_id = spec.get("taskId", None)

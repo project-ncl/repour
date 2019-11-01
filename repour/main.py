@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 class ContextLogRecord(logging.LogRecord):
     no_context_found = "NoContext"
+    no_userid_found = "NoUserIdContext"
+    no_request_context_found = "NoRequestContext"
+    no_process_context_found = "NoProcessContext"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,8 +25,18 @@ class ContextLogRecord(logging.LogRecord):
             task = None
         if task is not None:
             self.log_context = getattr(task, "log_context", self.no_context_found)
+            self.log_user_id = getattr(task, "log_user_id", self.no_userid_found)
+            self.log_request_context = getattr(
+                task, "log_request_context", self.no_request_context_found
+            )
+            self.log_process_context = getattr(
+                task, "log_process_context", self.no_process_context_found
+            )
         else:
             self.log_context = self.no_context_found
+            self.log_user_id = self.no_userid_found
+            self.log_request_context = self.no_request_context_found
+            self.log_process_context = self.no_process_context_found
 
     def has_event_loop(self):
         try:
@@ -222,7 +235,7 @@ def configure_logging(
     logging.setLogRecordFactory(ContextLogRecord)
 
     formatter = logging.Formatter(
-        fmt="{asctime} [{levelname}] [{log_context}] {name}:{lineno} {message}",
+        fmt="{asctime} [{levelname}] [{log_context}:{log_user_id}:{log_request_context}:{log_process_context}] {name}:{lineno} {message}",
         style="{",
     )
 
