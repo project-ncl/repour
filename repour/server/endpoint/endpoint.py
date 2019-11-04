@@ -93,6 +93,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         log_user_id = request.headers.get("log-user-id", "").strip()
         log_request_context = request.headers.get("log-request-context", "").strip()
         log_process_context = request.headers.get("log-process-context", "").strip()
+        log_expires = request.headers.get("log-expires", "").strip()
+        log_tmp = request.headers.get("log-tmp", "").strip()
 
         callback_id = create_callback_id()
 
@@ -100,6 +102,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         asyncio.Task.current_task().log_user_id = log_user_id
         asyncio.Task.current_task().log_request_context = log_request_context
         asyncio.Task.current_task().log_process_context = log_process_context
+        asyncio.Task.current_task().log_expires = log_expires
+        asyncio.Task.current_task().log_tmp = log_tmp
         asyncio.Task.current_task().callback_id = callback_id
 
         try:
@@ -238,6 +242,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                                 "log-user-id": current_task.log_user_id,
                                 "log-request-context": current_task.log_request_context,
                                 "log-process-context": current_task.log_process_context,
+                                "log-expires": current_task.log_expires,
+                                "log_tmp": current_task.log_tmp,
                             }
                             logger.debug(
                                 "Authorization enabled, adding header to callback: "
@@ -308,6 +314,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             callback_task.log_user_id = log_user_id
             callback_task.log_request_context = log_request_context
             callback_task.log_process_context = log_process_context
+            callback_task.log_expires = log_expires
+            callback_task.log_tmp = log_tmp
             callback_task.callback_id = callback_id
             # Set the task_id if provided in the request
             task_id = spec.get("taskId", None)

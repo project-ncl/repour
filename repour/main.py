@@ -16,7 +16,10 @@ class ContextLogRecord(logging.LogRecord):
     no_userid_found = "NoUserIdContext"
     no_request_context_found = "NoRequestContext"
     no_process_context_found = "NoProcessContext"
+    no_log_expires_found = "NoLogExpires"
+    no_log_tmp_found = "NoLogTmp"
 
+    # TODO: at some point we'll probably just have to scan for 'log-*' stuff to clean this up
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.has_event_loop():
@@ -32,11 +35,15 @@ class ContextLogRecord(logging.LogRecord):
             self.log_process_context = getattr(
                 task, "log_process_context", self.no_process_context_found
             )
+            self.log_expires = getattr(task, "log_expires", self.no_log_expires_found)
+            self.log_tmp = getattr(task, "log_tmp", self.no_log_tmp_found)
         else:
             self.log_context = self.no_context_found
             self.log_user_id = self.no_userid_found
             self.log_request_context = self.no_request_context_found
             self.log_process_context = self.no_process_context_found
+            self.log_expires = self.no_log_expires_found
+            self.log_tmp = self.no_log_tmp_found
 
     def has_event_loop(self):
         try:
@@ -235,7 +242,7 @@ def configure_logging(
     logging.setLogRecordFactory(ContextLogRecord)
 
     formatter = logging.Formatter(
-        fmt="{asctime} [{levelname}] [{log_context}:{log_user_id}:{log_request_context}:{log_process_context}] {name}:{lineno} {message}",
+        fmt="{asctime} [{levelname}] [{log_context}:{log_user_id}:{log_request_context}:{log_process_context}:{log_expires}:{log_tmp}] {name}:{lineno} {message}",
         style="{",
     )
 
