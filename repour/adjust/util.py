@@ -177,8 +177,10 @@ async def print_java_version(java_bin_dir=""):
 async def generate_user_context():
     """ For now, returns a string of key=value,key=value """
     current_task = asyncio.Task.current_task()
-    return "log-user-id={},log-request-context={},log-process-context={}".format(
+    return "log-user-id={},log-request-context={},log-process-context={},log-expires={},log-tmp={}".format(
         current_task.log_user_id,
         current_task.log_request_context,
         current_task.log_process_context,
+        current_task.log_expires,
+        current_task.log_tmp,
     )
