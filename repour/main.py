@@ -83,7 +83,6 @@ def run_container_subcommand(args):
     kafka_cafile = os.environ.get("REPOUR_KAFKA_CAFILE")
 
     configure_logging(logging.INFO, kafka_server=kafka_server, kafka_topic=kafka_topic, kafka_cafile=kafka_cafile)
-    configure_logging(logging.INFO)
 
     # Read required config from env vars, most of it is hardcoded though
     missing_envs = []
