@@ -59,7 +59,7 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
             env = {'JAVA_HOME': '/usr/lib/jvm/java-' + jvm_version + '-openjdk'}
             logger.info("Specifying JAVA_HOME: " + env['JAVA_HOME'])
         else:
-            env = None
+            env = {}
 
         output = yield from expect_ok(
             cmd=[command_gradle, "--version"],
