@@ -21,29 +21,34 @@ class ContextLogRecord(logging.LogRecord):
 
     # TODO: at some point we'll probably just have to scan for 'log-*' stuff to clean this up
     def __init__(self, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
+        self.mdc = {}
+
         if self.has_event_loop():
             task = asyncio.Task.current_task()
         else:
             task = None
         if task is not None:
             self.log_context = getattr(task, "log_context", self.no_context_found)
-            self.log_user_id = getattr(task, "log_user_id", self.no_userid_found)
-            self.log_request_context = getattr(
+            self.mdc["userId"] = getattr(task, "log_user_id", self.no_userid_found)
+            self.mdc["requestContext"] = getattr(
                 task, "log_request_context", self.no_request_context_found
             )
-            self.log_process_context = getattr(
+            self.mdc["processContext"] = getattr(
                 task, "log_process_context", self.no_process_context_found
             )
-            self.log_expires = getattr(task, "log_expires", self.no_log_expires_found)
-            self.log_tmp = getattr(task, "log_tmp", self.no_log_tmp_found)
+            self.mdc["expires"] = getattr(
+                task, "log_expires", self.no_log_expires_found
+            )
+            self.mdc["tmp"] = getattr(task, "log_tmp", self.no_log_tmp_found)
         else:
             self.log_context = self.no_context_found
-            self.log_user_id = self.no_userid_found
-            self.log_request_context = self.no_request_context_found
-            self.log_process_context = self.no_process_context_found
-            self.log_expires = self.no_log_expires_found
-            self.log_tmp = self.no_log_tmp_found
+            self.mdc["userId"] = self.no_userid_found
+            self.mdc["requestContext"] = self.no_request_context_found
+            self.mdc["processContext"] = self.no_process_context_found
+            self.mdc["expires"] = self.no_log_expires_found
+            self.mdc["tmp"] = self.no_log_tmp_found
 
     def has_event_loop(self):
         try:
@@ -242,7 +247,7 @@ def configure_logging(
     logging.setLogRecordFactory(ContextLogRecord)
 
     formatter = logging.Formatter(
-        fmt="{asctime} [{levelname}] [{log_context}:{log_user_id}:{log_request_context}:{log_process_context}:{log_expires}:{log_tmp}] {name}:{lineno} {message}",
+        fmt="{asctime} [{levelname}] [{log_context}] {name}:{lineno} {message}",
         style="{",
     )
 
