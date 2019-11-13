@@ -13,42 +13,27 @@ logger = logging.getLogger(__name__)
 
 class ContextLogRecord(logging.LogRecord):
     no_context_found = "NoContext"
-    no_userid_found = "NoUserIdContext"
-    no_request_context_found = "NoRequestContext"
-    no_process_context_found = "NoProcessContext"
-    no_log_expires_found = "NoLogExpires"
-    no_log_tmp_found = "NoLogTmp"
 
     # TODO: at some point we'll probably just have to scan for 'log-*' stuff to clean this up
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        self.mdc = {}
 
         if self.has_event_loop():
             task = asyncio.Task.current_task()
         else:
             task = None
         if task is not None:
+            self.mdc = {}
             self.log_context = getattr(task, "log_context", self.no_context_found)
-            self.mdc["userId"] = getattr(task, "log_user_id", self.no_userid_found)
-            self.mdc["requestContext"] = getattr(
-                task, "log_request_context", self.no_request_context_found
-            )
-            self.mdc["processContext"] = getattr(
-                task, "log_process_context", self.no_process_context_found
-            )
-            self.mdc["expires"] = getattr(
-                task, "log_expires", self.no_log_expires_found
-            )
-            self.mdc["tmp"] = getattr(task, "log_tmp", self.no_log_tmp_found)
+
+            self.mdc["userId"] = getattr(task, "log_user_id", None)
+            self.mdc["requestContext"] = getattr(task, "log_request_context", None)
+            self.mdc["processContext"] = getattr(task, "log_process_context", None)
+            self.mdc["expires"] = getattr(task, "log_expires", None)
+            self.mdc["tmp"] = getattr(task, "log_tmp", None)
         else:
             self.log_context = self.no_context_found
-            self.mdc["userId"] = self.no_userid_found
-            self.mdc["requestContext"] = self.no_request_context_found
-            self.mdc["processContext"] = self.no_process_context_found
-            self.mdc["expires"] = self.no_log_expires_found
-            self.mdc["tmp"] = self.no_log_tmp_found
 
     def has_event_loop(self):
         try:
