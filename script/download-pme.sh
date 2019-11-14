@@ -14,6 +14,7 @@ function downloadVersionFromCentral {
   curl -Is "$MAVEN_CENTRAL_BASE_URL/$1/" | grep -q "404 Not Found"
   if [[ $? == 1 ]]; then
     curl -Lo pom-manipulation-cli.jar "$MAVEN_CENTRAL_BASE_URL/$1/pom-manipulation-cli-$1.jar"
+    curl -Lo jar.md5 "$MAVEN_CENTRAL_BASE_URL/$1/pom-manipulation-cli-$1.jar.md5"
     echo "Downloaded version $1 from Maven Central."
   else
     echo "Version $1 does not exist in Maven Central."
@@ -58,9 +59,24 @@ function downloadLatestSnapshot {
   FILE="pom-manipulation-cli-$FILE_SNAPSHOT_SUFFIX.jar"
   URL="$BASE_URL/$SNAPSHOT_VERSION/$FILE"
   curl -Lo pom-manipulation-cli.jar "$URL"
+  curl -Lo jar.md5 "$URL.md5"
   rm metadata.xml
 
   echo "Downloaded latest snapshot of $SNAPSHOT_VERSION from $URL"
+}
+
+function verify_md5() {
+    local md5_jar_dl=$(md5sum pom-manipulation-cli.jar | awk '{ print $1 }')
+    local real_md5=$(cat jar.md5)
+
+    if [[ "${md5_jar_dl}" != "${real_md5}" ]]; then
+        echo "======================"
+        echo "Mismatch in jar downloaded and its md5. Aborting"
+        echo "======================"
+        exit 1
+    else
+        echo "md5 of jar verified!"
+    fi
 }
 
 if [[ "$#" == 0 ]]; then
@@ -72,3 +88,5 @@ elif [[ "$1" == "latest" ]]; then
 else
   downloadVersionFromCentral $1
 fi
+
+verify_md5
