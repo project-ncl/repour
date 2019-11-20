@@ -21,7 +21,7 @@ MANIPULATION_FILE_NAME = "manipulation.json"
 stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
 
-def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=None, timestamp=None):
+def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, specific_indy_group=None, timestamp=None):
 
     @asyncio.coroutine
     def adjust(work_dir, extra_adjust_parameters, adjust_result):
@@ -51,39 +51,26 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
 
         expect_ok = asutil.expect_ok_closure()
 
-        command_gradle = get_command_gradle(work_dir)
-
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
-            env = {'JAVA_HOME': '/usr/lib/jvm/java-' + jvm_version + '-openjdk'}
-            logger.info("Specifying JAVA_HOME: " + env['JAVA_HOME'])
+            location = '/usr/lib/jvm/java-' + jvm_version + '-openjdk/bin/'
+            logger.info("Specifying java path: " + location)
         else:
-            env = {}
+            location = ''
 
-        output = yield from expect_ok(
-            cmd=[command_gradle, "--version"],
-            desc="Failed getting Gradle version",
-            cwd=work_dir,
-            stdout=stdout_options["text"],
-            stderr=stderr_options["stdout"],
-            print_cmd=True,
-            env=env
-        )
-        logger.info(output)
+        default_parameters.append("--target=" + work_dir)
+        default_parameters.append("--init-script=" + init_file_path)
 
-        if 'JAVA_HOME' in env:
-            yield from util.print_java_version(java_bin_dir=env['JAVA_HOME'])
-        else:
-            yield from util.print_java_version()
+        yield from util.print_java_version(java_bin_dir=location)
 
-        cmd = [command_gradle, "--info", "--console", "plain", "--no-daemon", "--stacktrace",
-               "--init-script", init_file_path, "generateAlignmentMetadata"] + default_parameters + temp_build_parameters + extra_parameters
+        cmd = [location + "java", "-jar", gme_jar_path] \
+              + default_parameters + temp_build_parameters + extra_parameters
 
         result = yield from process_provider.get_process_provider(EXECUTION_NAME,
                                                                   cmd,
                                                                   get_result_data=get_result_data,
-                                                                  send_log=True)(work_dir, extra_adjust_parameters, adjust_result, env=env)
+                                                                  send_log=True)(work_dir, extra_adjust_parameters, adjust_result)
 
         return result
 
@@ -142,14 +129,3 @@ def get_gradle_provider(init_file_path, default_parameters, specific_indy_group=
         return template
 
     return adjust
-
-def get_command_gradle(work_dir):
-
-    # Use system gradle
-    command_gradle = 'gradle'
-
-    # If gradlew present, use it instead
-    if os.path.isfile(os.path.join(work_dir, './gradlew')):
-        command_gradle = './gradlew'
-
-    return command_gradle
