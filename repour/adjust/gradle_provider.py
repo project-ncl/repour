@@ -20,7 +20,11 @@ stderr_options = asutil.process_stderr_options
 
 
 def get_gradle_provider(
-    init_file_path, default_parameters, specific_indy_group=None, timestamp=None
+    init_file_path,
+    gme_jar_path,
+    default_parameters,
+    specific_indy_group=None,
+    timestamp=None,
 ):
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         """Generate the manipulation.json file with information about aligned versions"""
@@ -57,10 +61,22 @@ def get_gradle_provider(
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
-            env = {"JAVA_HOME": "/usr/lib/jvm/java-" + jvm_version + "-openjdk"}
-            logger.info("Specifying JAVA_HOME: " + env["JAVA_HOME"])
+            location = "/usr/lib/jvm/java-" + jvm_version + "-openjdk/bin/"
+            logger.info("Specifying java path: " + location)
         else:
-            env = {}
+            location = ""
+
+        default_parameters.append("--target=" + work_dir)
+        default_parameters.append("--init-script=" + init_file_path)
+
+        await util.print_java_version(java_bin_dir=location)
+
+        cmd = (
+            [location + "java", "-jar", gme_jar_path]
+            + default_parameters
+            + temp_build_parameters
+            + extra_parameters
+        )
 
         output = await expect_ok(
             cmd=[command_gradle, "--version"],
@@ -69,7 +85,6 @@ def get_gradle_provider(
             stdout=stdout_options["text"],
             stderr=stderr_options["stdout"],
             print_cmd=True,
-            env=env,
         )
         logger.info(output)
 
@@ -173,15 +188,3 @@ def get_gradle_provider(
         return template
 
     return adjust
-
-
-def get_command_gradle(work_dir):
-
-    # Use system gradle
-    command_gradle = "gradle"
-
-    # If gradlew present, use it instead
-    if os.path.isfile(os.path.join(work_dir, "./gradlew")):
-        command_gradle = "./gradlew"
-
-    return command_gradle
