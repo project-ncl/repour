@@ -288,6 +288,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
 
     result = await gradle_provider.get_gradle_provider(
         adjust_provider_config["gradleAnalyzerPluginInitFilePath"],
+        adjust_provider_config["gradleAnalyzerPluginJarPath"],
         default_parameters,
         specific_indy_group,
         timestamp,
