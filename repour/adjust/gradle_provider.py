@@ -59,13 +59,12 @@ def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, specif
         else:
             location = ''
 
-        default_parameters.append("--target=" + work_dir)
-        default_parameters.append("--init-script=" + init_file_path)
+        target_and_init = ["--target=" + work_dir, "--init-script=" + init_file_path]
 
         yield from util.print_java_version(java_bin_dir=location)
 
         cmd = [location + "java", "-jar", gme_jar_path] \
-              + default_parameters + temp_build_parameters + extra_parameters
+              + default_parameters + target_and_init + temp_build_parameters + extra_parameters
 
         result = yield from process_provider.get_process_provider(EXECUTION_NAME,
                                                                   cmd,
