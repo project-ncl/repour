@@ -43,51 +43,9 @@ class ContextLogRecord(logging.LogRecord):
             return False
 
 
-def override(config, config_coords, args, arg_name):
-    if getattr(args, arg_name, None) is not None:
-
-        def resolve_leaf_dict(parent_dict, leaf_coords):
-            if len(leaf_coords) == 1:
-                return parent_dict
-            return resolve_leaf_dict(parent_dict[leaf_coords[0]], leaf_coords[1:])
-
-        d = resolve_leaf_dict(config, config_coords)
-        logger.debug(
-            "Overriding config/{} with arg {}".format("/".join(config_coords), arg_name)
-        )
-        d[config_coords[-1]] = getattr(args, arg_name)
-
-
 #
 # Subcommands
 #
-
-
-def run_subcommand(args):
-    from .server import server
-
-    # Config
-    config = load_config(args.config)
-    override(config, ("log", "path"), args, "log")
-    override(config, ("bind", "address"), args, "address")
-    override(config, ("bind", "port"), args, "port")
-
-    # Logging
-    log_default_level = logging._nameToLevel[config["log"]["level"]]
-    configure_logging(
-        log_default_level, config["log"]["path"], args.verbose, args.quiet, args.silent
-    )
-
-    repo_provider = {"type": "modeb", "params": {}}
-
-    # Go
-    server.start_server(
-        bind=config["bind"],
-        repo_provider=repo_provider,
-        adjust_provider=config["adjust_provider"],
-    )
-
-
 def run_container_subcommand(args):
     from .server import server
 
@@ -159,8 +117,6 @@ def run_container_subcommand(args):
 #
 # General
 #
-
-
 def create_argparser():
     parser = argparse.ArgumentParser(description="Run repour server in various modes")
     parser.add_argument(
@@ -187,27 +143,6 @@ def create_argparser():
     )
 
     subparsers = parser.add_subparsers()
-
-    run_desc = "Run the server"
-    run_parser = subparsers.add_parser("run", help=run_desc)
-    run_parser.description = run_desc
-    run_parser.set_defaults(func=run_subcommand)
-    run_parser.add_argument(
-        "-c",
-        "--config",
-        default="config.json",
-        help="Path to the configuration file. Default: config.json",
-    )
-    run_parser.add_argument(
-        "-a",
-        "--address",
-        help="Override the bind IP address provided in the config file.",
-    )
-    run_parser.add_argument(
-        "-p",
-        "--port",
-        help="Override the bind port number provided in the config file.",
-    )
 
     run_container_desc = "Run the server in a container environment"
     run_container_parser = subparsers.add_parser(
@@ -272,24 +207,6 @@ def configure_logging(
             kafka_server, kafka_topic, ssl_cafile=kafka_cafile
         )
         root_logger.addHandler(kafka_handler_obj)
-
-
-def load_config(config_path):
-    import yaml
-    from . import validation
-
-    config_dir = os.path.dirname(config_path)
-
-    def config_relative(loader, node):
-        value = loader.construct_scalar(node)
-        return os.path.abspath(os.path.join(config_dir, value))
-
-    yaml.add_constructor("!config_relative", config_relative)
-
-    with open(config_path, "r") as f:
-        config = yaml.load(f)
-
-    return validation.server_config(config)
 
 
 def main():
