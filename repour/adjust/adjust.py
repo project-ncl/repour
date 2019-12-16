@@ -178,7 +178,6 @@ async def adjust(adjustspec, repo_provider):
     """
 
     c = await config.get_configuration()
-    executions = c.get("adjust", {}).get("executions", [])
 
     adjust_result = {"adjustType": [], "resultData": {}}
 
@@ -257,8 +256,6 @@ async def handle_temp_build(adjustspec, adjust_provider_config):
 
 async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
     logger.info("Using Gradle manipulation")
-
-    executions = c.get("adjust", {}).get("executions", [])
 
     adjust_provider_config = c.get("adjust", {}).get(
         gradle_provider.EXECUTION_NAME, None
