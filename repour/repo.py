@@ -349,7 +349,6 @@ def repo_local(root_url):
 
     return get_url
 
-
     async def get_url(spec, create=True):
         return RepoUrls(
             readwrite=spec["internal_url"]["readwrite"],
