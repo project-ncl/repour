@@ -308,45 +308,6 @@ def repo_gitlab(root_url, ssh_root_url, group, username, password):
     return get_url
 
 
-def repo_gitolite(ssh_url, http_url):
-    logger.info(
-        "Using gitolite repository provider, SSH: {ssh_url} HTTP: {http_url}".format(
-            **locals()
-        )
-    )
-    name_pattern = re.compile(r"^[0-9a-zA-Z][-0-9a-zA-Z._@/+]*$")
-
-    async def get_url(spec, create=True):
-        repo_name = spec["name"]
-        match = name_pattern.match(repo_name)
-        if not match:
-            raise exception.RepoError(
-                "Repo name '{repo_name}' does not match pattern '{name_pattern.pattern}'".format(
-                    **locals()
-                )
-            )
-
-        encoded_name = urllib.parse.quote(repo_name)
-        repo_url = RepoUrls(
-            readwrite="{root}/{name}".format(root=ssh_url, name=encoded_name),
-            readonly="{root}/{name}".format(root=http_url, name=encoded_name),
-        )
-
-        if not create:
-            return repo_url
-
-        # Gitolite will create-on-push if required
-        logger.info(
-            "Using gitolite repo at rw={repo_url.readwrite} ro={repo_url.readonly}".format(
-                **locals()
-            )
-        )
-
-        return repo_url
-
-    return get_url
-
-
 def repo_local(root_url):
     logger.info("Using local repository provider, root: {root_url}".format(**locals()))
     root_path = urllib.parse.urlparse(root_url).path
@@ -389,13 +350,6 @@ def repo_local(root_url):
     return get_url
 
 
-def repo_modeb():
-    logger.warn(
-        "Using Mode B repository provider (client-specified repositories)".format(
-            **locals()
-        )
-    )
-
     async def get_url(spec, create=True):
         return RepoUrls(
             readwrite=spec["internal_url"]["readwrite"],
@@ -412,7 +366,5 @@ def repo_modeb():
 provider_types = {
     "gerrit": repo_gerrit,
     "gitlab": repo_gitlab,
-    "gitolite": repo_gitolite,
     "local": repo_local,
-    "modeb": repo_modeb,
 }
