@@ -54,8 +54,6 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
         "POST", "/git-external-to-internal", external_to_internal_source
     )
 
-    # See NCL-3872: endpoints removed for PNC 2.0
-    # app.router.add_route("POST", "/pull", pull_source)
     app.router.add_route(
         "POST",
         "/clone",

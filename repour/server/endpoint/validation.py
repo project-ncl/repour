@@ -68,7 +68,6 @@ external_to_internal = Schema(
 #
 
 clone_raw = {
-    # "name": name_str,
     "type": "git",  # only git supported for now
     Optional("ref"): null_or_str,
     "originRepoUrl": Url(),
