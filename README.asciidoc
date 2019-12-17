@@ -62,12 +62,6 @@ Since Repour is probably not exposed at the edge of the build system, other part
 
 Once Repour is called, it returns a set of git coordinates that can be used by the rest of the build system. See link:#what-repour-will-do-and-not-do[What Repour will do and not do].
 
-==== Direct clients
-
-Repour `/pull` has a `name` parameter, which impacts which repository the sources end up in. As the logical grouping of sources is beyond the scope of Repour, it is left to the caller to determine. However, unique ``name``s result in unique deduplication namespaces, so if the caller wants to use Repour's link:#file-tree-deduplication[deduplication guarantee] optimally, a minimal set of ``name``s should be used.
-
-Repour would be perfectly happy if it were given the same `name` for every request (regardless of how related the sources are), so lean towards too few unique names rather than too many.
-
 ==== Builder clients
 
 When a builder host gets the sources, it won't communicate with Repour, but with the git repository provider where Repour has stored the sources.
@@ -84,219 +78,16 @@ git clone --depth 1 --branch $tag $readonlyurl
 Note that `--branch` is only usable with references (tags or branches), not commit IDs. The builder typically should not clone from a branch name as this is inherently mutable.
 
 == Interface
-
-=== Pull
-
-[cols="h,6a"]
-|===
-|URL
-|/pull
-
-|Request (SCM)
-|[cols="h,4a"]
-!===
-!Method
-!POST
-
-!Content-Type
-!application/json
-
-!Body (Schema)
-![source,python]
-----
-{
-    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<\!\.git)$'),
-    "type": Any("git", "hg", "svn"),
-    "ref": nonempty_str,
-    "url": Url(),
-    Optional("adjust"): bool,
-    Optional("callback"): {
-        "url": Url(),
-        Optional("method"): Any("PUT", "POST"),
-    },
-}
-----
-
-!Body (Example)
-![source,javascript]
-{
-    "name": "teiid",
-    "type": "git",
-    "ref": "teiid-parent-8.11.0.Final",
-    "url": "https://github.com/teiid/teiid.git"
-}
-!===
-
-|Request (Archive)
-|[cols="h,4a"]
-!===
-!Method
-!POST
-
-!Content-Type
-!application/json
-
-!Body (Schema)
-![source,python]
-----
-{
-    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<\!\.git)$'),
-    "type": "archive",
-    "url": Url(),
-    Optional("adjust"): bool,
-    Optional("callback"): {
-        "url": Url(),
-        Optional("method"): Any("PUT", "POST"),
-    },
-}
-----
-
-!Body (Example)
-![source,javascript]
-{
-    "name": "teiid",
-    "type": "archive",
-    "url": "https://github.com/teiid/teiid/archive/teiid-parent-8.11.0.Final.tar.gz"
-}
-!===
-
-|Response (Success)
-|[cols="h,4a"]
-!===
-!Status
-!200
-
-!Content-Type
-!application/json
-
-!Body (Schema)
-![source,python]
-{
-    "branch": str,
-    "tag": str,
-    "url": {
-        "readwrite": Url(),
-        "readonly": Url(),
-    }
-    Optional("pull"): {
-        "branch": str,
-        "tag": str,
-        "url": {
-            "readwrite": Url(),
-            "readonly": Url(),
-        }
-    }
-}
-
-!Body (Example)
-![source,javascript]
-{
-    "branch": "pull-1439285353",
-    "tag": "pull-1439285353-root",
-    "url": {
-        "readwrite": "file:///tmp/repour-test-repos/example",
-        "readonly": "file:///tmp/repour-test-repos/example"
-    }
-}
-
-!Body (Example adjust)
-![source,javascript]
-{
-    "branch": "adjust-1439285354",
-    "tag": "adjust-1439285354-root",
-    "url": {
-        "readwrite": "file:///tmp/repour-test-repos/example",
-        "readonly": "file:///tmp/repour-test-repos/example"
-    },
-    "pull": {
-        "branch": "pull-1439285353",
-        "tag": "pull-1439285353-root",
-        "url": {
-            "readwrite": "file:///tmp/repour-test-repos/example",
-            "readonly": "file:///tmp/repour-test-repos/example"
-        },
-    }
-}
-!===
-
-|Response (Invalid request body)
-|[cols="h,4a"]
-!===
-!Status
-!400
-
-!Content-Type
-!application/json
-
-!Body (Schema)
-![source,python]
-[
-    {
-        "error_message": str,
-        "error_type": str,
-        "path": [str],
-    }
-]
-
-!Body (Example)
-![source,javascript]
-[
-    {
-        "error_message": "expected a URL",
-        "error_type": "dictionary value",
-        "path": ["url"]
-    },
-    {
-        "error_message": "expected str",
-        "error_type": "dictionary value",
-        "path": ["name"]
-    }
-]
-
-!===
-
-|Response (Processing error)
-|[cols="h,4a"]
-!===
-!Status
-!400
-
-!Content-Type
-!application/json
-
-!Body (Schema)
-![source,python]
-{
-    "desc": str,
-    "error_type": str,
-    "error_traceback": str,
-    str: object,
-}
-
-!Body (Example)
-![source,javascript]
-{
-    "desc": "Could not clone with git",
-    "error_type": "PullCommandError",
-    "error_traceback": "d41d8cd98f00b204e9800998ecf8427e",
-    "cmd": [
-        "git",
-        "clone",
-        "--branch",
-        "teiid-parent-8.11.0.Final",
-        "--depth",
-        "1",
-        "--",
-        "git@github.com:teiid/teiid.gitasd",
-        "/tmp/tmppizdwfsigit"
-    ],
-    "exit_code": 128
-}
-!===
-|===
-
 === Adjust
 
+Checkout a git ref from the origin repo and push it to the target repo.
+If the ref is a branch, the branch will be pushed to the target repo. If the ref is a tag, the tag will be pushed to the target repo. If the ref is a SHA, then a branch will be created with name 'branch-<ref>' and pushed as a branch to the target repo. The latter is required to get a particular commit to the target repo.
+
+You can specify an 'buildType' option to set if you want to run PME/GME/project-manipulator or not on it. You can also specify the 'adjustParameters'. The result of the PME run, together with the tag information is found in the response, under key 'adjust_result'. The value of 'adjust_result' is the same as for '/adjust'.
+
+'buildType' can be 'MVN', 'GRADLE', and 'NODEJS'.
+
+The response will contain the exact ref name as what was sent
 [cols="h,6a"]
 |===
 |URL
@@ -314,19 +105,32 @@ Note that `--branch` is only usable with references (tags or branches), not comm
 !Body (Schema)
 ![source,python]
 {
-    "name": Match('^[a-zA-Z0-9_.][a-zA-Z0-9_.-]*(?<\!\.git)$'),
     "ref": nonempty_str,
+    Optional("adjustParameters"): All(dict),
+    Optional("originRepoUrl"): Any(None, str),
+    Optional("sync"): bool,
     Optional("callback"): {
         "url": Url(),
         Optional("method"): Any("PUT", "POST"),
     },
+    Optional("tempBuild"): bool,
+    Optional("tempBuildTimestamp"): null_or_str,
+    Optional("taskId"): null_or_str,
+    Optional("buildType"): nonempty_str,
+    "internal_url": {
+        "readwrite": Url(),
+        "readonly": Url()
+    }
 }
 
 !Body (Example)
 ![source,javascript]
 {
-    "name": "example",
     "ref": "pull-1436349331-root"
+    "internal_url": {
+        "readwrite": "git@github.com/test/me",
+        "readonly": "https://github.com/test/me"
+    }
 }
 !===
 
@@ -342,22 +146,44 @@ Note that `--branch` is only usable with references (tags or branches), not comm
 !Body (Schema)
 ![source,python]
 {
-    "branch": str,
+    "commit": str,
     "tag": str,
     "url": {
         "readwrite": Url(),
         "readonly": Url(),
+    },
+    "adjustResultData": {
+        "log": str,
+        "VersioningState": {
+            "executionRootModified": {
+                "groupId": "value",
+                "artifactId": "value",
+                "version": "value"
+            }
+        },
+        "RemovedRepositories": []
     }
 }
 
 !Body (Example)
 ![source,javascript]
 {
-    "branch": "adjust-1439285354",
+    "commit": "abcd",
     "tag": "adjust-1439285354-root",
     "url": {
         "readwrite": "file:///tmp/repour-test-repos/example",
         "readonly": "file:///tmp/repour-test-repos/example"
+    },
+    "adjustResultData": {
+        "log": "help"
+        "VersioningState": {
+            "executionRootModified": {
+                "groupId": "value",
+                "artifactId": "value",
+                "version": "value"
+            }
+        },
+        "RemovedRepositories": []
     }
 }
 !===
@@ -462,7 +288,7 @@ The response will contain the resulting ref name.
 ![source,python]
 {
     "type": "git", # only git supported for now
-    "ref": nonempty_str,
+    Optional("ref"): nonempty_str,
     "originRepoUrl": Url(),
     "targetRepoUrl": Url(),
     Optional("callback"): {
@@ -493,14 +319,6 @@ The response will contain the resulting ref name.
 !===
 |===
 
-=== Clone Adjust
-
-Checkout a git ref from the origin repo and push it to the target repo.
-If the ref is a branch, the branch will be pushed to the target repo. If the ref is a tag, the tag will be pushed to the target repo. If the ref is a SHA, then a branch will be created with name 'branch-<ref>' and pushed as a branch to the target repo. The latter is required to get a particular commit to the target repo.
-
-You can specify an 'adjust' option to set if you want to run PME or not on it. You can also specify the 'adjustParameters'. The result of the PME run, together with the tag information is found in the response, under key 'adjust_result'. The value of 'adjust_result' is the same as for '/adjust'.
-
-The response will contain the exact ref name as what was sent
 
 === Callback mode
 
@@ -584,39 +402,15 @@ The docker images can be run in plain Docker or OpenShift. Some less-than-ideal 
 ** The lack of shared persistent volumes in OSE also means the container is not scalable
 ** The configuration can't be included in the image because the working directory is intended to be the persistent volume mount, which will start empty in OSE.
 
-=== Locally Simulated OSE
-
-The integration tests use the Docker images in an OSE-like environment. To do something similar yourself, you first need a volume mount that is structured the same as an OpenShift `Secret` volume would be:
-
-[source,bash]
-----
-mkdir -p /tmp/secrets/repour /tmp/secrets/admin
-ssh-keygen -f /tmp/secrets/repour/repour -N ""
-ssh-keygen -f /tmp/secrets/admin/admin -N ""
-----
-
-Note the real `Secret` volume could actually be multiple volumes (mounted at `/mnt/secrets/repour` and `/mnt/secrets/admin`), so least privilege can apply. `Dockerfile` only needs to know the private key of the `repour` user. Neither needs to know the `admin` user's private key.
-
-Then start both images, mounting the volume as shared. `Dockerfile` needs some environment variables: where to find the repository provider, and a REST endpoint required by PME (provide a dummy value if not using adjust)
-
-[source,bash]
-----
-docker run --volume "/tmp/secrets:/mnt/secrets:z" --user="$UID" -d --name repour_git repour_integration_test_git:latest
-docker run --volume "/tmp/secrets:/mnt/secrets:z" --user="$UID" -d --link repour_git:git --name repour -e "REPOUR_PME_DA_URL=foo" repour_integration_test:latest
-----
-
 == Development
 
 === Local Server Setup
 
 ==== Prerequisites
 
-- Python 3.4.1+
+- Python 3.6+
 - pip
 - Git 2.4.3+
-- Mercural (optional, for hg support)
-- Subversion (optional, for svn support)
-- Docker 1.7.1+ (optional, for integration tests)
 
 ==== Poetry setup
 Install `poetry` in your machine.
@@ -643,16 +437,12 @@ poetry run 'python3 ...'
 
 To run pre-commit checks and test, run:
 [source,bash]
-tox
-
-==== Configure
-
-Copy the example configuration in `config-example.yaml` to `config.yaml`, then edit.
+poetry run tox
 
 ==== Start the server
 
 [source,bash]
-vex rpo python -m repour run
+python -m repour run-container
 
 For more information, add the `-h` switch to the command.
 
@@ -662,15 +452,7 @@ For more information, add the `-h` switch to the command.
 
 Unit tests are self-contained and work without an internet connection. To run them:
 
-1. `vex rpo python -m unittest`
-
-==== Integration Tests
-
-GitLab integration tests will be executed using the local Docker server. To run them:
-
-1. ensure your vex environment includes `venv/integration-test.txt`
-2. prefix `REPOUR_RUN_IT=1` before the `unittest` command, to set the triggering environment variable. For example: `REPOUR_RUN_IT=1 vex rpo python -m unittest`
-
+1. `poetry run tox`
 
 == Running Repour with multiple replicas
 
