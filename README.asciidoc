@@ -442,9 +442,16 @@ poetry run tox
 ==== Start the server
 
 [source,bash]
-python -m repour run-container
+poetry run python3 -m repour run-container
 
 For more information, add the `-h` switch to the command.
+
+To set the log level, run:
+
+[source,bash]
+poetry run python3 -m repour -l DEBUG run-container
+
+By default the log level is 'INFO'. Use any of the logging level defined link:https://docs.python.org/3/library/logging.html#logging-levels[here]
 
 === Tests
 
