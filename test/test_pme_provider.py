@@ -60,10 +60,10 @@ class TestPMEProvider(unittest.TestCase):
 
         result_simplified = result["VersioningState"]["executionRootModified"]
 
-        self.assertEquals(result_simplified["groupId"], group_id)
-        self.assertEquals(result_simplified["artifactId"], artifact_id)
+        self.assertEqual(result_simplified["groupId"], group_id)
+        self.assertEqual(result_simplified["artifactId"], artifact_id)
 
         if version is not None:
-            self.assertEquals(result_simplified["version"], version)
+            self.assertEqual(result_simplified["version"], version)
 
-        self.assertEquals(result["RemovedRepositories"], removed_repositories)
+        self.assertEqual(result["RemovedRepositories"], removed_repositories)

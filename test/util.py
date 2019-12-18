@@ -113,7 +113,6 @@ def http_write_handler(stream):
             if not buf:
                 break
             await resp.write(buf)
-            await resp.drain()
         await resp.write_eof()
 
         return resp
