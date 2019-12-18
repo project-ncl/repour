@@ -55,7 +55,7 @@ def run_container_subcommand(args):
     kafka_cafile = os.environ.get("REPOUR_KAFKA_CAFILE")
 
     configure_logging(
-        logging.INFO,
+        args.log,
         kafka_server=kafka_server,
         kafka_topic=kafka_topic,
         kafka_cafile=kafka_cafile,
@@ -120,25 +120,9 @@ def run_container_subcommand(args):
 def create_argparser():
     parser = argparse.ArgumentParser(description="Run repour server in various modes")
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="Increase logging verbosity one level, repeatable.",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="count",
-        default=0,
-        help="Decrease logging verbosity one level, repeatable.",
-    )
-    parser.add_argument(
-        "-s", "--silent", action="store_true", help="Do not log to stdio."
-    )
-    parser.add_argument(
         "-l",
         "--log",
+        default="INFO",
         help="Override the path for the log file provided in the config file.",
     )
 
@@ -157,9 +141,6 @@ def create_argparser():
 def configure_logging(
     default_level,
     log_path=None,
-    verbose_count=0,
-    quiet_count=0,
-    silent=False,
     kafka_server=None,
     kafka_topic=None,
     kafka_cafile=None,
@@ -182,10 +163,9 @@ def configure_logging(
         file_log.setFormatter(formatter)
         root_logger.addHandler(file_log)
 
-    if not silent:
-        console_log = logging.StreamHandler()
-        console_log.setFormatter(formatter)
-        root_logger.addHandler(console_log)
+    console_log = logging.StreamHandler()
+    console_log.setFormatter(formatter)
+    root_logger.addHandler(console_log)
 
     callback_id_log = file_callback_log.FileCallbackHandler()
     callback_id_log.setFormatter(formatter_callback)
@@ -194,8 +174,7 @@ def configure_logging(
     # Cleanup of old log files
     asyncio.get_event_loop().create_task(file_callback_log.setup_clean_old_logfiles())
 
-    log_level = default_level + (10 * quiet_count) - (10 * verbose_count)
-    root_logger.setLevel(log_level)
+    root_logger.setLevel(getattr(logging, default_level))
 
     if kafka_server and kafka_topic and kafka_cafile:
         logger.info("Setting up Kafka logging handler")
