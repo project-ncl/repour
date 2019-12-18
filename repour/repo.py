@@ -349,6 +349,14 @@ def repo_local(root_url):
 
     return get_url
 
+
+def repo_modeb():
+    logger.warn(
+        "Using Mode B repository provider (client-specified repositories)".format(
+            **locals()
+        )
+    )
+
     async def get_url(spec, create=True):
         return RepoUrls(
             readwrite=spec["internal_url"]["readwrite"],
@@ -366,4 +374,5 @@ provider_types = {
     "gerrit": repo_gerrit,
     "gitlab": repo_gitlab,
     "local": repo_local,
+    "modeb": repo_modeb,
 }

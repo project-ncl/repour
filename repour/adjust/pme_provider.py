@@ -82,10 +82,10 @@ def get_pme_provider(
             if len(result) == 2:
                 return result[0], result[1]
             else:
-                logger.warn(
+                logger.warning(
                     'BREW_BUILD_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"'
                 )
-                logger.warn('Value provided is: "' + paramsString + '"')
+                logger.warning('Value provided is: "' + paramsString + '"')
                 return None, None
 
     async def adjust(repo_dir, extra_adjust_parameters, adjust_result):
@@ -296,10 +296,10 @@ def parse_pme_result_manipulation_format(
     pme_result = {"VersioningState": {"executionRootModified": {}}}
 
     if group_id is not None and artifact_id is not None:
-        logger.warn("Overriding the groupId of the result to: " + group_id)
+        logger.warning("Overriding the groupId of the result to: " + group_id)
         pme_result["VersioningState"]["executionRootModified"]["groupId"] = group_id
 
-        logger.warn("Overriding the artifactId of the result to: " + artifact_id)
+        logger.warning("Overriding the artifactId of the result to: " + artifact_id)
         pme_result["VersioningState"]["executionRootModified"][
             "artifactId"
         ] = artifact_id
@@ -337,10 +337,10 @@ def parse_pme_result_pom_manip_ext_result_format(
     pme_result = json.loads(raw_result_data)
 
     if group_id is not None and artifact_id is not None:
-        logger.warn("Overriding the groupId of the result to: " + group_id)
+        logger.warning("Overriding the groupId of the result to: " + group_id)
         pme_result["VersioningState"]["executionRootModified"]["groupId"] = group_id
 
-        logger.warn("Overriding the artifactId of the result to: " + artifact_id)
+        logger.warning("Overriding the artifactId of the result to: " + artifact_id)
         pme_result["VersioningState"]["executionRootModified"][
             "artifactId"
         ] = artifact_id
