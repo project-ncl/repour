@@ -1,4 +1,3 @@
-# flake8: noqa
 #!/usr/bin/env python3
 
 import grp
@@ -15,7 +14,7 @@ import sys
 def uid_exists(uid):
     try:
         pwd.getpwuid(uid)
-    except KeyError as e:
+    except KeyError:
         return False
     else:
         return True
@@ -24,7 +23,7 @@ def uid_exists(uid):
 def gid_exists(gid):
     try:
         grp.getgrgid(gid)
-    except KeyError as e:
+    except KeyError:
         return False
     else:
         return True

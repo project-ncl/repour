@@ -1,4 +1,3 @@
-# flake8: noqa
 #!/usr/bin/env python3
 
 import errno
@@ -18,6 +17,7 @@ def kill_all(pid2, timeout=5):
     pid2_status = None
     # SIGTERM everything but us
     os.kill(os.P_ALL, signal.SIGTERM)
+
     # Setup SIGALRM timeout
     def handle_timeout(signum, frame):
         raise TimeoutError()
@@ -27,7 +27,7 @@ def kill_all(pid2, timeout=5):
     # Reap all children
     try:
         pid2_status = reap_children(pid2, reap_all=True)
-    except TimeoutError as e:
+    except TimeoutError:
         # SIGKILL everything but us
         os.kill(os.P_ALL, signal.SIGKILL)
     finally:
@@ -43,7 +43,7 @@ def reap_children(pid2, reap_all):
     while more_children:
         try:
             pid, status = os.waitpid(os.P_ALL, 0)
-        except InterruptedError as e:
+        except InterruptedError:
             # Signals are already handled by pid2 exiting
             pass
         except ChildProcessError as e:
