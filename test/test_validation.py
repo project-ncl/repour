@@ -1,3 +1,4 @@
+# flake8: noqa
 import unittest
 
 import repour.server.endpoint.validation as validation

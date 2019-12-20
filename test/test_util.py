@@ -1,3 +1,4 @@
+# flake8: noqa
 import unittest
 
 import repour.adjust.util as util

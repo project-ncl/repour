@@ -1,3 +1,4 @@
+# flake8: noqa
 import re
 from urllib.parse import urlparse
 

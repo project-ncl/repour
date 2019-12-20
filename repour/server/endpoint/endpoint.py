@@ -1,3 +1,4 @@
+# flake8: noqa
 import asyncio
 import base64
 import concurrent.futures as cfutures
