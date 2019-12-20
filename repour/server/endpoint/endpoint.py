@@ -17,7 +17,7 @@ from prometheus_client import Counter, Histogram, Summary
 
 from ... import exception
 from ...config import config
-from ...logs import file_callback_log
+from repour.lib.logs import file_callback_log
 from . import validation
 
 logger = logging.getLogger(__name__)

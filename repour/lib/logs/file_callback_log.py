@@ -1,4 +1,3 @@
-# flake8: noqa
 import asyncio
 import calendar
 import logging
@@ -63,7 +62,7 @@ class FileCallbackHandler(logging.StreamHandler):
 
                     # need to flush to make sure every reader sees the change
                     self.stream.close()
-        except:
+        except RuntimeError:
             self.handleError(record)
 
     def _open_callback_file(self, callback_id):

@@ -7,7 +7,7 @@ import sys
 
 from kafka_logger.handlers import KafkaLoggingHandler
 
-from .logs import file_callback_log
+from repour.lib.logs import file_callback_log
 
 logger = logging.getLogger(__name__)
 

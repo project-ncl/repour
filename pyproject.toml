@@ -16,13 +16,10 @@ pyyaml = "^5.1"
 prometheus_client = "^0.7.1"
 prometheus_async = "^19.2"
 kafka-logging-handler = "^0.2.3"
+flake8 = "^3.7"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.14"
-
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
 
 [tool.tox]
 legacy_tox_ini = """
@@ -36,8 +33,13 @@ skip_install = true
 deps =
     pytest
     pre-commit
+    flake8
 commands =
     poetry install -vvv
     pre-commit run --all-files --show-diff-on-failure
     poetry run pytest test/
+    flake8
 """
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

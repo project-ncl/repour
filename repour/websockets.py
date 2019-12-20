@@ -3,7 +3,7 @@ import asyncio
 import logging
 import os
 
-from .logs.file_callback_log import get_callback_log_path
+from repour.lib.file_callback_log import get_callback_log_path
 
 # Period to re-read file to see if change happened
 PERIOD = 0.3
