@@ -7,7 +7,7 @@ import time
 import unittest
 from test import util
 
-import repour.asgit
+from repour.lib.scm import asgit
 import repour.asutil
 
 loop = asyncio.get_event_loop()
@@ -17,7 +17,7 @@ expect_ok = repour.asutil.expect_ok_closure()
 class TestCommon(unittest.TestCase):
     def test_setup_commiter(self):
         with util.TemporaryGitDirectory() as repo:
-            loop.run_until_complete(repour.asgit.setup_commiter(expect_ok, repo))
+            loop.run_until_complete(asgit.setup_commiter(expect_ok, repo))
             out = subprocess.check_output(["git", "config", "--local", "-l"], cwd=repo)
 
         self.assertIn(b"user.name=", out)
@@ -28,9 +28,7 @@ class TestCommon(unittest.TestCase):
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
             util.quiet_check_call(["git", "add", "-A"], cwd=repo)
-            loop.run_until_complete(
-                repour.asgit.fixed_date_commit(expect_ok, repo, "Test")
-            )
+            loop.run_until_complete(asgit.fixed_date_commit(expect_ok, repo, "Test"))
             out = subprocess.check_output(
                 ["git", "log", "-1", "--pretty=fuller"], cwd=repo
             )
@@ -43,7 +41,7 @@ class TestCommon(unittest.TestCase):
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello")
             loop.run_until_complete(
-                repour.asgit.prepare_new_branch(
+                asgit.prepare_new_branch(
                     expect_ok, repo, "pull-1234567890", orphan=True
                 )
             )
@@ -52,7 +50,7 @@ class TestCommon(unittest.TestCase):
             with open(os.path.join(repo, "asd.txt"), "w") as f:
                 f.write("Hello Hello")
             loop.run_until_complete(
-                repour.asgit.prepare_new_branch(expect_ok, repo, "adjust-1234567890")
+                asgit.prepare_new_branch(expect_ok, repo, "adjust-1234567890")
             )
             util.quiet_check_call(["git", "commit", "-m", "Test"], cwd=repo)
 
@@ -63,7 +61,7 @@ class TestCommon(unittest.TestCase):
             util.quiet_check_call(["git", "add", "-A"], cwd=repo)
             util.quiet_check_call(["git", "commit", "-m", "Test"], cwd=repo)
             loop.run_until_complete(
-                repour.asgit.annotated_tag(
+                asgit.annotated_tag(
                     expect_ok, repo, "pull-1234567890-root", "Annotation"
                 )
             )
@@ -80,9 +78,7 @@ class TestCommon(unittest.TestCase):
                 util.quiet_check_call(["git", "commit", "-m", "Test Commit"], cwd=repo)
                 util.quiet_check_call(["git", "tag", "test-tag"], cwd=repo)
 
-                loop.run_until_complete(
-                    repour.asgit.push_with_tags(expect_ok, repo, "master")
-                )
+                loop.run_until_complete(asgit.push_with_tags(expect_ok, repo, "master"))
 
                 remote_tags = subprocess.check_output(
                     ["git", "tag", "-l", "-n"], cwd=repo
@@ -102,7 +98,7 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello")
                 p = loop.run_until_complete(
-                    repour.asgit.push_new_dedup_branch(
+                    asgit.push_new_dedup_branch(
                         expect_ok=expect_ok,
                         repo_dir=repo,
                         repo_url=remote,
@@ -121,7 +117,7 @@ class TestPushNewDedupBranch(unittest.TestCase):
 
                 # No changes
                 nc = loop.run_until_complete(
-                    repour.asgit.push_new_dedup_branch(
+                    asgit.push_new_dedup_branch(
                         expect_ok=expect_ok,
                         repo_dir=repo,
                         repo_url=remote,
@@ -138,7 +134,7 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello Hello")
                 c = loop.run_until_complete(
-                    repour.asgit.push_new_dedup_branch(
+                    asgit.push_new_dedup_branch(
                         expect_ok=expect_ok,
                         repo_dir=repo,
                         repo_url=remote,
@@ -163,7 +159,7 @@ class TestPushNewDedupBranch(unittest.TestCase):
                 with open(os.path.join(repo, "asd.txt"), "w") as f:
                     f.write("Hello Hello")
                 ce = loop.run_until_complete(
-                    repour.asgit.push_new_dedup_branch(
+                    asgit.push_new_dedup_branch(
                         expect_ok=expect_ok,
                         repo_dir=repo,
                         repo_url=remote,

@@ -7,9 +7,11 @@ import shutil
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
 
-from .. import asgit, asutil, clone, exception
+from .. import asutil, clone, exception
 from ..config import config
 from repour.lib.scm import git
+from repour.lib.scm import asgit
+
 from . import (
     gradle_provider,
     noop_provider,

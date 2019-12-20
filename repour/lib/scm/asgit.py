@@ -1,9 +1,8 @@
-# flake8: noqa
 import logging
 import uuid
 
-from . import exception
-from .config import config
+from repour import exception
+from repour.config import config
 from repour.lib.scm import git
 
 logger = logging.getLogger(__name__)
