@@ -8,7 +8,6 @@ import unittest
 from test import util
 
 import repour.adjust.adjust
-import repour.asgit
 
 loop = asyncio.get_event_loop()
 
