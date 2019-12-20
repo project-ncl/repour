@@ -6,7 +6,7 @@ from prometheus_client import Histogram, Summary
 
 from . import asutil, exception
 from .config import config
-from .scm import git_provider
+from repour.lib.scm import git
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 #
 
 expect_ok = asutil.expect_ok_closure(exception.CommandError)
-
-git = git_provider.git_provider()
 
 REQ_TIME = Summary("clone_req_time", "time spent with clone endpoint")
 REQ_HISTOGRAM_TIME = Histogram(
@@ -41,18 +39,18 @@ async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origi
         - origin_remote: remote that was cloned from
     """
 
-    isRefBranch = await git["is_branch"](
+    isRefBranch = await git.is_branch(
         work_dir, ref, remote=origin_remote
     )  # if ref is a branch, we don't have to create one
-    isRefTag = await git["is_tag"](work_dir, ref)
+    isRefTag = await git.is_tag(work_dir, ref)
 
     if isRefBranch:
-        await git["push"](work_dir, remote, ref)  # push it to the remote
+        await git.push(work_dir, remote, ref)  # push it to the remote
     elif isRefTag:
         c = await config.get_configuration()
         git_user = c.get("git_username")
 
-        await git["push_with_tags"](work_dir, ref, git_user, remote=remote)
+        await git.push_with_tags(work_dir, ref, git_user, remote=remote)
     else:
         # Case if ref is a particular SHA
         # We can't really push a particular hash to the target repository
@@ -60,11 +58,11 @@ async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origi
         # to push the SHA
         tag_name = "repour-sync-" + ref
 
-        tag_already_exists = await git["is_tag"](work_dir, tag_name)
+        tag_already_exists = await git.is_tag(work_dir, tag_name)
 
         if not tag_already_exists:
-            await git["add_tag"](work_dir, tag_name)
-            await git["push"](work_dir, remote, tag_name)
+            await git.add_tag(work_dir, tag_name)
+            await git.push(work_dir, remote, tag_name)
         else:
             logger.info(
                 "Tag already exists in internal repository. Not pushing anything"
@@ -100,11 +98,9 @@ async def clone_git(clonespec):
 
         # NCL-4255: if ref provided and internal repository is not 'new', sync the ref only
         if "ref" in clonespec and clonespec["ref"] and not new_internal_repo:
-            await git["clone"](clone_dir, clonespec["originRepoUrl"])  # Clone origin
-            await git["checkout"](
-                clone_dir, clonespec["ref"], force=True
-            )  # Checkout ref
-            await git["add_remote"](
+            await git.clone(clone_dir, clonespec["originRepoUrl"])  # Clone origin
+            await git.checkout(clone_dir, clonespec["ref"], force=True)  # Checkout ref
+            await git.add_remote(
                 clone_dir,
                 "target",
                 asutil.add_username_url(clonespec["targetRepoUrl"], git_user),
@@ -116,17 +112,17 @@ async def clone_git(clonespec):
             # Sync everything if ref not specified or internal repository is new
             # From: https://stackoverflow.com/a/7216269/2907906
             logger.info("Syncing everything")
-            await git["clone_mirror"](
+            await git.clone_mirror(
                 clone_dir + "/.git", clonespec["originRepoUrl"]
             )  # Clone origin
-            await git["disable_bare_repository"](clone_dir)
-            await git["reset_hard"](clone_dir)
-            await git["add_remote"](
+            await git.disable_bare_repository(clone_dir)
+            await git.reset_hard(clone_dir)
+            await git.add_remote(
                 clone_dir,
                 "target",
                 asutil.add_username_url(clonespec["targetRepoUrl"], git_user),
             )  # Add target remote
-            await git["push_all"](clone_dir, "target", tags_also=True)
+            await git.push_all(clone_dir, "target", tags_also=True)
 
         return clonespec
 
@@ -138,13 +134,13 @@ async def check_new_internal_repo(git_url):
     returns: bool
     """
     with asutil.TemporaryDirectory(suffix="git") as temp_dir:
-        await git["clone"](temp_dir, git_url)  # Clone origin
+        await git.clone(temp_dir, git_url)  # Clone origin
 
-        tags = await git["list_tags"](temp_dir)
+        tags = await git.list_tags(temp_dir)
         if len(tags) > 0:
             return False
         else:
-            branches = await git["list_branches"](temp_dir)
+            branches = await git.list_branches(temp_dir)
             return len(branches) == 0
 
 

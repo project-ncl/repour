@@ -3,7 +3,7 @@ import uuid
 
 from . import exception
 from .config import config
-from .scm import git_provider
+from repour.lib.scm import git
 
 logger = logging.getLogger(__name__)
 
@@ -12,14 +12,13 @@ logger = logging.getLogger(__name__)
 #
 
 c = config.get_configuration_sync()
-git = git_provider.git_provider()
 
 
 async def setup_commiter(expect_ok, repo_dir):
-    await git["set_user_name"](
+    await git.set_user_name(
         repo_dir, c.get("scm", {}).get("git", {}).get("user.name", "Repour")
     )
-    await git["set_user_email"](
+    await git.set_user_email(
         repo_dir, c.get("scm", {}).get("git", {}).get("user.email", "<>")
     )
 
@@ -28,8 +27,8 @@ async def fixed_date_commit(
     expect_ok, repo_dir, commit_message, commit_date="1970-01-01 00:00:00 +0000"
 ):
     # To maintain an identical commitid for identical trees, use a fixed author/commit date.
-    await git["commit"](repo_dir, commit_message, commit_date)
-    head_commitid = await git["rev_parse"](repo_dir)
+    await git.commit(repo_dir, commit_message, commit_date)
+    head_commitid = await git.rev_parse(repo_dir)
     return head_commitid
 
 
@@ -41,24 +40,24 @@ async def normal_date_commit(expect_ok, repo_dir, commit_message):
 
 
 async def prepare_new_branch(expect_ok, repo_dir, branch_name, orphan=False):
-    await git["create_branch_checkout"](repo_dir, branch_name, orphan)
-    await git["add_all"](repo_dir)
+    await git.create_branch_checkout(repo_dir, branch_name, orphan)
+    await git.add_all(repo_dir)
 
 
 async def replace_branch(expect_ok, repo_dir, current_branch_name, new_name):
-    await git["create_branch_checkout"](repo_dir, new_name)
-    await git["delete_branch"](repo_dir, current_branch_name)
+    await git.create_branch_checkout(repo_dir, new_name)
+    await git.delete_branch(repo_dir, current_branch_name)
 
 
 async def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=False):
-    await git["tag_annotated"](repo_dir, tag_name, message, ok_if_exists=ok_if_exists)
+    await git.tag_annotated(repo_dir, tag_name, message, ok_if_exists=ok_if_exists)
 
 
 async def push_with_tags(expect_ok, repo_dir, branch_name):
     c = await config.get_configuration()
     git_user = c.get("git_username")
 
-    await git["push_with_tags"](repo_dir, branch_name, git_user, tryAtomic=True)
+    await git.push_with_tags(repo_dir, branch_name, git_user, tryAtomic=True)
 
 
 #
@@ -98,13 +97,13 @@ async def push_new_dedup_branch(
     if real_commit_time:
         # prepare_new_branch does a git add all, so calling git write-tree
         # should give the current tree SHA of the directory
-        tree_sha = await git["write_tree"](repo_dir)
+        tree_sha = await git.write_tree(repo_dir)
 
         # Find if there's already a tag for the tree sha above
-        tag_name = await git["get_tag_from_tree_sha"](repo_dir, tree_sha)
+        tag_name = await git.get_tag_from_tree_sha(repo_dir, tree_sha)
 
         if tag_name:
-            commit = await git["get_commit_from_tag_name"](repo_dir, tag_name)
+            commit = await git.get_commit_from_tag_name(repo_dir, tag_name)
 
         # Find if tree sha already exists in a tag
         # - yes -> return existing tag, if no_change_ok = true
@@ -130,7 +129,7 @@ async def push_new_dedup_branch(
             specific_tag_name,
         )
 
-        commit = await git["get_commit_from_tag_name"](repo_dir, tag_name)
+        commit = await git.get_commit_from_tag_name(repo_dir, tag_name)
     else:
         logger.info("Existing tag containing changes to commit is present. Using it")
         logger.info("Tag name is: {0}".format(tag_name))
@@ -167,7 +166,7 @@ async def commit_push_tag(
 
     except exception.CommandError as e:
         if no_change_ok and e.exit_code == 1:
-            commit_id = await git["rev_parse"](repo_dir)
+            commit_id = await git.rev_parse(repo_dir)
         else:
             raise
 
@@ -180,7 +179,7 @@ async def commit_push_tag(
         tag_name = "repour-{commit_id}".format(**locals())
 
     # Check if tag name already exists, if so, modify tag name to <tag>-{commitid}
-    does_tag_exist = await git["is_tag"](repo_dir, tag_name)
+    does_tag_exist = await git.is_tag(repo_dir, tag_name)
 
     shorthand_commit_id = commit_id[:8]  # only show first 8 chars of commit id
 

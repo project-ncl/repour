@@ -7,7 +7,7 @@ from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
 
 from ... import exception
-from ...scm import git_provider
+from repour.lib.scm import git
 
 REQ_TIME = Summary("info_req_time", "time spent with info endpoint")
 REQ_HISTOGRAM_TIME = Histogram("info_req_histogram", "Histogram for info endpoint")
@@ -19,7 +19,7 @@ async def handle_request(request):
     version = repour.__version__
     path_name = os.path.dirname(sys.argv[0])
     try:
-        git_sha = await git_provider.git_provider()["rev_parse"](path_name)
+        git_sha = await git.rev_parse(path_name)
     except exception.CommandError:
         git_sha = "Unknown"
 
