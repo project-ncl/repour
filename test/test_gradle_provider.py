@@ -1,3 +1,4 @@
+# flake8: noqa
 import asyncio
 import tempfile
 import unittest
