@@ -8,7 +8,7 @@ from prometheus_client import Histogram, Summary
 
 from .. import asgit, asutil, clone, exception
 from ..config import config
-from ..scm import git_provider
+from repour.lib.scm import git
 from . import (
     gradle_provider,
     noop_provider,
@@ -53,7 +53,6 @@ logger = logging.getLogger(__name__)
 #
 # Each factory function takes various parameters that SHOULD be all derived from configuration.
 
-git = git_provider.git_provider()
 expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
 
@@ -86,15 +85,15 @@ async def is_sync_on(adjustspec):
 
 
 async def check_ref_exists(work_dir, ref):
-    is_tag = await git["is_tag"](work_dir, ref)
+    is_tag = await git.is_tag(work_dir, ref)
     if is_tag:
         return True
 
-    is_branch = await git["is_branch"](work_dir, ref)
+    is_branch = await git.is_branch(work_dir, ref)
     if is_branch:
         return True
 
-    is_sha = await git["does_sha_exist"](work_dir, ref)
+    is_sha = await git.does_sha_exist(work_dir, ref)
     if is_sha:
         return True
 
@@ -107,7 +106,7 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     internal_repo_url = await repo_provider(adjustspec, create=False)
     git_user = configuration.get("git_username")
 
-    await git["clone"](work_dir, adjustspec["originRepoUrl"])  # Clone origin
+    await git.clone(work_dir, adjustspec["originRepoUrl"])  # Clone origin
 
     # See NCL-4069: sometimes even with sync on, the upstream repo might not have the ref, but the downstream repo will
     # if ref exists on upstream repository, continue the sync as usual
@@ -115,12 +114,12 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # if no, then fail completely
     ref_exists = await check_ref_exists(work_dir, adjustspec["ref"])
     if ref_exists:
-        await git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
+        await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
-        await git["rename_remote"](
+        await git.rename_remote(
             work_dir, "origin", "origin_remote"
         )  # Rename origin remote
-        await git["add_remote"](
+        await git.add_remote(
             work_dir,
             "origin",
             asutil.add_username_url(internal_repo_url.readwrite, git_user),
@@ -141,7 +140,7 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
         os.makedirs(work_dir)
 
         # Clone the internal repository
-        await git["clone"](
+        await git.clone(
             work_dir, asutil.add_username_url(internal_repo_url.readwrite, git_user)
         )  # Clone origin
 
@@ -150,9 +149,7 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
             logger.info(
                 "Downstream repository has the ref, but not the upstream one. No syncing required!"
             )
-            await git["checkout"](
-                work_dir, adjustspec["ref"], force=True
-            )  # Checkout ref
+            await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
         else:
             logger.error(
                 "Both upstream and downstream repository do not have the 'ref' present. Cannot proceed"
@@ -166,7 +163,7 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # At this point the target repository might have the ref we want to sync, but the local repository might not have all the tags
     # from the target repository. We need to sync tags because we use it to know if we have tags with existing changes or if we
     # need to create tags of format <version>-<sha> if existing tag with name <version> exists after pme changes
-    await git["fetch_tags"](work_dir, remote="origin")
+    await git.fetch_tags(work_dir, remote="origin")
 
 
 @time(REQ_TIME)
@@ -200,12 +197,10 @@ async def adjust(adjustspec, repo_provider):
         else:
             git_user = c.get("git_username")
 
-            await git["clone"](
+            await git.clone(
                 work_dir, asutil.add_username_url(repo_url.readwrite, git_user)
             )  # Clone origin
-            await git["checkout"](
-                work_dir, adjustspec["ref"], force=True
-            )  # Checkout ref
+            await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
         await asgit.setup_commiter(expect_ok, work_dir)
 
