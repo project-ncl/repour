@@ -417,7 +417,7 @@ Install `poetry` in your machine.
 
 To install all the dependencies, run:
 [source,bash]
-poetry install --dev
+poetry install
 
 To add a new dependency:
 [source,bash]
