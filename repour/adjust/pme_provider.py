@@ -118,7 +118,7 @@ def get_pme_provider(
         # See: PRODTASKS-361
         repo_dir = os.path.join(repo_dir, subfolder)
         log_context_value = await util.generate_user_context()
-        log_context_parameter = ["--log-context=" + log_context_value]
+        log_context_parameter = ["-DrestHeaders=" + log_context_value]
 
         cmd = (
             [location + "java", "-jar", pme_jar_path]
