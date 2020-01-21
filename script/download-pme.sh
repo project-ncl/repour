@@ -8,7 +8,7 @@ function help {
     echo -e "\t By default use the repository at oss.sonatype.org"
 }
 
-MAVEN_CENTRAL_BASE_URL="http://repo1.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-cli"
+MAVEN_CENTRAL_BASE_URL="https://repo1.maven.org/maven2/org/commonjava/maven/ext/pom-manipulation-cli"
 
 function downloadVersionFromCentral {
   curl -Is "$MAVEN_CENTRAL_BASE_URL/$1/" | grep -q "404 Not Found"
