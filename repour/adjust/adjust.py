@@ -14,6 +14,7 @@ from .. import asutil
 from .. import clone
 from .. import exception
 from ..config import config
+from ..logs import log_util
 from ..scm import git_provider
 from prometheus_client import Summary
 from prometheus_client import Histogram
@@ -167,10 +168,14 @@ def adjust(adjustspec, repo_provider):
     if buildType not in c.get("adjust", {}):
         raise Exception("Adjust provider for \"{buildType}\" build type could not be found.".format(**locals()))
 
+    if 'taskId' in adjustspec:
+        log_util.add_update_mdc_key_value_in_task("processContext", "build-" + str(adjustspec['taskId']))
+
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
         repo_url = yield from repo_provider(adjustspec, create=False)
 
+        process_mdc("BEGIN", "SCM_CLONE")
         sync_enabled = yield from is_sync_on(adjustspec)
         if sync_enabled:
             yield from sync_external_repo(adjustspec, repo_provider, work_dir, c)
@@ -180,6 +185,9 @@ def adjust(adjustspec, repo_provider):
             yield from git["clone"](work_dir, asutil.add_username_url(repo_url.readwrite, git_user))  # Clone origin
             yield from git["checkout"](work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
+        process_mdc("END", "SCM_CLONE")
+
+        process_mdc("BEGIN", "ALIGNMENT_ADJUST")
         ### Adjust Phase ###
         yield from asgit.setup_commiter(expect_ok, work_dir)
 
@@ -252,6 +260,8 @@ def adjust(adjustspec, repo_provider):
         result = result if result is not None else {}
 
         result["adjustResultData"] = adjust_result["resultData"]
+
+        process_mdc("END", "ALIGNMENT_ADJUST")
     return result
 
 @asyncio.coroutine
@@ -277,3 +287,13 @@ Adjust Type: {adjust_type}
         specific_tag_name=specific_tag_name,
     )
     return d
+
+def process_mdc(step, name):
+    log_util.add_update_mdc_key_value_in_task("process_stage_name", name)
+    log_util.add_update_mdc_key_value_in_task("process_stage_step", step)
+
+    logger.info(step + ": " + name)
+
+    # Remove the fields now
+    log_util.remove_mdc_key_in_task("process_stage_step")
+    log_util.remove_mdc_key_in_task("process_stage_name")
