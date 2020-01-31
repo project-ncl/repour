@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import copy
 import logging
 import os
 import sys
@@ -19,6 +20,11 @@ class ContextLogRecord(logging.LogRecord):
         else:
             task = None
         if task is not None:
+            # shallow copy the mdc. this is needed since logging is async and
+            # could be sent after changes in the mdc object. So we want to
+            # capture the mdc object at the time the log was submitted, not
+            # afterwards
+            self.mdc = copy.copy(getattr(task, "mdc", {}))
             self.log_context = getattr(task, "log_context", self.no_context_found)
         else:
             self.log_context = self.no_context_found
