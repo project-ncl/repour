@@ -253,8 +253,16 @@ def configure_logging(default_level, log_path=None, verbose_count=0, quiet_count
 
         kafka_handler_obj = KafkaLoggingHandler(kafka_server,
                                                 kafka_topic,
+                                                log_preprocess=[adjust_kafka_timestamp],
                                                 ssl_cafile=kafka_cafile)
         root_logger.addHandler(kafka_handler_obj)
+
+
+def adjust_kafka_timestamp(data):
+    if data is not None and 'timestamp' in data:
+        data['@timestamp'] = data['timestamp']
+        return data
+
 
 def load_config(config_path):
     import yaml
