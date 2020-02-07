@@ -184,9 +184,21 @@ def configure_logging(
         logger_kafka.setLevel(logging.ERROR)
 
         kafka_handler_obj = KafkaLoggingHandler(
-            kafka_server, kafka_topic, ssl_cafile=kafka_cafile
+            kafka_server,
+            kafka_topic,
+            log_preprocess=[adjust_kafka_timestamp],
+            ssl_cafile=kafka_cafile,
         )
         root_logger.addHandler(kafka_handler_obj)
+
+
+def adjust_kafka_timestamp(data):
+    """
+    This is needed for the log-event-duration service to work properly
+    """
+    if data is not None and "timestamp" in data:
+        data["@timestamp"] = data["timestamp"]
+        return data
 
 
 def main():
