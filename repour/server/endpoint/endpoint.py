@@ -17,6 +17,7 @@ from prometheus_client import Counter, Histogram, Summary
 
 from ... import exception
 from ...config import config
+from repour.lib.logs import log_util
 from repour.lib.logs import file_callback_log
 from . import validation
 
@@ -100,11 +101,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         callback_id = create_callback_id()
 
         asyncio.Task.current_task().log_context = log_context
-        asyncio.Task.current_task().log_user_id = log_user_id
-        asyncio.Task.current_task().log_request_context = log_request_context
-        asyncio.Task.current_task().log_process_context = log_process_context
-        asyncio.Task.current_task().log_expires = log_expires
-        asyncio.Task.current_task().log_tmp = log_tmp
+        log_util.add_update_mdc_key_value_in_task("userId", log_user_id)
+        log_util.add_update_mdc_key_value_in_task("requestContext", log_request_context)
+        log_util.add_update_mdc_key_value_in_task("processContext", log_process_context)
+        log_util.add_update_mdc_key_value_in_task("expires", log_expires)
+        log_util.add_update_mdc_key_value_in_task("tmp", log_tmp)
         asyncio.Task.current_task().callback_id = callback_id
 
         try:
@@ -240,11 +241,15 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                                 "Authorization": request.headers["Authorization"]
                             }
                             context_headers = {
-                                "log-user-id": current_task.log_user_id,
-                                "log-request-context": current_task.log_request_context,
-                                "log-process-context": current_task.log_process_context,
-                                "log-expires": current_task.log_expires,
-                                "log_tmp": current_task.log_tmp,
+                                "log-user-id": current_task.mdc["userId"],
+                                "log-request-context": current_task.mdc[
+                                    "requestContext"
+                                ],
+                                "log-process-context": current_task.mdc[
+                                    "processContext"
+                                ],
+                                "log-expires": current_task.mdc["expires"],
+                                "log_tmp": current_task.mdc["tmp"],
                             }
                             logger.debug(
                                 "Authorization enabled, adding header to callback: "
@@ -312,11 +317,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             )
             callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
             callback_task.log_context = log_context
-            callback_task.log_user_id = log_user_id
-            callback_task.log_request_context = log_request_context
-            callback_task.log_process_context = log_process_context
-            callback_task.log_expires = log_expires
-            callback_task.log_tmp = log_tmp
+            callback_task.mdc = asyncio.Task.current_task().mdc
             callback_task.callback_id = callback_id
             # Set the task_id if provided in the request
             task_id = spec.get("taskId", None)

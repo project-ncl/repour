@@ -1,6 +1,7 @@
 # flake8: noqa
 import argparse
 import asyncio
+import copy
 import logging
 import os
 import sys
@@ -25,14 +26,12 @@ class ContextLogRecord(logging.LogRecord):
         else:
             task = None
         if task is not None:
-            self.mdc = {}
+            # shallow copy the mdc. this is needed since logging is async and
+            # could be sent after changes in the mdc object. So we want to
+            # capture the mdc object at the time the log was submitted, not
+            # afterwards
+            self.mdc = copy.copy(getattr(task, "mdc", {}))
             self.log_context = getattr(task, "log_context", self.no_context_found)
-
-            self.mdc["userId"] = getattr(task, "log_user_id", None)
-            self.mdc["requestContext"] = getattr(task, "log_request_context", None)
-            self.mdc["processContext"] = getattr(task, "log_process_context", None)
-            self.mdc["expires"] = getattr(task, "log_expires", None)
-            self.mdc["tmp"] = getattr(task, "log_tmp", None)
         else:
             self.log_context = self.no_context_found
 
