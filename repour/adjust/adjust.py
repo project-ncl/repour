@@ -9,6 +9,7 @@ from prometheus_client import Histogram, Summary
 
 from .. import asutil, clone, exception
 from ..config import config
+from repour.lib.logs import log_util
 from repour.lib.scm import git
 from repour.lib.scm import asgit
 
@@ -194,6 +195,7 @@ async def adjust(adjustspec, repo_provider):
 
         repo_url = await repo_provider(adjustspec, create=False)
 
+        process_mdc("BEGIN", "SCM_CLONE")
         sync_enabled = await is_sync_on(adjustspec)
         if sync_enabled:
             await sync_external_repo(adjustspec, repo_provider, work_dir, c)
@@ -206,7 +208,9 @@ async def adjust(adjustspec, repo_provider):
             await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
         await asgit.setup_commiter(expect_ok, work_dir)
+        process_mdc("END", "SCM_CLONE")
 
+        process_mdc("BEGIN", "ALIGNMENT_ADJUST")
         ### Adjust Phase ###
         if build_type == "MVN":
             specific_tag_name = await adjust_mvn(work_dir, c, adjustspec, adjust_result)
@@ -231,6 +235,7 @@ async def adjust(adjustspec, repo_provider):
         result = result if result is not None else {}
 
         result["adjustResultData"] = adjust_result["resultData"]
+        process_mdc("END", "ALIGNMENT_ADJUST")
     return result
 
 
@@ -430,3 +435,14 @@ Adjust Type: {adjust_type}
         specific_tag_name=specific_tag_name,
     )
     return d
+
+
+def process_mdc(step, name):
+    log_util.add_update_mdc_key_value_in_task("process_stage_name", name)
+    log_util.add_update_mdc_key_value_in_task("process_stage_step", step)
+
+    logger.info(step + ": " + name)
+
+    # Remove the fields now
+    log_util.remove_mdc_key_in_task("process_stage_step")
+    log_util.remove_mdc_key_in_task("process_stage_name")
