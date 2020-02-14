@@ -313,7 +313,6 @@ async def push_with_tags(dir, branch, config_git_user, remote="origin", tryAtomi
             + " with git. Make sure user '"
             + git_user
             + "' has push permissions to this repository",
-            stderr=None,
             cwd=dir,
             print_cmd=True,
         )
