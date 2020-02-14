@@ -310,7 +310,6 @@ def git_provider():
             yield from expect_ok(
                 cmd=["git", "push"] + (["--atomic"] if atomic else []) + options,
                 desc="Could not" + (" atomic" if atomic else "") + " push " + failure_push_msg + " with git. Make sure user '" + git_user + "' has push permissions to this repository",
-                stderr=None,
                 cwd=dir,
                 print_cmd=True
             )
