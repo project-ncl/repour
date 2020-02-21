@@ -394,13 +394,25 @@ async def rev_parse(dir, rev="HEAD"):
     return res
 
 
+async def current_branch(dir):
+    res = await expect_ok(
+        cmd=["cat", ".git/HEAD"],
+        desc="Could not get branch with git",
+        stdout="single",
+        cwd=dir,
+    )
+    return res
+
+
 async def create_branch_checkout(dir, branch_name, orphan=False):
-    await expect_ok(
+    output = await expect_ok(
         cmd=["git", "checkout", "--orphan" if orphan else "-b", branch_name],
         desc="Could not create branch with git",
+        stdout="text",
         cwd=dir,
         print_cmd=True,
     )
+    logger.info(str(output))
 
 
 async def add_all(dir):
