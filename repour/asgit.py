@@ -85,6 +85,8 @@ def push_new_dedup_branch(expect_ok, repo_dir, repo_url, operation_name, operati
     # can be used for deduplication.
     temp_branch = "repour_commitid_search_temp_branch_" + str(uuid.uuid1())
     yield from prepare_new_branch(expect_ok, repo_dir, temp_branch, orphan=orphan)
+    branch_info = yield from git["current_branch"](repo_dir)
+    logger.info("Branch is " + branch_info)
 
     if real_commit_time:
         # prepare_new_branch does a git add all, so calling git write-tree

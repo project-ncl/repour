@@ -207,6 +207,7 @@ def git_provider():
         except Exception as e:
             return False
 
+
     @asyncio.coroutine
     def is_tag(dir, ref):
         try:  # TODO improve, its ugly
@@ -385,14 +386,27 @@ def git_provider():
         )
         return res
 
+
+    @asyncio.coroutine
+    def current_branch(dir):
+        res = yield from expect_ok(
+            cmd=["cat", ".git/HEAD"],
+            desc="Could not get branch with git",
+            stdout="single",
+            cwd=dir
+        )
+        return res
+
     @asyncio.coroutine
     def create_branch_checkout(dir, branch_name, orphan=False):
-        yield from expect_ok(
+        output = yield from expect_ok(
             cmd=["git", "checkout", "--orphan" if orphan else "-b", branch_name],
             desc="Could not create branch with git",
+            stdout="text",
             cwd=dir,
             print_cmd=True
         )
+        logger.info(str(output))
 
     @asyncio.coroutine
     def add_all(dir):
@@ -650,6 +664,7 @@ def git_provider():
         "set_user_email": set_user_email,
         "commit": commit,
         "rev_parse": rev_parse,
+        "current_branch": current_branch,
         "create_branch_checkout": create_branch_checkout,
         "add_all": add_all,
         "tag_annotated": tag_annotated,
