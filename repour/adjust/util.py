@@ -115,8 +115,8 @@ def get_temp_build_timestamp(adjustspec):
 
 def get_extra_parameters(extra_adjust_parameters):
     """
-    Get the extra PME parameters from PNC
-    If the PME parameters contain '--file=<folder>/pom.xml', then extract that folder
+    Get the extra build configuration parameters from PNC
+    If the parameters contain '--file=<folder>/pom.xml', then extract that folder
     and remove that --file option from the list of extra params.
     In PME 2.11 and PME 2.12, there is a bug where that option causes the file target/pom-manip-ext-result.json
     to be badly generated. Fixed in PME 2.13+
@@ -126,7 +126,7 @@ def get_extra_parameters(extra_adjust_parameters):
     """
     subfolder = ""
 
-    paramsString = extra_adjust_parameters.get("CUSTOM_PME_PARAMETERS", None)
+    paramsString = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", None)
     if paramsString is None:
         return [], subfolder
     else:
