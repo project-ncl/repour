@@ -43,13 +43,11 @@ def get_project_manipulator_provider(
 
     async def get_extra_parameters(extra_adjust_parameters):
         """
-        Get the extra CUSTOM_PROJECT_MANIPULATOR_PARAMETERS parameters from PNC
+        Get the extra ALIGNMENT_PARAMETERS parameters from PNC
         """
         subfolder = ""
 
-        paramsString = extra_adjust_parameters.get(
-            "CUSTOM_PROJECT_MANIPULATOR_PARAMETERS", None
-        )
+        paramsString = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", None)
         if paramsString is None:
             return []
         else:

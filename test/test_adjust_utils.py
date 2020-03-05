@@ -7,21 +7,21 @@ import repour.adjust.util as util
 class TestAdjustUtil(unittest.TestCase):
     def test_util_file_option(self):
 
-        param = {"CUSTOM_PME_PARAMETERS": "-Dtest=test -f haha/pom.xml"}
+        param = {"ALIGNMENT_PARAMETERS": "-Dtest=test -f haha/pom.xml"}
 
         remaining_args, filepath = util.get_extra_parameters(param)
 
         self.assertEqual(remaining_args, ["-Dtest=test"])
         self.assertEqual(filepath, "haha/")
 
-        param_file = {"CUSTOM_PME_PARAMETERS": "--file hoho/pom.xml -Dtest=test"}
+        param_file = {"ALIGNMENT_PARAMETERS": "--file hoho/pom.xml -Dtest=test"}
 
         remaining_args, filepath = util.get_extra_parameters(param_file)
         self.assertEqual(remaining_args, ["-Dtest=test"])
         self.assertEqual(filepath, "hoho/")
 
         param_file_equal = {
-            "CUSTOM_PME_PARAMETERS": "-Dtest2=test2 --file=hihi -Dtest=test"
+            "ALIGNMENT_PARAMETERS": "-Dtest2=test2 --file=hihi -Dtest=test"
         }
 
         remaining_args, filepath = util.get_extra_parameters(param_file_equal)

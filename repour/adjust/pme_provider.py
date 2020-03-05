@@ -50,7 +50,7 @@ def get_pme_provider(
 
         return: :bool:
         """
-        paramsString = extra_adjust_parameters.get("CUSTOM_PME_PARAMETERS", None)
+        paramsString = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", None)
 
         if paramsString is None:
             return False
