@@ -21,7 +21,7 @@ MANIPULATION_FILE_NAME = "manipulation.json"
 stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
 
-def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, specific_indy_group=None, timestamp=None):
+def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, default_gradle_path, specific_indy_group=None, timestamp=None):
 
     @asyncio.coroutine
     def adjust(work_dir, extra_adjust_parameters, adjust_result):
@@ -47,10 +47,6 @@ def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, specif
 
         logger.info("Adjusting in {}".format(work_dir))
 
-        logger.info("Getting Gradle version...")
-
-        expect_ok = asutil.expect_ok_closure()
-
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
@@ -60,6 +56,9 @@ def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, specif
             location = ''
 
         target_and_init = ["--target=" + work_dir, "--init-script=" + init_file_path]
+
+        if not gradlew_path_present(work_dir):
+            target_and_init.append("-l=" + default_gradle_path)
 
         yield from util.print_java_version(java_bin_dir=location)
 
@@ -128,3 +127,6 @@ def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, specif
         return template
 
     return adjust
+
+def gradlew_path_present(work_dir):
+    return os.path.exists(os.path.join(work_dir, 'gradlew'))
