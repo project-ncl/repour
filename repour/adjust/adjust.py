@@ -218,7 +218,9 @@ def adjust(adjustspec, repo_provider):
             adjust_result = yield from gradle_provider.get_gradle_provider(
                 adjust_provider_config["gradleAnalyzerPluginInitFilePath"],
                 adjust_provider_config["gradleAnalyzerPluginJarPath"],
-                default_parameters, specific_indy_group, timestamp) \
+                default_parameters,
+                adjust_provider_config["defaultGradlePath"],
+                specific_indy_group, timestamp) \
                 (work_dir, extra_adjust_parameters, adjust_result)
 
             specific_tag_name = adjust_result["resultData"]["VersioningState"]["executionRootModified"]["version"]
