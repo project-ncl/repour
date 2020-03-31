@@ -137,18 +137,20 @@ def get_pme_provider(
             )
         )
 
-        res = await process_provider.get_process_provider(
-            execution_name,
-            cmd,
-            get_result_data=get_result_data,
-            send_log=output_to_logs,
-        )(repo_dir, extra_adjust_parameters, adjust_result)
-
         pme_disabled = is_pme_disabled_via_extra_parameters(extra_adjust_parameters)
 
         if pme_disabled:
             logger.warning("PME is disabled via extra parameters")
             await create_pme_result_file(repo_dir)
+            res = {}
+            res["adjustType"] = execution_name
+        else:
+            res = await process_provider.get_process_provider(
+                execution_name,
+                cmd,
+                get_result_data=get_result_data,
+                send_log=output_to_logs,
+            )(repo_dir, extra_adjust_parameters, adjust_result)
 
         (
             override_group_id,
