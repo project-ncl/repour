@@ -24,6 +24,7 @@ def get_gradle_provider(
     init_file_path,
     gme_jar_path,
     default_parameters,
+    default_gradle_path,
     specific_indy_group=None,
     timestamp=None,
 ):
@@ -53,12 +54,6 @@ def get_gradle_provider(
 
         logger.info("Adjusting in {}".format(work_dir))
 
-        logger.info("Getting Gradle version...")
-
-        expect_ok = asutil.expect_ok_closure()
-
-        command_gradle = get_command_gradle(work_dir)
-
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
         if jvm_version:
@@ -67,46 +62,17 @@ def get_gradle_provider(
         else:
             location = ""
 
+        await util.print_java_version(java_bin_dir=location)
+
         target_and_init = ["--target=" + work_dir, "--init-script=" + init_file_path]
 
-        await util.print_java_version(java_bin_dir=location)
+        if not gradlew_path_present(work_dir):
+            target_and_init.append("-l=" + default_gradle_path)
 
         cmd = (
             [location + "java", "-jar", gme_jar_path]
             + default_parameters
             + target_and_init
-            + temp_build_parameters
-            + extra_parameters
-        )
-
-        output = await expect_ok(
-            cmd=[command_gradle, "--version"],
-            desc="Failed getting Gradle version",
-            cwd=work_dir,
-            stdout=stdout_options["text"],
-            stderr=stderr_options["stdout"],
-            print_cmd=True,
-        )
-        logger.info(output)
-
-        if "JAVA_HOME" in env:
-            await util.print_java_version(java_bin_dir=env["JAVA_HOME"] + "/bin")
-        else:
-            await util.print_java_version()
-
-        cmd = (
-            [
-                command_gradle,
-                "--info",
-                "--console",
-                "plain",
-                "--no-daemon",
-                "--stacktrace",
-                "--init-script",
-                init_file_path,
-                "generateAlignmentMetadata",
-            ]
-            + default_parameters
             + temp_build_parameters
             + extra_parameters
         )
@@ -117,7 +83,7 @@ def get_gradle_provider(
             get_result_data=get_result_data,
             send_log=True,
             results_file=MANIPULATION_FILE_NAME,
-        )(work_dir, extra_adjust_parameters, adjust_result, env=env)
+        )(work_dir, extra_adjust_parameters, adjust_result)
 
         adjust_result["adjustType"] = result["adjustType"]
         adjust_result["resultData"] = result["resultData"]
@@ -189,3 +155,7 @@ def get_gradle_provider(
         return template
 
     return adjust
+
+
+def gradlew_path_present(work_dir):
+    return os.path.exists(os.path.join(work_dir, "gradlew"))
