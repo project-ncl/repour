@@ -290,6 +290,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
         adjust_provider_config["gradleAnalyzerPluginInitFilePath"],
         adjust_provider_config["gradleAnalyzerPluginJarPath"],
         default_parameters,
+        adjust_provider_config["defaultGradlePath"],
         specific_indy_group,
         timestamp,
     )(work_dir, extra_adjust_parameters, adjust_result)
