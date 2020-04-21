@@ -1,20 +1,24 @@
 #!/bin/bash
 
-while getopts r:b: option
+# USAGE: ./release.sh -r $release_number (release version) -b $branch (release branch) -p (push)
+
+PUSH=false
+while getopts "r:b:p" option
 do
 case "${option}"
 in
 r) RELEASE=${OPTARG};;
 b) BRANCH=${OPTARG};;
+p) PUSH=true;;
 esac
 done
+
+echo "branch: $BRANCH , release: $RELEASE, push: $PUSH"
 
 mkdir tmprelease
 cd tmprelease
 
 git clone git@github.com:project-ncl/repour.git
-
-echo "branch: $BRANCH , releae: $RELEASE"
 
 cd repour
 
@@ -59,9 +63,7 @@ printf "$oldstart\n$changes\n$oldend" > repour.wiki/Changelog.md
 
 git --git-dir=repour.wiki/.git add repour.wiki/Changelog.md && git --git-dir=repour.wiki/.git commit -m "[auto] Updated Changelog (markdown)"
 
-read -p "Push changes? (y/n)" -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]
+if [ $PUSH = true ]
 then
     git --git-dir=repour/.git push
     git --git-dir=repour.wiki/.git push
