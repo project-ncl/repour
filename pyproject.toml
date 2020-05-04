@@ -19,7 +19,7 @@ kafka-logging-handler = "^0.2.3"
 flake8 = "^3.7"
 
 [tool.poetry.dev-dependencies]
-tox = "^3.14"
+tox = "^3.15"
 
 [tool.tox]
 legacy_tox_ini = """
