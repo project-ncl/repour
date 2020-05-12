@@ -16,7 +16,7 @@ pyyaml = "^5.3"
 prometheus_client = "^0.7.1"
 prometheus_async = "^19.2"
 kafka-logging-handler = "^0.2.3"
-flake8 = "^3.7"
+flake8 = "^3.8"
 more-itertools = "^8.2.0"
 
 [tool.poetry.dev-dependencies]
