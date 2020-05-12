@@ -240,23 +240,22 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             auth_header = {
                                 "Authorization": request.headers["Authorization"]
                             }
-                            context_headers = {
-                                "log-user-id": current_task.mdc["userId"],
-                                "log-request-context": current_task.mdc[
-                                    "requestContext"
-                                ],
-                                "log-process-context": current_task.mdc[
-                                    "processContext"
-                                ],
-                                "log-expires": current_task.mdc["expires"],
-                                "log_tmp": current_task.mdc["tmp"],
-                            }
                             logger.debug(
                                 "Authorization enabled, adding header to callback: "
                                 + str(auth_header)
                             )
                             headers.update(auth_header)
-                            headers.update(context_headers)
+
+                        context_headers = {
+                            "log-user-id": current_task.mdc["userId"],
+                            "log-request-context": current_task.mdc["requestContext"],
+                            "log-process-context": current_task.mdc["processContext"],
+                            "log-expires": current_task.mdc["expires"],
+                            "log_tmp": current_task.mdc["tmp"],
+                        }
+
+                        headers.update(context_headers)
+                        headers.update({"Content-Type": "application/json"})
 
                         resp = await client_session.request(
                             callback_spec.get("method", "POST"),
