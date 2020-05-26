@@ -32,8 +32,12 @@ class ContextLogRecord(logging.LogRecord):
             # afterwards
             self.mdc = copy.copy(getattr(task, "mdc", {}))
             self.log_context = getattr(task, "log_context", self.no_context_found)
+
+            # required for bifrost for streaming logs
+            self.loggerName = getattr(task, "loggerName", self.no_context_found)
         else:
             self.log_context = self.no_context_found
+            self.loggerName = self.no_context_found
 
     def has_event_loop(self):
         try:
