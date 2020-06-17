@@ -13,6 +13,8 @@ from repour.lib.logs import log_util
 from repour.lib.scm import git
 from repour.lib.scm import asgit
 
+from repour import asutil
+
 from . import (
     gradle_provider,
     noop_provider,
@@ -183,6 +185,8 @@ async def adjust(adjustspec, repo_provider):
     adjust_result = {"adjustType": [], "resultData": {}}
 
     result = {}
+
+    verify_only_authorized_urls_used(adjustspec, c)
 
     # By default the buildType is Maven
     build_type = "MVN"
@@ -447,3 +451,32 @@ def process_mdc(step, name):
     # Remove the fields now
     log_util.remove_mdc_key_in_task("process_stage_step")
     log_util.remove_mdc_key_in_task("process_stage_name")
+
+
+def verify_only_authorized_urls_used(adjustspec, c):
+    """
+    If the alignment parameters contain non-authorized urls, an exception is thrown
+    """
+
+    authorized_url_root = c.get("adjust_authorized_url")
+
+    extra_adjust_parameters = adjustspec.get("adjustParameters", {})
+    text = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", "")
+
+    non_authorized_urls = asutil.list_non_origin_urls_from_string(
+        authorized_url_root, text
+    )
+
+    if len(non_authorized_urls) > 0:
+        logger.error(
+            "The adjust parameters contain non-authorized urls: '{}'. Url has to be from: {}".format(
+                non_authorized_urls, authorized_url_root
+            )
+        )
+        raise exception.CommandError(
+            "Non-authorized urls used in adjust parameters",
+            [],
+            10,
+            "",
+            "Non-authorized urls used in adjust parameters",
+        )

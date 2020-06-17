@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import os
+import re
 import shutil
 import tempfile
 import urllib.parse
@@ -232,3 +233,31 @@ def safe_remove_file(path):
         os.remove(path)
     except OSError:
         pass
+
+
+def list_urls_from_string(text):
+    """
+    From: https://stackoverflow.com/a/48769624/2907906
+    Modified to require the protocol (http:// or https://) to be present
+
+    It'll return a list of urls present in the string
+    """
+    return re.findall("(?:(?:https?):\/\/)[\w/\-?=%.]+\.[\w/\-?=%.]+", text)
+
+
+def list_non_origin_urls_from_string(origin_url, text):
+    """
+    Given a string, list all the urls that do not end with 'origin_url'.
+    """
+
+    result = []
+    urls = list_urls_from_string(text)
+
+    for url in urls:
+
+        url_parsed = urllib.parse.urlparse(url)
+
+        if not url_parsed.netloc.endswith(origin_url):
+            result.append(url)
+
+    return result
