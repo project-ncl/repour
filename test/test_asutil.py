@@ -131,3 +131,17 @@ class TestExpectOk(unittest.TestCase):
             loop.run_until_complete(expect_ok(["printf", self.t], stdout="single")),
             self.l[0],
         )
+
+    def test_list_non_origin_urls_from_string(self):
+
+        origin_url = "testme.com"
+        text = "-Pgmail -DgroovyScripts=http://hola.testme.com/test?bee=boo&jee=text"
+
+        self.assertEqual(
+            [], repour.asutil.list_non_origin_urls_from_string(origin_url, text)
+        )
+
+        text2 = "-Pgmail -DgroovyScripts=http://testme.booya.com?bee=boo -Dheeha=http://todo.testme.com"
+        self.assertEqual(
+            1, len(repour.asutil.list_non_origin_urls_from_string(origin_url, text2))
+        )
