@@ -418,6 +418,26 @@ def git_provider():
         )
 
     @asyncio.coroutine
+    def add_file(dir, file_path, force=False):
+        """
+        file_path  is relative to the dir
+
+        Add individual file to Git. force option provided to ignore .gitignore if needed
+        """
+        command = ["git", "add"]
+        if force:
+            command.append("-f")
+        command.append(file_path)
+
+        yield from expect_ok(
+            cmd=command,
+            desc="Could not add file with git",
+            cwd=dir,
+            print_cmd=True
+        )
+
+
+    @asyncio.coroutine
     def fetch_tags(dir, remote="origin"):
         try:
             yield from expect_ok(
@@ -667,6 +687,7 @@ def git_provider():
         "current_branch": current_branch,
         "create_branch_checkout": create_branch_checkout,
         "add_all": add_all,
+        "add_file": add_file,
         "tag_annotated": tag_annotated,
         "write_tree": write_tree,
         "get_tag_from_tree_sha": get_tag_from_tree_sha,
