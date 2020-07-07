@@ -10,6 +10,9 @@ from string import Template
 from . import process_provider
 from . import util
 from .. import asutil
+from ..scm import git_provider
+
+git = git_provider.git_provider()
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +72,10 @@ def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, defaul
                                                                   cmd,
                                                                   get_result_data=get_result_data,
                                                                   send_log=True)(work_dir, extra_adjust_parameters, adjust_result)
+
+        if gme_repos_dot_gradle_present(work_dir):
+            logger.info("Explicitly adding file {}".format(os.path.join(work_dir, 'gradle', 'gme-repos.gradle')))
+            yield from git["add_file"](work_dir, os.path.join('gradle', 'gme-repos.gradle'), force=True)
 
         return result
 
@@ -130,3 +137,7 @@ def get_gradle_provider(init_file_path, gme_jar_path, default_parameters, defaul
 
 def gradlew_path_present(work_dir):
     return os.path.exists(os.path.join(work_dir, 'gradlew'))
+
+
+def gme_repos_dot_gradle_present(work_dir):
+    return os.path.exists(os.path.join(work_dir, 'gradle', 'gme-repos.gradle'))
