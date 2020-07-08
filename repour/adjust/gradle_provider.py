@@ -8,6 +8,7 @@ from string import Template
 
 from .. import asutil
 from . import process_provider, util
+from repour.lib.scm import git
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,16 @@ def get_gradle_provider(
             results_file=MANIPULATION_FILE_NAME,
         )(work_dir, extra_adjust_parameters, adjust_result)
 
+        if gme_repos_dot_gradle_present(work_dir):
+            logger.info(
+                "Explicitly adding file {}".format(
+                    os.path.join(work_dir, "gradle", "gme-repos.gradle")
+                )
+            )
+            await git.add_file(
+                work_dir, os.path.join("gradle", "gme-repos.gradle"), force=True
+            )
+
         adjust_result["adjustType"] = result["adjustType"]
         adjust_result["resultData"] = result["resultData"]
 
@@ -159,3 +170,7 @@ def get_gradle_provider(
 
 def gradlew_path_present(work_dir):
     return os.path.exists(os.path.join(work_dir, "gradlew"))
+
+
+def gme_repos_dot_gradle_present(work_dir):
+    return os.path.exists(os.path.join(work_dir, "gradle", "gme-repos.gradle"))
