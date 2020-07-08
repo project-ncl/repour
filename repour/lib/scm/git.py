@@ -424,6 +424,21 @@ async def add_all(dir):
     )
 
 
+async def add_file(dir, file_path, force=False):
+    """
+    file_path  is relative to the dir
+    Add individual file to Git. force option provided to ignore .gitignore if needed
+    """
+    command = ["git", "add"]
+    if force:
+        command.append("-f")
+    command.append(file_path)
+
+    await expect_ok(
+        cmd=command, desc="Could not add file with git", cwd=dir, print_cmd=True
+    )
+
+
 async def fetch_tags(dir, remote="origin"):
     try:
         await expect_ok(
