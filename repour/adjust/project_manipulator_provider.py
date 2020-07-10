@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def get_project_manipulator_provider(
     execution_name, jar_path, default_parameters, specific_indy_group, timestamp
 ):
-    async def get_result_data(work_dir, results_file=None):
+    async def get_result_data(work_dir, extra_parameters, results_file=None):
 
         raw_result_data = "{}"
         if results_file:

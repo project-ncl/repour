@@ -23,7 +23,7 @@ def get_pme_provider(
     timestamp=None,
 ):
     async def get_result_data(
-        work_dir, group_id=None, artifact_id=None, results_file=None
+        work_dir, extra_parameters, group_id=None, artifact_id=None, results_file=None
     ):
 
         if results_file:
@@ -32,16 +32,19 @@ def get_pme_provider(
             result_file_path_pom_manip = work_dir + "/target/pom-manip-ext-result.json"
             result_file_path_manipulation = work_dir + "/target/manipulation.json"
 
+        pme_and_extra_params = pme_parameters.copy()
+        pme_and_extra_params.extend(extra_parameters)
+
         if os.path.isfile(result_file_path_manipulation):
             with open(result_file_path_manipulation, "r") as file:
                 return parse_pme_result_manipulation_format(
-                    work_dir, pme_parameters, file.read(), group_id, artifact_id
+                    work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
                 )
 
         elif os.path.isfile(result_file_path_pom_manip):
             with open(result_file_path_pom_manip, "r") as file:
                 return parse_pme_result_pom_manip_ext_result_format(
-                    work_dir, pme_parameters, file.read(), group_id, artifact_id
+                    work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
                 )
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
@@ -156,7 +159,7 @@ def get_pme_provider(
         ) = await get_extra_param_execution_root_name(extra_adjust_parameters)
 
         adjust_result["resultData"] = await get_result_data(
-            repo_dir, override_group_id, override_artifact_id
+            repo_dir, extra_parameters, override_group_id, override_artifact_id
         )
         return res
 

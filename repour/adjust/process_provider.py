@@ -73,7 +73,7 @@ def get_process_provider(
 
         adjust_result_data["adjustType"] = execution_name
         adjust_result_data["resultData"] = await get_result_data(
-            repo_dir, results_file=results_file
+            repo_dir, extra_adjust_parameters, results_file=results_file
         )
         return adjust_result_data
 
