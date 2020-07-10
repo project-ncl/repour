@@ -101,7 +101,7 @@ def get_gradle_provider(
 
         return result
 
-    async def get_result_data(work_dir, results_file=None):
+    async def get_result_data(work_dir, extra_parameters, results_file=None):
         """ Read the manipulation.json file and return it as an object
 
         Format is:
