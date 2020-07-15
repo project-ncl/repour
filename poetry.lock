@@ -378,7 +378,7 @@ description = "tox is a generic virtualenv management and test command line tool
 name = "tox"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
-version = "3.16.1"
+version = "3.17.0"
 
 [package.dependencies]
 colorama = ">=0.4.1"
@@ -475,7 +475,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "5763a26870f6f72d0415799a73c8d66d5b51200ae238321ae2fd611d9cdb2805"
+content-hash = "f749c47ac3e8518323fd4a420ed89c98c333795d9cc1e12020b963ed8aeb7b36"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -659,8 +659,8 @@ toml = [
     {file = "toml-0.10.0.tar.gz", hash = "sha256:229f81c57791a41d65e399fc06bf0848bab550a9dfd5ed66df18ce5f05e73d5c"},
 ]
 tox = [
-    {file = "tox-3.16.1-py2.py3-none-any.whl", hash = "sha256:60c3793f8ab194097ec75b5a9866138444f63742b0f664ec80be1222a40687c5"},
-    {file = "tox-3.16.1.tar.gz", hash = "sha256:9a746cda9cadb9e1e05c7ab99f98cfcea355140d2ecac5f97520be94657c3bc7"},
+    {file = "tox-3.17.0-py2.py3-none-any.whl", hash = "sha256:df4e418bee73acf258dcba1b1d9c6af0caea5d9105005ecf1b10a9a45c91dbdc"},
+    {file = "tox-3.17.0.tar.gz", hash = "sha256:1abf2ff7add9fabe95848af14cfe3c412361bef1ce52f7ceb4ff88d289e306ac"},
 ]
 typing-extensions = [
     {file = "typing_extensions-3.7.4.2-py2-none-any.whl", hash = "sha256:f8d2bd89d25bc39dabe7d23df520442fa1d8969b82544370e03d88b5a591c392"},
