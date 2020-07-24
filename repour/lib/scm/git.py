@@ -170,6 +170,31 @@ async def add_remote(dir, name, url):
     )
 
 
+async def rm(dir, path_in_repository, cached=False):
+    """
+    git rm a path in git
+
+    Parameters:
+    - dir: git repository location
+    - path_in_repository is relative to the repository.
+    - cached: remove from cache or not
+    """
+
+    command = ["git", "rm"]
+
+    if cached:
+        command.append("--cached")
+
+    command.append(path_in_repository)
+
+    await expect_ok(
+        cmd=command,
+        cwd=dir,
+        desc="Could not remove {} with git.".format(dir),
+        print_cmd=True,
+    )
+
+
 async def does_sha_exist(dir, ref):
     try:
         await expect_ok(
@@ -701,3 +726,15 @@ async def list_branches(dir):
         print_cmd=True,
     )
     return list(filter(None, [a.strip() for a in branches.split("\n")]))
+
+
+async def submodule_update_init(dir):
+    """
+    Run 'git submodule update --init' to initialize the git submodules
+    """
+    await expect_ok(
+        cmd=["git", "submodule", "update", "--init"],
+        cwd=dir,
+        desc="Could not initiate submodules with git in path {}.".format(dir),
+        print_cmd=True,
+    )

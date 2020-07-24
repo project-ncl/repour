@@ -1,4 +1,6 @@
+import configparser
 import logging
+import os
 import uuid
 
 from repour import exception
@@ -232,3 +234,68 @@ async def commit_push_tag(
 
     logger.info("Pushed to repo: tag {tag_name}".format(**locals()))
     return tag_name
+
+
+async def transform_git_submodule_into_fat_repository(work_dir):
+    """
+    Given the git repository, check if it's using git submodules.
+
+    If it is, then keep the git submodule content, but push it as part of the parent repository
+    rather than as a git submodule. We're effectively building a fat repository.
+
+    Instructions: https://www.atlassian.com/git/articles/core-concept-workflows-and-tips
+    (Section How do I integrate a submodule back into my project?)
+    """
+    git_submodule_file = os.path.join(work_dir, ".gitmodules")
+
+    if not os.path.exists(git_submodule_file):
+        return
+
+    logger.info(
+        "Repository {} is using git submodules. Transforming it into a fat repository".format(
+            work_dir
+        )
+    )
+    await git.submodule_update_init(work_dir)
+
+    submodule_locations = find_submodule_locations(git_submodule_file)
+
+    for location in submodule_locations:
+        # Step 1: remove all the submodule locations from cache
+        await git.rm(work_dir, location, cached=True)
+
+        # Step 2: remove all .git file (it's a file for submodule) in the submodule locations if present
+        logger.info("Removing .git folder inside the submodule " + location)
+        os.remove(os.path.join(work_dir, location, ".git"))
+
+        # Step 3: git add the submodule path
+        await git.add_file(work_dir, location)
+
+    # Step 4: remove the .gitmodules file
+    await git.rm(work_dir, ".gitmodules")
+
+    # Step 5: git commit the changes
+    await git.commit(
+        work_dir, "Removing submodules and transforming into fat repository"
+    )
+
+
+def find_submodule_locations(git_submodule_file):
+    """
+    Given a submodule file, parse it to extract the various submodule locations (paths) in the repository
+
+    Parameters:
+    - git_submodule_file
+
+    Return: list<str>: locations of submoduled in the repository
+    """
+    submodule_locations = []
+
+    config = configparser.ConfigParser()
+    config.read(git_submodule_file)
+
+    for section in config.sections():
+        if "path" in config[section]:
+            submodule_locations.append(config[section]["path"])
+
+    return submodule_locations
