@@ -85,6 +85,7 @@ async def clone(clonespec, repo_provider):
 
 
 async def clone_git(clonespec):
+    """ Note: we ignore transforming git submodules into fat repository here since we'll rewrite history for the branch if we do that """
     with asutil.TemporaryDirectory(suffix="git") as clone_dir:
 
         c = await config.get_configuration()

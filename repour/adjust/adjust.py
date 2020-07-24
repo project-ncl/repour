@@ -212,6 +212,7 @@ async def adjust(adjustspec, repo_provider):
             await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
         await asgit.setup_commiter(expect_ok, work_dir)
+        await asgit.transform_git_submodule_into_fat_repository(work_dir)
         process_mdc("END", "SCM_CLONE")
 
         process_mdc("BEGIN", "ALIGNMENT_ADJUST")
