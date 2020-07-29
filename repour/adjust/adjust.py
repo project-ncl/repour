@@ -287,7 +287,9 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
                 )
             )
 
-    default_parameters = adjust_provider_config.get("defaultParameters", [])
+    default_parameters = adjust_provider_config.get(
+        "defaultParameters", []
+    ) + get_default_alignment_parameters(adjustspec)
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
     result = await gradle_provider.get_gradle_provider(
@@ -339,18 +341,31 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 specific_indy_group,
             ) = await handle_temp_build(adjustspec, adjust_provider_config)
 
+            # default PME parameters
             pme_parameters = adjust_provider_config.get("defaultParameters", [])
+
+            # path of repour settings.xml for permanent builds
             default_settings_parameters = adjust_provider_config.get(
                 "defaultSettingsParameters", []
             )
+
+            # path of repour settings.xml for temporary builds
             temporary_settings_parameters = adjust_provider_config.get(
                 "temporarySettingsParameters", []
             )
 
             if temp_build_enabled:
-                pme_parameters = temporary_settings_parameters + pme_parameters
+                pme_parameters = (
+                    temporary_settings_parameters
+                    + pme_parameters
+                    + get_default_alignment_parameters(adjustspec)
+                )
             else:
-                pme_parameters = default_settings_parameters + pme_parameters
+                pme_parameters = (
+                    default_settings_parameters
+                    + pme_parameters
+                    + get_default_alignment_parameters(adjustspec)
+                )
 
             await pme_provider.get_pme_provider(
                 execution_name,
@@ -385,7 +400,9 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
     adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
-    default_parameters = adjust_provider_config.get("defaultParameters", [])
+    default_parameters = adjust_provider_config.get(
+        "defaultParameters", []
+    ) + get_default_alignment_parameters(adjustspec)
 
     temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(
         adjustspec, adjust_provider_config
@@ -480,3 +497,19 @@ def verify_only_authorized_urls_used(adjustspec, c):
             "",
             "Non-authorized urls used in adjust parameters",
         )
+
+
+def get_default_alignment_parameters(adjustspec):
+    """
+    Helper method to extract default alignment parameters as passed in spec and return values in a list.
+
+    for e.g if the params is passed as "key=value key2=value2", then the returned list will be:
+        ["key=value", "key2=value2"]
+    """
+
+    default_alignment_parameters = []
+
+    if "defaultAlignmentParams" in adjustspec:
+        default_alignment_parameters = adjustspec["defaultAlignmentParams"].split()
+
+    return default_alignment_parameters
