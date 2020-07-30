@@ -509,7 +509,10 @@ def get_default_alignment_parameters(adjustspec):
 
     default_alignment_parameters = []
 
-    if "defaultAlignmentParams" in adjustspec:
+    if (
+        "defaultAlignmentParams" in adjustspec
+        and adjustspec["defaultAlignmentParams"] is not None
+    ):
         default_alignment_parameters = adjustspec["defaultAlignmentParams"].split()
 
     return default_alignment_parameters
