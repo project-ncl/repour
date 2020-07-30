@@ -54,7 +54,7 @@ adjust_raw = {
     Optional("tempBuildTimestamp"): null_or_str,
     Optional("taskId"): null_or_str,
     Optional("buildType"): nonempty_str,
-    Optional("defaultAlignmentParams"): nonempty_str,
+    Optional("defaultAlignmentParams"): Any(None, str),
 }
 
 adjust = Schema(adjust_raw, required=True, extra=False)
