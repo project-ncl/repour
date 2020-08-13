@@ -154,6 +154,18 @@ def get_jvm_from_extra_parameters(extra_parameters):
         return None
 
 
+def get_param_value(name, params1, params2=[]):
+    """
+    Searches for the given param name in given arrays and returns the value of the first occurence. The param name must
+    match completely, so you have to pass it along with "-D" if it is in the arrays.
+    """
+    for params in [params1, params2]:
+        for param in params:
+            if param.startswith(name + "="):
+                return param.replace(name + "=", "")
+    return None
+
+
 async def print_java_version(java_bin_dir=""):
 
     if java_bin_dir and java_bin_dir.endswith("/"):
