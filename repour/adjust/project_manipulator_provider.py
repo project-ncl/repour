@@ -65,17 +65,21 @@ def get_project_manipulator_provider(
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
 
+        extra_parameters = await get_extra_parameters(extra_adjust_parameters)
+
         temp_build_parameters = []
 
         if timestamp:
+            orig_inc_suffix = util.get_param_value(
+                "-DversionIncrementalSuffix", extra_parameters, default_parameters
+            )
+            temp_suffix = ("-" + orig_inc_suffix) if orig_inc_suffix else ""
             temp_build_parameters.append(
-                "-DversionIncrementalSuffix=" + timestamp + "-redhat"
+                "-DversionIncrementalSuffix=" + timestamp + temp_suffix
             )
 
         if specific_indy_group:
             temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
-
-        extra_parameters = await get_extra_parameters(extra_adjust_parameters)
 
         filename = tempfile.NamedTemporaryFile(delete=False).name
 
