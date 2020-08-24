@@ -182,7 +182,7 @@ description = "A Python logging handler library for Kafka consumers."
 name = "kafka-logging-handler"
 optional = false
 python-versions = "*"
-version = "0.2.3"
+version = "0.2.4"
 
 [package.dependencies]
 kafka-python = "*"
@@ -475,7 +475,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "2544eeb01165627af83ed02c56caf212f78dfcb420df1bee6f835414a318069c"
+content-hash = "f0c3a8c87d723a53bbbd195245f8ae7f39e26f6adca7db63863e2ed7412c4725"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -544,11 +544,7 @@ importlib-resources = [
     {file = "importlib_resources-1.5.0.tar.gz", hash = "sha256:6f87df66833e1942667108628ec48900e02a4ab4ad850e25fbf07cb17cf734ca"},
 ]
 kafka-logging-handler = [
-    {file = "kafka-logging-handler-0.2.3.tar.gz", hash = "sha256:c2bd3e2b1a9720e08e0cdfe2fa8a6a7b527caffb2219d31c3d8f79573681c02b"},
-    {file = "kafka_logging_handler-0.2.3-py2-none-any.whl", hash = "sha256:acf78bfdd2968ea3f43d23ac2f0f65194aecc3d6e409a8b3f902e40b7228780c"},
-    {file = "kafka_logging_handler-0.2.3-py2.7.egg", hash = "sha256:e866475ba9a0729830783745816d955af1688e7e4982bbf2be1a19138cf74dd7"},
-    {file = "kafka_logging_handler-0.2.3-py3-none-any.whl", hash = "sha256:b90d0eb785aabe9bb6a566e36cda2321b696e3c35a67200cc9a84684871d0305"},
-    {file = "kafka_logging_handler-0.2.3-py3.6.egg", hash = "sha256:516b95edb8cceb26d8962e699c0dfdb8547cd7ceeb4d0bdcc2175fef1bd07f5a"},
+    {file = "kafka-logging-handler-0.2.4.tar.gz", hash = "sha256:77056404331236eae399e0df322944df5c3ff5af13f0205057a5514224a1a629"},
 ]
 kafka-python = [
     {file = "kafka-python-2.0.1.tar.gz", hash = "sha256:e59ad42dec8c7d54e3fbba0c1f8b54c44d92a3392d88242962d0c29803f2f6f8"},
