@@ -17,7 +17,7 @@ prometheus_client = "^0.8.0"
 prometheus_async = "^19.2"
 kafka-logging-handler = "^0.2.4"
 flake8 = "^3.8"
-more-itertools = "^8.4.0"
+more-itertools = "^8.5.0"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.18"
