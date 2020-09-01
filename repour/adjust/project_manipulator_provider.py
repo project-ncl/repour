@@ -6,7 +6,7 @@ import shlex
 import tempfile
 
 from .. import exception
-from . import process_provider
+from . import process_provider, util
 
 logger = logging.getLogger(__name__)
 
