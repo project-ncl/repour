@@ -117,6 +117,14 @@ version = "*"
 
 [[package]]
 category = "main"
+description = "A Git URL parsing module (supports parsing and rewriting)"
+name = "giturlparse"
+optional = false
+python-versions = "*"
+version = "0.9.2"
+
+[[package]]
+category = "main"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
@@ -471,7 +479,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "0f90f925ad1d7be1e96dee477026d26215b03f7f940e03983b35560377198602"
+content-hash = "94ecd5a4eaf3eeb41f549b2db6b2c855f6244c0a34ec4f9aa6e00ae9bab6eeae"
 lock-version = "1.0"
 python-versions = "^3.6"
 
@@ -524,6 +532,10 @@ filelock = [
 flake8 = [
     {file = "flake8-3.8.3-py2.py3-none-any.whl", hash = "sha256:15e351d19611c887e482fb960eae4d44845013cc142d42896e9862f775d8cf5c"},
     {file = "flake8-3.8.3.tar.gz", hash = "sha256:f04b9fcbac03b0a3e58c0ab3a0ecc462e023a9faf046d57794184028123aa208"},
+]
+giturlparse = [
+    {file = "giturlparse-0.9.2-py2.py3-none-any.whl", hash = "sha256:8025143dd297122d8ecf96006f85a9e81c3c491b0ec5eebbba608488edbb289b"},
+    {file = "giturlparse-0.9.2.tar.gz", hash = "sha256:7d923e9f4fa60b112cd306a19f5b4fe221a6f5fa9f34b48e6607e54ab7909cd4"},
 ]
 idna = [
     {file = "idna-2.9-py2.py3-none-any.whl", hash = "sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa"},
