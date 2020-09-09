@@ -133,3 +133,22 @@ class TestServerConfig(unittest.TestCase):
             },
         }
         self.assertEqual(valid, validation.server_config(valid))
+
+class TestClone(unittest.TestCase):
+    def test_clone_validation(self):
+        valid = {
+            'type': 'git', 
+            'ref': None,
+            'originRepoUrl': 'http://github.com/project-ncl/repour.git', 
+            'targetRepoUrl': 'git+ssh://gerrit.com/project-ncl/repour.git'
+            }
+        self.assertEqual(valid, validation.clone(valid))    
+    def test_clone_validation_with_git_scp_url(self):
+        valid = {
+            'type': 'git', 
+            'ref': None,
+            'originRepoUrl': 'git@github.com:project-ncl/repour.git', 
+            'targetRepoUrl': 'git+ssh://gerrit.com/project-ncl/repour.git'
+            }
+        self.assertEqual(valid, validation.clone(valid))
+    

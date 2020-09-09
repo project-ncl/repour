@@ -5,6 +5,18 @@ from voluptuous import *
 
 from ...adjust import adjust as adjustmodule
 from ... import repo
+from giturlparse import validate as validate_git_url
+
+
+@message("expected a GitUrl", cls=UrlInvalid)
+def GitUrl(value):
+    """ Validates whether passed value is valid url for git
+        If the value is invalid, the method raises an Exception
+    """
+    t = validate_git_url(value)
+    if not t:
+        raise ValueError
+    return value
 
 
 def mode_b_ify(raw):
@@ -72,8 +84,8 @@ external_to_internal = Schema(
 clone_raw = {
     "type": "git",  # only git supported for now
     Optional("ref"): null_or_str,
-    "originRepoUrl": Url(),
-    "targetRepoUrl": Url(),
+    "originRepoUrl": Any(Url(), GitUrl()),  # pylint: disable=no-value-for-parameter
+    "targetRepoUrl": Url(),  # pylint: disable=no-value-for-parameter
     Optional("callback"): callback_raw,
 }
 
