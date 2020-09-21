@@ -10,7 +10,7 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = "^3.6"
 aiohttp = "^3.6"
-voluptuous = "^0.11.7"
+voluptuous = "^0.12.0"
 python-jose = "^3.2"
 pyyaml = "^5.3"
 prometheus_client = "^0.8.0"
