@@ -113,16 +113,19 @@ def get_temp_build_timestamp(adjustspec):
         return None
 
 
-def get_extra_parameters(extra_adjust_parameters):
+def get_extra_parameters(extra_adjust_parameters, flags=("-f", "--file")):
     """
     Get the extra build configuration parameters from PNC
-    If the parameters contain '--file=<folder>/pom.xml', then extract that folder
-    and remove that --file option from the list of extra params.
+    If the parameters contain '<flag>=<folder>/pom.xml', then extract that folder
+    and remove that <flag> option from the list of extra params.
     In PME 2.11 and PME 2.12, there is a bug where that option causes the file target/pom-manip-ext-result.json
     to be badly generated. Fixed in PME 2.13+
     See: PRODTASKS-361
-    Returns: tuple<list<string>, string>: list of params(minus the --file option), and folder where to run PME
-    If '--file' option not used, the folder will be an empty string
+
+    'flags' (:tuple:) specify which options to check for the extra parameters. By default it is '-f' and '--file', but can be adjusted
+
+    Returns: tuple<list<string>, string>: list of params(minus the <flag> option), and folder where to run PME
+    If '<flag>' option not used, the folder will be an empty string
     """
     subfolder = ""
 
@@ -132,11 +135,14 @@ def get_extra_parameters(extra_adjust_parameters):
     else:
 
         parser = argparse.ArgumentParser()
-        parser.add_argument("-f", "--file")
+        parser.add_argument(*flags)
         (options, remaining_args) = parser.parse_known_args(paramsString.split())
 
-        if options.file is not None:
-            subfolder = options.file.replace("pom.xml", "")
+        # remove any leading dash
+        option_title = re.sub(r"^-*", "", flags[-1])
+
+        if getattr(options, option_title) is not None:
+            subfolder = getattr(options, option_title).replace("pom.xml", "")
 
         return remaining_args, subfolder
 

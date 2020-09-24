@@ -49,7 +49,9 @@ def get_gradle_provider(
         if specific_indy_group:
             temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
 
-        extra_parameters, subfolder = util.get_extra_parameters(extra_adjust_parameters)
+        extra_parameters, subfolder = util.get_extra_parameters(
+            extra_adjust_parameters, flags=("-t", "--target")
+        )
 
         work_dir = os.path.join(work_dir, subfolder)
 
