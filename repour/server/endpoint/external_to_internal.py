@@ -44,7 +44,7 @@ async def translate_external_to_internal(external_git_url):
     scheme = result.scheme
     path = result.path
 
-    acceptable_schemes = ["https", "git", "git+ssh", "ssh"]
+    acceptable_schemes = ["https", "http", "git", "git+ssh", "ssh"]
 
     if scheme == "":
         raise Exception("Scheme in url is empty! Error!")
