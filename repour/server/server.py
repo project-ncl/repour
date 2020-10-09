@@ -49,6 +49,10 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
         shutdown_callbacks, validation.adjust_modeb, adjust.adjust, repour_url
     )
 
+    internal_scm_source = endpoint.validated_json_endpoint(
+        shutdown_callbacks, validation.internal_scm, internal_scm.internal_scm, repour_url
+    )
+
     logger.debug("Setting up handlers")
     app.router.add_route("GET", "/", info.handle_request)
     app.router.add_route(
@@ -64,6 +68,7 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     )
 
     app.router.add_route("POST", "/adjust", adjust_source)
+    app.router.add_route("POST", "/internal-scm", internal_scm_source)
     app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
     app.router.add_route("GET", "/metrics", aio.web.server_stats)

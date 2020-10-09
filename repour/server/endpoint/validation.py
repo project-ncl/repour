@@ -77,6 +77,16 @@ external_to_internal = Schema(
     {"external_url": nonempty_str}, required=True, extra=False
 )
 
+internal_scm = Schema(
+    {
+        "project": nonempty_noblank_str,
+        "owner_groups": [nonempty_noblank_str],
+        Optional("description"): null_or_str,
+        Optional("parent_project") : null_or_str,
+        Optional("callback"): callback_raw,
+    }
+)
+
 #
 # Clone
 #
