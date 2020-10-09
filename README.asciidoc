@@ -320,6 +320,69 @@ The response will contain the resulting ref name.
 |===
 
 
+=== Internal SCM creation
+
+Create a SCM repository on Gerrit.
+
+[cols="h,6a"]
+|===
+|URL
+|/internal-scm
+
+|Request
+|[cols="h,4a"]
+!===
+!Method
+!POST
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "project": nonempty_noblank_str,
+    "owner_groups": [nonempty_noblank_str],
+    Optional("description"): null_or_str,
+    Optional("parent_project"): null_or_str,
+    Optional("callback"): callback_raw,
+}
+
+!===
+
+|Response (Success)
+|[cols="h,4a"]
+!===
+!Status
+!200
+
+!Content-Type
+!application/json
+
+!Body (Schema)
+![source,python]
+{
+    "status": "SUCCESS_CREATED",
+    "readonly_url": "http://haha/project.git",
+    "readwrite_url": "git+ssh://haha/project.git",
+}
+# ^^ if created
+{
+    "status": "SUCCESS_ALREADY_EXISTS",
+    "readonly_url": "http://haha/project.git",
+    "readwrite_url": "git+ssh://haha/project.git",
+}
+# ^^ if already exists
+{
+    "error_traceback": "id",
+    "error_type": "error type",
+    "log": "everything went wrong"
+}
+# ^^ if failure, returns status 500
+!===
+|===
+
+
 === Callback mode
 
 All endpoints can operate in callback mode, which is activated by defining the optional `callback` parameter. In this mode an immediate response is given instead of waiting for the required processing to complete.
