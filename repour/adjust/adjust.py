@@ -288,15 +288,15 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
                 )
             )
 
-    default_parameters = adjust_provider_config.get(
-        "defaultParameters", []
-    ) + get_default_alignment_parameters(adjustspec)
+    repour_parameters = adjust_provider_config.get("defaultParameters", [])
+    default_parameters = get_default_alignment_parameters(adjustspec)
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
     result = await gradle_provider.get_gradle_provider(
         adjust_provider_config["gradleAnalyzerPluginInitFilePath"],
         adjust_provider_config["gradleAnalyzerPluginJarPath"],
         default_parameters,
+        repour_parameters,
         adjust_provider_config["defaultGradlePath"],
         specific_indy_group,
         timestamp,
@@ -342,8 +342,8 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 specific_indy_group,
             ) = await handle_temp_build(adjustspec, adjust_provider_config)
 
-            # default PME parameters
-            pme_parameters = adjust_provider_config.get("defaultParameters", [])
+            # unrewritable repour PME parameters
+            repour_parameters = adjust_provider_config.get("defaultParameters", [])
 
             # path of repour settings.xml for permanent builds
             default_settings_parameters = adjust_provider_config.get(
@@ -358,13 +358,11 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
             if temp_build_enabled:
                 pme_parameters = (
                     temporary_settings_parameters
-                    + pme_parameters
                     + get_default_alignment_parameters(adjustspec)
                 )
             else:
                 pme_parameters = (
                     default_settings_parameters
-                    + pme_parameters
                     + get_default_alignment_parameters(adjustspec)
                 )
 
@@ -372,6 +370,7 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 execution_name,
                 adjust_provider_config["cliJarPathAbsolute"],
                 pme_parameters,
+                repour_parameters,
                 adjust_provider_config.get("outputToLogs", False),
                 specific_indy_group,
                 timestamp,
@@ -401,9 +400,10 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
     adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
-    default_parameters = adjust_provider_config.get(
-        "defaultParameters", []
-    ) + get_default_alignment_parameters(adjustspec)
+    # unrewritable repour project-manipulator parameters
+    repour_parameters = adjust_provider_config.get("defaultParameters", [])
+    # default project-manipulator parameters from build config
+    default_parameters = get_default_alignment_parameters(adjustspec)
 
     temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(
         adjustspec, adjust_provider_config
@@ -413,6 +413,7 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
         execution_name,
         adjust_provider_config["cliJarPathAbsolute"],
         default_parameters,
+        repour_parameters,
         specific_indy_group,
         timestamp,
     )(work_dir, extra_adjust_parameters, adjust_result)

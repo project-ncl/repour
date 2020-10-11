@@ -25,6 +25,7 @@ def get_gradle_provider(
     init_file_path,
     gme_jar_path,
     default_parameters,
+    repour_parameters,
     default_gradle_path,
     specific_indy_group=None,
     timestamp=None,
@@ -76,8 +77,9 @@ def get_gradle_provider(
             [location + "java", "-jar", gme_jar_path]
             + default_parameters
             + target_and_init
-            + temp_build_parameters
             + extra_parameters
+            + repour_parameters
+            + temp_build_parameters
         )
 
         result = await process_provider.get_process_provider(

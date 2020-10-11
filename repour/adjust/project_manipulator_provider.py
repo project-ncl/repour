@@ -12,7 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_project_manipulator_provider(
-    execution_name, jar_path, default_parameters, specific_indy_group, timestamp
+    execution_name,
+    jar_path,
+    default_parameters,
+    repour_parameters,
+    specific_indy_group,
+    timestamp,
 ):
     async def get_result_data(work_dir, extra_parameters, results_file=None):
 
@@ -71,7 +76,10 @@ def get_project_manipulator_provider(
 
         if timestamp:
             orig_inc_suffix = util.get_param_value(
-                "-DversionIncrementalSuffix", extra_parameters, default_parameters
+                "-DversionIncrementalSuffix",
+                repour_parameters,
+                extra_parameters,
+                default_parameters,
             )
             temp_suffix = ("-" + orig_inc_suffix) if orig_inc_suffix else ""
             temp_build_parameters.append(
@@ -86,8 +94,9 @@ def get_project_manipulator_provider(
         cmd = (
             ["java", "-jar", jar_path]
             + default_parameters
-            + temp_build_parameters
             + extra_parameters
+            + repour_parameters
+            + temp_build_parameters
             + ["--result=" + filename]
         )
 
