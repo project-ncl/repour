@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 def get_pme_provider(
     execution_name,
     pme_jar_path,
-    pme_parameters,
+    default_parameters,
+    repour_parameters,
     output_to_logs=False,
     specific_indy_group=None,
     timestamp=None,
@@ -32,8 +33,9 @@ def get_pme_provider(
             result_file_path_pom_manip = work_dir + "/target/pom-manip-ext-result.json"
             result_file_path_manipulation = work_dir + "/target/manipulation.json"
 
-        pme_and_extra_params = pme_parameters.copy()
+        pme_and_extra_params = default_parameters.copy()
         pme_and_extra_params.extend(extra_parameters)
+        pme_and_extra_params.extend(repour_parameters)
 
         if os.path.isfile(result_file_path_manipulation):
             with open(result_file_path_manipulation, "r") as file:
@@ -125,9 +127,10 @@ def get_pme_provider(
 
         cmd = (
             [location + "java", "-jar", pme_jar_path]
-            + pme_parameters
-            + temp_build_parameters
+            + default_parameters
             + extra_parameters
+            + repour_parameters
+            + temp_build_parameters
             + log_context_parameter
         )
 
