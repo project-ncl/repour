@@ -87,7 +87,7 @@ def get_project_manipulator_provider(
             )
 
         if specific_indy_group:
-            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
+            temp_build_parameters.append("-DrepositoryGroup=" + specific_indy_group)
 
         filename = tempfile.NamedTemporaryFile(delete=False).name
 
