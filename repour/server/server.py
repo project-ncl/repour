@@ -50,7 +50,10 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     )
 
     internal_scm_source = endpoint.validated_json_endpoint(
-        shutdown_callbacks, validation.internal_scm, internal_scm.internal_scm, repour_url
+        shutdown_callbacks,
+        validation.internal_scm,
+        internal_scm.internal_scm,
+        repour_url,
     )
 
     logger.debug("Setting up handlers")
