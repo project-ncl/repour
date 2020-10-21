@@ -4,7 +4,6 @@ import repour.server.endpoint.internal_scm as internal_scm
 
 
 class TestInternalSCM(unittest.TestCase):
-
     def test_build_gerrit_command(self):
         result = internal_scm.build_gerrit_command(
             "project1",
