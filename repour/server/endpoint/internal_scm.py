@@ -1,12 +1,11 @@
 import logging
 
-from aiohttp import web
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
+from ...config import config
 
 import asyncssh
 
-from ... import exception
 
 REQ_TIME = Summary("internal_scm_req_time", "time spent with internal-scm endpoint")
 REQ_HISTOGRAM_TIME = Histogram(
