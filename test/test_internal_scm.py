@@ -11,7 +11,8 @@ class TestInternalSCM(unittest.TestCase):
             "project1",
             "parent-project",
             ["owner1", "owner2"],
-            "description1 description2")
+            "description1 description2"
+        )
 
         # test if description specified
         self.assertTrue("-d 'description1 description2'" in result)
