@@ -32,19 +32,21 @@ async def internal_scm(spec, repo_provider):
     readonly_url = configuration.get("read_only_template")
     readwrite_url = configuration.get("read_write_template")
 
+    command = build_gerrit_command(
+        spec.get("project"),
+        spec.get("parent_project"),
+        spec.get("owner_groups"),
+        spec.get("description"),
+    )
+
+    logger.info("Command to run: " + command)
+
     async with asyncssh.connect(
         configuration.get("hostname"),
         username=configuration.get("username"),
         known_hosts=None,
     ) as conn:
 
-        command = build_gerrit_command(
-            spec.get("project"),
-            spec.get("parent_project"),
-            spec.get("owner_groups"),
-            spec.get("description"),
-        )
-        logger.info("Command to run: " + command)
         result = await conn.run(command, check=True)
         exit_status = result.exit_status
 
@@ -58,7 +60,7 @@ async def internal_scm(spec, repo_provider):
             return {
                 "status": "FAILURE",
                 "exit_status": exit_status,
-                "log": result.stderr,
+                "command_log": result.stderr,
             }
 
 
