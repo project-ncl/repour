@@ -50,8 +50,8 @@ async def internal_scm(spec, repo_provider):
         if exit_status == 0:
             return {
                 "status": "SUCCESS",
-                "readonly_url": readonly_url.format(REPO_NAME=project),
-                "readwrite_url": readwrite_url.format(REPO_NAME=project),
+                "readonly_url": readonly_url.format(REPO_NAME=spec.get("project")),
+                "readwrite_url": readwrite_url.format(REPO_NAME=spec.get("project")),
             }
         else:
             return {
