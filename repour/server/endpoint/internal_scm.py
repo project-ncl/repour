@@ -26,11 +26,11 @@ async def internal_scm(spec, repo_provider):
     => failure: {"status": "FAILURE", "exit_status": <exit status:int>, "log": "<log: str>"}
     """
 
-    config = await config.get_configuration()
+    configuration = await config.get_configuration()
 
     async with asyncssh.connect(
-        config.get("gerrit_hostname"),
-        username=config.get("gerrit_username"),
+        configuration.get("gerrit_hostname"),
+        username=configuration.get("gerrit_username"),
         known_hosts=None,
     ) as conn:
 
