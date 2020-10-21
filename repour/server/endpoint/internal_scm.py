@@ -26,11 +26,14 @@ async def internal_scm(spec, repo_provider):
     => failure: {"status": "FAILURE", "exit_status": <exit status:int>, "log": "<log: str>"}
     """
 
-    configuration = await config.get_configuration()
+    configuration = await config.get_configuration().get("gerrit")
+
+    readonly_url = configuration.get("read_only_template")
+    readwrite_url = configuration.get("read_write_template")
 
     async with asyncssh.connect(
-        configuration.get("gerrit_hostname"),
-        username=configuration.get("gerrit_username"),
+        configuration.get("hostname"),
+        username=configuration.get("username"),
         known_hosts=None,
     ) as conn:
 
@@ -45,7 +48,11 @@ async def internal_scm(spec, repo_provider):
         exit_status = result.exit_status
 
         if exit_status == 0:
-            return {"status": "SUCCESS"}
+            return {
+                "status": "SUCCESS",
+                "readonly_url": readonly_url.format(REPO_NAME=project),
+                "readwrite_url": readwrite_url.format(REPO_NAME=project)
+            }
         else:
             return {
                 "status": "FAILURE",
