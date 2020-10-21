@@ -22,8 +22,9 @@ async def internal_scm(spec, repo_provider):
     spec is looks like validation.internal_scm
 
     Output is:
-    => success: {"status": "SUCCESS"}
-    => failure: {"status": "FAILURE", "exit_status": <exit status:int>, "log": "<log: str>"}
+    => success: {"status": "SUCCESS_CREATED", "readonly_url": "..", "readwrite_url": ".."} if project created
+    => success: {"status": "SUCCESS_ALREADY_EXISTS", "readonly_url": "..", "readwrite_url": ".."} if project created
+    => failure: {"status": "FAILURE", "exit_status": <exit status:int>, "command_log": "<log: str>"}
     """
 
     configuration = await config.get_configuration()
@@ -52,11 +53,18 @@ async def internal_scm(spec, repo_provider):
 
         if exit_status == 0:
             return {
-                "status": "SUCCESS",
+                "status": "SUCCESS_CREATED",
+                "readonly_url": readonly_url.format(REPO_NAME=spec.get("project")),
+                "readwrite_url": readwrite_url.format(REPO_NAME=spec.get("project")),
+            }
+        elif exit_status == 1 and "Project already exists" in result.stderr:
+            return {
+                "status": "SUCCESS_ALREADY_EXISTS",
                 "readonly_url": readonly_url.format(REPO_NAME=spec.get("project")),
                 "readwrite_url": readwrite_url.format(REPO_NAME=spec.get("project")),
             }
         else:
+            # TODO: how to return proper status code?
             return {
                 "status": "FAILURE",
                 "exit_status": exit_status,
