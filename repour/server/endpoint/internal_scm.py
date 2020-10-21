@@ -44,7 +44,7 @@ async def internal_scm(spec, repo_provider):
             spec.get("owner_groups"),
             spec.get("description"),
         )
-        logger.info("Command to run: {}", command)
+        logger.info("Command to run: " + command)
         result = await conn.run(command, check=True)
         exit_status = result.exit_status
 
