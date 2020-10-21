@@ -11,7 +11,15 @@ from .. import clone, repo, websockets
 from ..adjust import adjust
 from ..auth import auth
 from ..config import config
-from .endpoint import cancel, endpoint, external_to_internal, info, validation, ws
+from .endpoint import (
+    cancel,
+    endpoint,
+    external_to_internal,
+    info,
+    validation,
+    ws,
+    internal_scm,
+)
 
 logger = logging.getLogger(__name__)
 
