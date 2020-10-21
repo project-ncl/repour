@@ -26,7 +26,8 @@ async def internal_scm(spec, repo_provider):
     => failure: {"status": "FAILURE", "exit_status": <exit status:int>, "log": "<log: str>"}
     """
 
-    configuration = await config.get_configuration().get("gerrit")
+    configuration = await config.get_configuration()
+    configuration = configuration.get("gerrit")
 
     readonly_url = configuration.get("read_only_template")
     readwrite_url = configuration.get("read_write_template")
