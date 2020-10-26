@@ -67,6 +67,7 @@ adjust_raw = {
     Optional("taskId"): null_or_str,
     Optional("buildType"): nonempty_str,
     Optional("defaultAlignmentParams"): Any(None, str),
+    Optional("brewPullActive"): bool,
 }
 
 adjust = Schema(adjust_raw, required=True, extra=False)
