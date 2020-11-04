@@ -140,32 +140,27 @@ def get_gradle_provider(
             "Reading '{}' file with alignment result".format(manipulation_file_path)
         )
 
-        if not os.path.exists(manipulation_file_path):
-            raise Exception(
-                "Expected generated alignment file '{}' does not exist".format(
-                    manipulation_file_path
+        if os.path.exists(manipulation_file_path):
+
+            with open(manipulation_file_path, "r") as f:
+                result = json.load(f)
+                template["VersioningState"]["executionRootModified"][
+                    "groupId"
+                ] = result["group"]
+                template["VersioningState"]["executionRootModified"][
+                    "artifactId"
+                ] = result["name"]
+                template["VersioningState"]["executionRootModified"][
+                    "version"
+                ] = result["version"]
+
+            try:
+                template["RemovedRepositories"] = util.get_removed_repos(
+                    work_dir, default_parameters
                 )
-            )
-
-        with open(manipulation_file_path, "r") as f:
-            result = json.load(f)
-            template["VersioningState"]["executionRootModified"]["groupId"] = result[
-                "group"
-            ]
-            template["VersioningState"]["executionRootModified"]["artifactId"] = result[
-                "name"
-            ]
-            template["VersioningState"]["executionRootModified"]["version"] = result[
-                "version"
-            ]
-
-        try:
-            template["RemovedRepositories"] = util.get_removed_repos(
-                work_dir, default_parameters
-            )
-        except FileNotFoundError as e:
-            logger.error("File for removed repositories could not be found")
-            logger.error(str(e))
+            except FileNotFoundError as e:
+                logger.error("File for removed repositories could not be found")
+                logger.error(str(e))
 
         return template
 
