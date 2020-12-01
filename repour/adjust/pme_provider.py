@@ -124,6 +124,12 @@ def get_pme_provider(
         repo_dir = os.path.join(repo_dir, subfolder)
         log_context_value = await util.generate_user_context()
         log_context_parameter = ["-DrestHeaders=" + log_context_value]
+        util.verify_folder_exists(
+            repo_dir,
+            "'{}' path specified in alignment parameters doesn't exist".format(
+                subfolder
+            ),
+        )
 
         cmd = (
             [location + "java", "-jar", pme_jar_path]
@@ -155,7 +161,6 @@ def get_pme_provider(
         if pme_disabled:
             logger.warning("PME is disabled via extra parameters")
             await create_pme_result_file(repo_dir)
-
         (
             override_group_id,
             override_artifact_id,

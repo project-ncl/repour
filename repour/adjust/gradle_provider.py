@@ -55,6 +55,12 @@ def get_gradle_provider(
         )
 
         work_dir = os.path.join(work_dir, subfolder)
+        util.verify_folder_exists(
+            work_dir,
+            "'{}' path specified in alignment parameter doesn't exist".format(
+                subfolder
+            ),
+        )
 
         logger.info("Adjusting in {}".format(work_dir))
 
