@@ -147,6 +147,24 @@ def get_extra_parameters(extra_adjust_parameters, flags=("-f", "--file")):
         return remaining_args, subfolder
 
 
+def verify_folder_exists(folder, error_msg):
+    """
+    Checks if the folder exists and it is a folder. If not, a exception.CommandError is thrown
+    """
+    if os.path.exists(folder) and os.path.isdir(folder):
+        # all ok! do nothing!
+        pass
+    else:
+        if not os.path.exists(folder):
+            raise exception.CommandError(
+                error_msg, [], 10, stdout=error_msg, stderr=error_msg
+            )
+        else:
+            raise exception.CommandError(
+                error_msg, [], 10, stdout=error_msg, stderr=error_msg
+            )
+
+
 def get_jvm_from_extra_parameters(extra_parameters):
     """
     If repour JVM option specified, return the option value. Otherwise return None
