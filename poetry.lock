@@ -157,11 +157,11 @@ pyflakes = ">=2.2.0,<2.3.0"
 
 [[package]]
 name = "giturlparse"
-version = "0.9.2"
+version = "0.10.0"
 description = "A Git URL parsing module (supports parsing and rewriting)"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 
 [[package]]
 name = "idna"
@@ -511,7 +511,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "5b3dff70028c51b7aa17839d089616e64a9bcdc35b1a9e7630eec75673f871b8"
+content-hash = "8bbb916a1e7b77040a0c676854e3756d1f10125d2115a15b1c370557cc91597b"
 
 [metadata.files]
 aiohttp = [
@@ -656,8 +656,8 @@ flake8 = [
     {file = "flake8-3.8.4.tar.gz", hash = "sha256:aadae8761ec651813c24be05c6f7b4680857ef6afaae4651a4eccaef97ce6c3b"},
 ]
 giturlparse = [
-    {file = "giturlparse-0.9.2-py2.py3-none-any.whl", hash = "sha256:8025143dd297122d8ecf96006f85a9e81c3c491b0ec5eebbba608488edbb289b"},
-    {file = "giturlparse-0.9.2.tar.gz", hash = "sha256:7d923e9f4fa60b112cd306a19f5b4fe221a6f5fa9f34b48e6607e54ab7909cd4"},
+    {file = "giturlparse-0.10.0-py2.py3-none-any.whl", hash = "sha256:04ba1a3a099c3093fa8d24a422913c6a9b2c2cd22bcffc939cf72e3e98f672d7"},
+    {file = "giturlparse-0.10.0.tar.gz", hash = "sha256:2595ab291d30717cda8474b874c9fd509f1b9802ad7f6968c36a45e4b13eb337"},
 ]
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},
