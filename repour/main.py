@@ -186,13 +186,16 @@ def configure_logging(
         logger_kafka = logging.getLogger("kafka")
         logger_kafka.setLevel(logging.ERROR)
 
-        kafka_handler_obj = KafkaLoggingHandler(
-            kafka_server,
-            kafka_topic,
-            log_preprocess=[adjust_kafka_timestamp],
-            ssl_cafile=kafka_cafile,
-        )
-        root_logger.addHandler(kafka_handler_obj)
+        try:
+            kafka_handler_obj = KafkaLoggingHandler(
+                kafka_server,
+                kafka_topic,
+                log_preprocess=[adjust_kafka_timestamp],
+                ssl_cafile=kafka_cafile,
+            )
+            root_logger.addHandler(kafka_handler_obj)
+        except Exception:
+            logger.exception("Kafka logging could not be setup")
 
 
 def adjust_kafka_timestamp(data):
