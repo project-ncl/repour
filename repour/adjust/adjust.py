@@ -7,6 +7,7 @@ import shutil
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
 
+from .scala_provider import get_scala_provider
 from .. import asutil, clone, exception
 from ..config import config
 from repour.lib.logs import log_util
@@ -223,6 +224,10 @@ async def adjust(adjustspec, repo_provider):
             specific_tag_name = await adjust_gradle(
                 work_dir, c, adjustspec, adjust_result
             )
+        elif build_type == "SBT":
+            specific_tag_name = await adjust_scala(
+                work_dir, c, adjustspec, adjust_result
+            )
         else:
             specific_tag_name = await adjust_project_manip(
                 work_dir, c, adjustspec, adjust_result
@@ -429,6 +434,33 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
     adjust_result["adjustType"].append(execution_name)
 
     return specific_tag_name
+
+
+async def adjust_scala(work_dir, c, adjustspec, adjust_result):
+    logger.info("Using Scala manipulation")
+
+    execution_name = "sbt-version-extension"
+
+    adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
+    extra_adjust_parameters = adjustspec.get("adjustParameters", {})
+
+    repour_parameters = adjust_provider_config.get("defaultParameters", [])
+    default_parameters = get_default_alignment_parameters(adjustspec)
+
+    temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(
+        adjustspec, adjust_provider_config
+    )
+
+    result = await get_scala_provider(
+        execution_name,
+        adjust_provider_config["cliJarPathAbsolute"],
+        default_parameters,
+        repour_parameters,
+        specific_indy_group,
+        timestamp,
+    )(work_dir, extra_adjust_parameters, adjust_result)
+
+    return result["resultData"]["VersioningState"]["executionRootModified"]["version"]
 
 
 async def commit_adjustments(
