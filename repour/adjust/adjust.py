@@ -439,7 +439,7 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
 async def adjust_scala(work_dir, c, adjustspec, adjust_result):
     logger.info("Using Scala manipulation")
 
-    execution_name = "sbt-version-extension"
+    execution_name = "SBT"
 
     adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
