@@ -90,7 +90,7 @@ def get_scala_provider(
 
         # TODO mock an empty result and delete once ready
         result = {"adjustType": [], "resultData": {}}
-        result["resultData"] = get_result_data(
+        result["resultData"] = await get_result_data(
             work_dir, extra_adjust_parameters, adjust_result
         )
         result["adjustType"].append(execution_name)
