@@ -1,5 +1,5 @@
 import logging
-from . import process_provider, util
+from . import util
 from .. import exception
 import shlex
 
@@ -68,19 +68,21 @@ def get_scala_provider(
         if specific_indy_group:
             temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
 
-        cmd = (
-            ["java", "-jar", sbt_ext_path]
-            + default_parameters
-            + extra_parameters
-            + repour_parameters
-            + temp_build_parameters
-        )
-
-        logger.info(
-            'Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals())
-        )
+        logger.info("SKIPPING " + execution_name + " alignment phase.")
 
         # TODO uncomment once ready
+        # cmd = (
+        #     ["java", "-jar", sbt_ext_path]
+        #     + default_parameters
+        #     + extra_parameters
+        #     + repour_parameters
+        #     + temp_build_parameters
+        # )
+        #
+        # logger.info(
+        #     'Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals())
+        # )
+        #
         # result = await process_provider.get_process_provider(
         #     execution_name,
         #     cmd,
