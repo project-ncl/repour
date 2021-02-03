@@ -112,19 +112,36 @@ def expect_ok_closure(exc_type=exception.CommandError):
         Known issues: it doesn't really process stderr, it assumes stderr is redirected
                       to stdout
         """
+        BYTES_TO_READ = 5000
+
         stdout_data_ary = []
         stderr_text = ""
 
         while True:
-            data = await process.stdout.readline()
+
+            # Try to read up to BYTES_TO_READ to read in batch rather than reading line by line
+            # if the length of data read is exactly BYTES_TO_READ, that probably means the data read didn't finish at the end of a line
+            # So read some more to guarantee all the data read ends at the end of a line
+            data = await process.stdout.read(BYTES_TO_READ)
+            if len(data) == BYTES_TO_READ:
+                # Sleep to give a chance for other unrelated async tasks to run. In theory we shouldn't need it, but in practice this
+                # loop tends to get all the attention of the event loop and prevents other unrelated async tasks to run. The sleep prevents this
+                await asyncio.sleep(0.1)
+                # data_second necessary to make the entire 'data' are strings of complete lines. We cannot guarantee that the 1000th byte ends with "\n"
+                data_second = await process.stdout.readline()
+                data += data_second
+
             decoded = data.decode()
+
             if decoded == "":
                 # that means we reached EOF and process stopped
                 break
             else:
-                decoded_stripped = decoded.strip()
-                logger.info(decoded_stripped)
-                stdout_data_ary.append(decoded_stripped)
+                # decoded contains multiple lines in a string
+                decoded_list = decoded.splitlines()
+                for item in decoded_list:
+                    logger.info(item)
+                stdout_data_ary.extend(decoded_list)
 
         stdout_text = "\n".join(stdout_data_ary)
         return stdout_text, stderr_text
