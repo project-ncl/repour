@@ -1,6 +1,7 @@
 import asyncio
 import calendar
 import logging
+import pylru
 import os
 import time
 
@@ -45,6 +46,7 @@ class FileCallbackHandler(logging.StreamHandler):
         self.mode = mode
         self.encoding = encoding
         self.delay = delay
+        self.cache_file_handler = pylru.lrucache(20, close_file_handler)
         logging.Handler.__init__(self)
 
     def emit(self, record):
@@ -61,13 +63,21 @@ class FileCallbackHandler(logging.StreamHandler):
                     logging.StreamHandler.emit(self, record)
 
                     # need to flush to make sure every reader sees the change
-                    self.stream.close()
+                    self.stream.flush()
         except RuntimeError:
             self.handleError(record)
 
     def _open_callback_file(self, callback_id):
         path = get_callback_log_path(callback_id)
-        return open(path, self.mode, encoding=self.encoding)
+
+        # Cache the most recently file handlers. If not in cache, then create one.
+        # Done because creating a new file handler on every `emit` is very costly
+        if callback_id not in self.cache_file_handler:
+            self.cache_file_handler[callback_id] = open(
+                path, self.mode, encoding=self.encoding
+            )
+
+        return self.cache_file_handler[callback_id]
 
 
 async def setup_clean_old_logfiles():
@@ -88,3 +98,11 @@ async def setup_clean_old_logfiles():
 
         # Run every hour
         await asyncio.sleep(3600)
+
+
+def close_file_handler(key, value):
+    """
+    Close the file handler once it is evicted from the cache
+    """
+    if value is not None:
+        value.close()
