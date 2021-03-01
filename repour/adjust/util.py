@@ -87,30 +87,43 @@ def get_specific_indy_group(adjustspec, adjust_provider_config):
         return None
 
 
-def get_temp_build_timestamp(adjustspec):
-    """ Find the timestamp to provide to PME from the adjust request.
+def get_build_version_suffix_prefix(adjustspec):
+    """ Generate the prefix of version suffix (i.e. suffix prefix) from the adjust request.
 
-        If the timestamp is set *AND* the temp_build key is set to true, then
-        this function returns the value of the timestamp.
+        If the suffix prefix is set *AND* the one of the special build types is active then
+        this function returns the value of the suffix prefix.
 
         Otherwise it will return None
     """
     temp_build_timestamp_key = "tempBuildTimestamp"
-    temp_build_timestamp = None
+    build_category_key = "BUILD_CATEGORY"
+    service_build_value = "SERVICE"
 
+    temporary_prefix = "temporary"
+    service_prefix = "managedsvc"
+
+    suffix_prefix = None
     temp_build_enabled = is_temp_build(adjustspec)
 
     if temp_build_timestamp_key in adjustspec:
-        temp_build_timestamp = adjustspec[temp_build_timestamp_key]
-
-    if temp_build_timestamp is None:
-        temp_build_timestamp = "temporary"
+        suffix_prefix = adjustspec[temp_build_timestamp_key]
 
     if temp_build_enabled:
-        logger.info("Temp build timestamp set to: " + str(temp_build_timestamp))
-        return temp_build_timestamp
-    else:
-        return None
+        if suffix_prefix is None:
+            logger.info("Temp build timestamp set to: " + str(suffix_prefix))
+            suffix_prefix = temporary_prefix
+
+    extra_params = adjustspec.get("adjustParameters", {})
+    service_build_enabled = service_build_value == get_param_value(
+        build_category_key, extra_params
+    )
+    if service_build_enabled:
+        if suffix_prefix:
+            suffix_prefix = service_prefix + "-" + suffix_prefix
+        else:
+            suffix_prefix = service_prefix
+
+    return suffix_prefix
 
 
 def get_extra_parameters(extra_adjust_parameters, flags=("-f", "--file")):
@@ -180,7 +193,7 @@ def get_jvm_from_extra_parameters(extra_parameters):
 
 def get_param_value(name, params1, params2=[], params3=[]):
     """
-    Searches for the given param name in given arrays and returns the value of the first occurence. The param name must
+    Searches for the given param name in given arrays and returns the value of the first occurrence. The param name must
     match completely, so you have to pass it along with "-D" if it is in the arrays.
     """
     for params in [params1, params2, params3]:

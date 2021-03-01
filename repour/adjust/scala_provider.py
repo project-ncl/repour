@@ -12,7 +12,7 @@ def get_scala_provider(
     default_parameters,
     repour_parameters,
     specific_indy_group,
-    timestamp,
+    suffix_prefix,
 ):
     async def get_result_data(work_dir, extra_adjust_parameters, results_file=None):
         template = {
@@ -53,7 +53,7 @@ def get_scala_provider(
 
         temp_build_parameters = []
 
-        if timestamp:
+        if suffix_prefix:
             orig_inc_suffix = util.get_param_value(
                 "-DversionIncrementalSuffix",
                 repour_parameters,
@@ -62,7 +62,7 @@ def get_scala_provider(
             )
             temp_suffix = ("-" + orig_inc_suffix) if orig_inc_suffix else ""
             temp_build_parameters.append(
-                "-DversionIncrementalSuffix=" + timestamp + temp_suffix
+                "-DversionIncrementalSuffix=" + suffix_prefix + temp_suffix
             )
 
         if specific_indy_group:

@@ -21,7 +21,7 @@ def get_pme_provider(
     repour_parameters,
     output_to_logs=False,
     specific_indy_group=None,
-    timestamp=None,
+    suffix_prefix=None,
 ):
     async def get_result_data(
         work_dir, extra_parameters, group_id=None, artifact_id=None, results_file=None
@@ -99,9 +99,9 @@ def get_pme_provider(
 
         temp_build_parameters = []
 
-        if timestamp:
+        if suffix_prefix:
             temp_build_parameters.append(
-                "-DversionIncrementalSuffix=" + timestamp + "-redhat"
+                "-DversionIncrementalSuffix=" + suffix_prefix + "-redhat"
             )
 
         if specific_indy_group:
