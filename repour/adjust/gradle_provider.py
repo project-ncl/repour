@@ -28,7 +28,7 @@ def get_gradle_provider(
     repour_parameters,
     default_gradle_path,
     specific_indy_group=None,
-    timestamp=None,
+    suffix_prefix=None,
 ):
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         """Generate the manipulation.json file with information about aligned versions"""
@@ -42,9 +42,9 @@ def get_gradle_provider(
 
         temp_build_parameters = []
 
-        if timestamp:
+        if suffix_prefix:
             temp_build_parameters.append(
-                "-DversionIncrementalSuffix=" + timestamp + "-redhat"
+                "-DversionIncrementalSuffix=" + suffix_prefix + "-redhat"
             )
 
         if specific_indy_group:

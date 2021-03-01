@@ -256,15 +256,17 @@ async def handle_temp_build(adjustspec, adjust_provider_config):
     specific_indy_group = util.get_specific_indy_group(
         adjustspec, adjust_provider_config
     )
-    timestamp = util.get_temp_build_timestamp(adjustspec)
+    suffix_prefix = util.get_build_version_suffix_prefix(adjustspec)
 
-    if timestamp and not specific_indy_group:
-        logger.error("Timestamp specified but specific indy group not specified!")
-        logger.error("Timestamp: " + timestamp)
+    if suffix_prefix and not specific_indy_group:
+        logger.error("Suffix prefix specified but specific Indy group not specified!")
+        logger.error("Suffix prefix: " + suffix_prefix)
 
-        raise Exception("Timestamp specified but specific indy group not specified!")
+        raise Exception(
+            "Suffix prefix specified but specific indy group not specified!"
+        )
 
-    return temp_build_enabled, timestamp, specific_indy_group
+    return temp_build_enabled, suffix_prefix, specific_indy_group
 
 
 async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
@@ -281,7 +283,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
             )
         )
 
-    temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(
+    temp_build_enabled, suffix_prefix, specific_indy_group = await handle_temp_build(
         adjustspec, adjust_provider_config
     )
 
@@ -304,7 +306,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
         repour_parameters,
         adjust_provider_config["defaultGradlePath"],
         specific_indy_group,
-        timestamp,
+        suffix_prefix,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
     return result["resultData"]["VersioningState"]["executionRootModified"]["version"]
@@ -343,7 +345,7 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
         elif adjust_provider_name == "pme":
             (
                 temp_build_enabled,
-                timestamp,
+                suffix_prefix,
                 specific_indy_group,
             ) = await handle_temp_build(adjustspec, adjust_provider_config)
 
@@ -378,7 +380,7 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 repour_parameters,
                 adjust_provider_config.get("outputToLogs", False),
                 specific_indy_group,
-                timestamp,
+                suffix_prefix,
             )(work_dir, extra_adjust_parameters, adjust_result)
 
             version = await pme_provider.get_version_from_pme_result(
@@ -410,7 +412,7 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
     # default project-manipulator parameters from build config
     default_parameters = get_default_alignment_parameters(adjustspec)
 
-    temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(
+    temp_build_enabled, suffix_prefix, specific_indy_group = await handle_temp_build(
         adjustspec, adjust_provider_config
     )
 
@@ -420,7 +422,7 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
         default_parameters,
         repour_parameters,
         specific_indy_group,
-        timestamp,
+        suffix_prefix,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
     # TODO: replace this with the real value
@@ -447,7 +449,7 @@ async def adjust_scala(work_dir, c, adjustspec, adjust_result):
     repour_parameters = adjust_provider_config.get("defaultParameters", [])
     default_parameters = get_default_alignment_parameters(adjustspec)
 
-    temp_build_enabled, timestamp, specific_indy_group = await handle_temp_build(
+    temp_build_enabled, suffix_prefix, specific_indy_group = await handle_temp_build(
         adjustspec, adjust_provider_config
     )
 
@@ -457,7 +459,7 @@ async def adjust_scala(work_dir, c, adjustspec, adjust_result):
         default_parameters,
         repour_parameters,
         specific_indy_group,
-        timestamp,
+        suffix_prefix,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
     return result["resultData"]["VersioningState"]["executionRootModified"]["version"]
