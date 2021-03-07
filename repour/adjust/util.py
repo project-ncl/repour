@@ -116,7 +116,9 @@ def get_build_version_suffix_prefix(adjustspec):
     if "genericParameters" in adjustspec:
         build_category = adjustspec["genericParameters"].get(build_category_key, None)
     else:
-        logger.warning("No genericParameters found in adjustspec!")
+        logger.warning(
+            "No genericParameters found in adjustspec! Contents: " + str(adjustspec)
+        )
         build_category = None
     service_build_enabled = service_build_value == build_category
     if service_build_enabled:
