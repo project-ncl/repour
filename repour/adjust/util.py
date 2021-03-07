@@ -114,7 +114,7 @@ def get_build_version_suffix_prefix(adjustspec):
             suffix_prefix = temporary_prefix
 
     build_category = None
-    if "genericParameters" in adjustspec:
+    if "adjustParameters" in adjustspec:
         build_category = adjustspec["adjustParameters"].get(build_category_key, None)
     else:
         logger.warning(
