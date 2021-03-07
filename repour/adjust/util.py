@@ -113,13 +113,13 @@ def get_build_version_suffix_prefix(adjustspec):
             logger.info("Temp build timestamp set to: " + str(suffix_prefix))
             suffix_prefix = temporary_prefix
 
+    build_category = None
     if "genericParameters" in adjustspec:
-        build_category = adjustspec["genericParameters"].get(build_category_key, None)
+        build_category = adjustspec["adjustParameters"].get(build_category_key, None)
     else:
         logger.warning(
-            "No genericParameters found in adjustspec! Contents: " + str(adjustspec)
+            "No adjustParameters found in adjustspec! Contents: " + str(adjustspec)
         )
-        build_category = None
     service_build_enabled = service_build_value == build_category
     if service_build_enabled:
         if suffix_prefix:
