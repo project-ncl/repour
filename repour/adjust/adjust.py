@@ -258,13 +258,11 @@ async def handle_temp_build(adjustspec, adjust_provider_config):
     )
     suffix_prefix = util.get_build_version_suffix_prefix(adjustspec)
 
-    if suffix_prefix and not specific_indy_group:
-        logger.error("Suffix prefix specified but specific Indy group not specified!")
+    if temp_build_enabled and not specific_indy_group:
+        logger.error("Temp build enabled but specific Indy group not specified!")
         logger.error("Suffix prefix: " + suffix_prefix)
 
-        raise Exception(
-            "Suffix prefix specified but specific indy group not specified!"
-        )
+        raise Exception("Temp build enabled but specific indy group not specified!")
 
     return temp_build_enabled, suffix_prefix, specific_indy_group
 
