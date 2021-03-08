@@ -24,7 +24,7 @@ pylru = "^1.2.0"
 cryptography = "3.3.2"
 
 [tool.poetry.dev-dependencies]
-tox = "^3.22"
+tox = "^3.23"
 
 [tool.tox]
 legacy_tox_ini = """
