@@ -39,10 +39,15 @@ async def translate_external_to_internal(external_git_url):
     elif not gerrit_server.endswith("/"):
         gerrit_server = gerrit_server + "/"
 
-    result = urlparse(external_git_url)
+    is_scp_like = external_git_url.startswith("git@")
 
-    scheme = result.scheme
-    path = result.path
+    if is_scp_like:
+        scheme = external_git_url.split("@")[0]
+        path = external_git_url.split("@")[1]
+    else:
+        result = urlparse(external_git_url)
+        scheme = result.scheme
+        path = result.path
 
     acceptable_schemes = ["https", "http", "git", "git+ssh", "ssh"]
 
@@ -63,7 +68,9 @@ async def translate_external_to_internal(external_git_url):
 
     # if organization name is 'gerrit', don't use it then
     if len(path_parts) > 1 and path_parts[-2] != "gerrit" and path_parts[-2]:
-        organization = path_parts[-2]
+        organization = (
+            path_parts[-2] if not is_scp_like else path_parts[-2].split(":")[-1]
+        )
 
     if organization and repository:
         repo_name = organization + "/" + repository
