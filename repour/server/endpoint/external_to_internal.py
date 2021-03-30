@@ -14,6 +14,10 @@ REQ_HISTOGRAM_TIME = Histogram(
     "external_to_internal_req_histogram", "Histogram for external_to_internal endpoint"
 )
 
+SCP_LIKE_URL_REGEX = (
+    r"^(\w+://)?(.+):[A-Za-z_](.*)\.git$"  # There is ":" in the middle of url
+)
+
 
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
@@ -39,15 +43,11 @@ async def translate_external_to_internal(external_git_url):
     elif not gerrit_server.endswith("/"):
         gerrit_server = gerrit_server + "/"
 
-    is_scp_like = external_git_url.startswith("git@")
+    is_scp_like = re.match(SCP_LIKE_URL_REGEX, external_git_url)
 
-    if is_scp_like:
-        scheme = external_git_url.split("@")[0]
-        path = external_git_url.split("@")[1]
-    else:
-        result = urlparse(external_git_url)
-        scheme = result.scheme
-        path = result.path
+    result = urlparse(external_git_url)
+    scheme = result.scheme if not external_git_url.startswith("git@") else "git"
+    path = result.path
 
     acceptable_schemes = ["https", "http", "git", "git+ssh", "ssh"]
 
