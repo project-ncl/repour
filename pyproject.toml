@@ -40,7 +40,7 @@ deps =
     pre-commit
     flake8
 commands =
-    poetry install -vvv
+    poetry install
     pre-commit run --all-files --show-diff-on-failure
     poetry run pytest test/
     flake8
