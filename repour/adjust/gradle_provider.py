@@ -8,6 +8,7 @@ from string import Template
 
 from .. import asutil
 from . import process_provider, util
+from . import pme_provider
 from repour.lib.scm import git
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,8 @@ logger = logging.getLogger(__name__)
 EXECUTION_NAME = "GRADLE"
 
 INIT_SCRIPT_FILE_NAME = "analyzer-init.gradle"
-MANIPULATION_FILE_NAME = "manipulation.json"
+ALIGNMENT_REPORT_FILE_NAME = "alignmentReport.json"
+GME_MANIPULATION_FILE_NAME = "manipulation.json"
 
 stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
@@ -89,11 +91,7 @@ def get_gradle_provider(
         )
 
         result = await process_provider.get_process_provider(
-            EXECUTION_NAME,
-            cmd,
-            get_result_data=get_result_data,
-            send_log=True,
-            results_file=MANIPULATION_FILE_NAME,
+            EXECUTION_NAME, cmd, get_result_data=get_result_data, send_log=True,
         )(work_dir, extra_adjust_parameters, adjust_result)
 
         if gme_repos_dot_gradle_present(work_dir):
@@ -105,13 +103,26 @@ def get_gradle_provider(
             await git.add_file(
                 work_dir, os.path.join("gradle", "gme-repos.gradle"), force=True
             )
+        (
+            override_group_id,
+            override_artifact_id,
+        ) = await pme_provider.get_extra_param_execution_root_name(
+            extra_adjust_parameters
+        )
 
         adjust_result["adjustType"] = result["adjustType"]
-        adjust_result["resultData"] = result["resultData"]
+        adjust_result["resultData"] = await get_result_data(
+            work_dir,
+            extra_parameters,
+            group_id=override_group_id,
+            artifact_id=override_artifact_id,
+        )
 
         return result
 
-    async def get_result_data(work_dir, extra_parameters, results_file=None):
+    async def get_result_data(
+        work_dir, extra_parameters, results_file=None, group_id=None, artifact_id=None
+    ):
         """ Read the manipulation.json file and return it as an object
 
         Format is:
@@ -129,46 +140,25 @@ def get_gradle_provider(
 
         """
 
-        template = {
-            "VersioningState": {
-                "executionRootModified": {
-                    "groupId": None,
-                    "artifactId": None,
-                    "version": None,
-                }
-            },
-            "RemovedRepositories": [],
-        }
+        alignment_report_file_path = os.path.join(work_dir, ALIGNMENT_REPORT_FILE_NAME)
+        manipulation_file_path = os.path.join(work_dir, GME_MANIPULATION_FILE_NAME)
 
-        manipulation_file_path = os.path.join(work_dir, MANIPULATION_FILE_NAME)
-
-        logger.info(
-            "Reading '{}' file with alignment result".format(manipulation_file_path)
-        )
-
-        if os.path.exists(manipulation_file_path):
-
-            with open(manipulation_file_path, "r") as f:
-                result = json.load(f)
-                template["VersioningState"]["executionRootModified"][
-                    "groupId"
-                ] = result["group"]
-                template["VersioningState"]["executionRootModified"][
-                    "artifactId"
-                ] = result["name"]
-                template["VersioningState"]["executionRootModified"][
-                    "version"
-                ] = result["version"]
-
-            try:
-                template["RemovedRepositories"] = util.get_removed_repos(
-                    work_dir, default_parameters
-                )
-            except FileNotFoundError as e:
-                logger.error("File for removed repositories could not be found")
-                logger.error(str(e))
-
-        return template
+        if os.path.isfile(alignment_report_file_path):
+            file_path = alignment_report_file_path
+            logger.info("Reading '{}' file with alignment result".format(file_path))
+            return pme_provider.parse_pme_result_manipulation_format(
+                work_dir,
+                default_parameters,
+                open(file_path).read(),
+                group_id,
+                artifact_id,
+            )
+        else:
+            file_path = manipulation_file_path
+            logger.info("Reading '{}' file with alignment result".format(file_path))
+            return parse_gme_manipulation_json(
+                work_dir, file_path, default_parameters, group_id, artifact_id
+            )
 
     return adjust
 
@@ -179,3 +169,48 @@ def gradlew_path_present(work_dir):
 
 def gme_repos_dot_gradle_present(work_dir):
     return os.path.exists(os.path.join(work_dir, "gradle", "gme-repos.gradle"))
+
+
+def parse_gme_manipulation_json(
+    work_dir, file_path, default_parameters, group_id=None, artifact_id=None
+):
+
+    template = {
+        "VersioningState": {
+            "executionRootModified": {
+                "groupId": None,
+                "artifactId": None,
+                "version": None,
+            }
+        },
+        "RemovedRepositories": [],
+    }
+
+    with open(file_path, "r") as f:
+        result = json.load(f)
+        template["VersioningState"]["executionRootModified"]["groupId"] = result[
+            "group"
+        ]
+        template["VersioningState"]["executionRootModified"]["artifactId"] = result[
+            "name"
+        ]
+        template["VersioningState"]["executionRootModified"]["version"] = result[
+            "version"
+        ]
+
+    if group_id is not None and artifact_id is not None:
+        logger.warning("Overriding the groupId of the result to: " + group_id)
+        template["VersioningState"]["executionRootModified"]["groupId"] = group_id
+
+        logger.warning("Overriding the artifactId of the result to: " + artifact_id)
+        template["VersioningState"]["executionRootModified"]["artifactId"] = artifact_id
+
+    try:
+        template["RemovedRepositories"] = util.get_removed_repos(
+            work_dir, default_parameters
+        )
+    except FileNotFoundError as e:
+        logger.error("File for removed repositories could not be found")
+        logger.error(str(e))
+
+    return template
