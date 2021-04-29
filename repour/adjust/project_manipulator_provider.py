@@ -42,6 +42,24 @@ def get_project_manipulator_provider(
 
         result_data = json.loads(raw_result_data)
 
+        # RHPAM wants the data in that format to parse the execution root name and version
+        # We can set the groupId to null, and artifactId to the name of the build in those cases
+
+        # "VersioningState": {
+        #   "executionRootModified": {
+        #       "groupId": group_id,
+        #       "artifactId": artifact_id,
+        #       "version": version,
+        #   }
+        # }
+        result_data["VersioningState"] = {
+            "executionRootModified": {
+                "groupId": None,
+                "artifactId": result_data["name"],
+                "version": result_data["version"],
+            }
+        }
+
         result_data["RemovedRepositories"] = []
 
         return result_data
