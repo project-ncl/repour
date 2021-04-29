@@ -72,9 +72,30 @@ def get_process_provider(
         adjust_result_data = {}
 
         adjust_result_data["adjustType"] = execution_name
-        adjust_result_data["resultData"] = await get_result_data(
+        process_provider_result = await get_result_data(
             repo_dir, extra_adjust_parameters, results_file=results_file
         )
+
+        # RHPAM wants the data in that format to parse the execution root name and version
+        # We can set the groupId to null, and artifactId to the name of the build in those cases
+
+        # "VersioningState": {
+        #   "executionRootModified": {
+        #       "groupId": group_id,
+        #       "artifactId": artifact_id,
+        #       "version": version,
+        #   }
+        # }
+        process_provider_result["VersioningState"] = {
+            "executionRootModified": {
+                "groupId": None,
+                "artifactId": process_provider_result["name"],
+                "version": process_provider_result["version"],
+            }
+        }
+
+        adjust_result_data["resultData"] = process_provider_result
+
         return adjust_result_data
 
     return adjust
