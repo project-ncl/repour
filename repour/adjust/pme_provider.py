@@ -30,24 +30,25 @@ def get_pme_provider(
         if results_file:
             result_file_path_manipulation = results_file
         else:
-            result_file_path_pom_manip = work_dir + "/target/pom-manip-ext-result.json"
             result_file_path_manipulation = work_dir + "/target/manipulation.json"
+            result_file_path_alignment_report = (
+                work_dir + "/target/alignmentReport.json"
+            )
 
         pme_and_extra_params = default_parameters.copy()
         pme_and_extra_params.extend(extra_parameters)
         pme_and_extra_params.extend(repour_parameters)
 
-        if os.path.isfile(result_file_path_manipulation):
-            with open(result_file_path_manipulation, "r") as file:
-                return parse_pme_result_manipulation_format(
-                    work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
-                )
+        if os.path.isfile(result_file_path_alignment_report):
+            file_path = result_file_path_alignment_report
+        else:
+            file_path = result_file_path_manipulation
 
-        elif os.path.isfile(result_file_path_pom_manip):
-            with open(result_file_path_pom_manip, "r") as file:
-                return parse_pme_result_pom_manip_ext_result_format(
-                    work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
-                )
+        with open(file_path, "r") as file:
+            logger.info("Getting results from file: " + file_path)
+            return parse_pme_result_manipulation_format(
+                work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
+            )
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
         """
@@ -70,29 +71,6 @@ def get_pme_provider(
                     return True
             else:
                 return False
-
-    async def get_extra_param_execution_root_name(extra_adjust_parameters):
-        """
-        If the parameter 'BREW_BUILD_NAME' is present, the string value should be in format '<group_id>:<artifact_id>'
-
-        Return the group_id,artifact_id value.
-
-        If the string is in the wrong format or if the parameter is not present, return None,None instead
-        """
-        paramsString = extra_adjust_parameters.get("BREW_BUILD_NAME", None)
-
-        if paramsString is None:
-            return None, None
-        else:
-            result = paramsString.split(":")
-            if len(result) == 2:
-                return result[0], result[1]
-            else:
-                logger.warning(
-                    'BREW_BUILD_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"'
-                )
-                logger.warning('Value provided is: "' + paramsString + '"')
-                return None, None
 
     async def adjust(repo_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
@@ -172,6 +150,30 @@ def get_pme_provider(
         return res
 
     return adjust
+
+
+async def get_extra_param_execution_root_name(extra_adjust_parameters):
+    """
+    If the parameter 'BREW_BUILD_NAME' is present, the string value should be in format '<group_id>:<artifact_id>'
+
+    Return the group_id,artifact_id value.
+
+    If the string is in the wrong format or if the parameter is not present, return None,None instead
+    """
+    paramsString = extra_adjust_parameters.get("BREW_BUILD_NAME", None)
+
+    if paramsString is None:
+        return None, None
+    else:
+        result = paramsString.split(":")
+        if len(result) == 2:
+            return result[0], result[1]
+        else:
+            logger.warning(
+                'BREW_BUILD_NAME parameter has as value the wrong format. It should be "<group_id>:<artifact_id>"'
+            )
+            logger.warning('Value provided is: "' + paramsString + '"')
+            return None, None
 
 
 async def get_version_from_pme_result(pme_result):
@@ -298,11 +300,7 @@ def parse_pme_result_manipulation_format(
     work_dir, pme_parameters, raw_result_data, group_id, artifact_id
 ):
 
-    logger.info(
-        'Got PME result data for manipulation.json: "{raw_result_data}".'.format(
-            **locals()
-        )
-    )
+    logger.info('Got PME result data: "{raw_result_data}".'.format(**locals()))
     data = json.loads(raw_result_data)
 
     pme_result = {"VersioningState": {"executionRootModified": {}}}
@@ -326,36 +324,6 @@ def parse_pme_result_manipulation_format(
         pme_result["VersioningState"]["executionRootModified"]["version"] = data[
             "executionRoot"
         ]["version"]
-
-    try:
-        pme_result["RemovedRepositories"] = util.get_removed_repos(
-            work_dir, pme_parameters
-        )
-    except FileNotFoundError as e:
-        logger.error("File for removed repositories could not be found")
-        logger.error(str(e))
-
-    return pme_result
-
-
-def parse_pme_result_pom_manip_ext_result_format(
-    work_dir, pme_parameters, raw_result_data, group_id, artifact_id
-):
-    logger.info(
-        'Got PME result data for pom-manip-ext-result.json: "{raw_result_data}".'.format(
-            **locals()
-        )
-    )
-    pme_result = json.loads(raw_result_data)
-
-    if group_id is not None and artifact_id is not None:
-        logger.warning("Overriding the groupId of the result to: " + group_id)
-        pme_result["VersioningState"]["executionRootModified"]["groupId"] = group_id
-
-        logger.warning("Overriding the artifactId of the result to: " + artifact_id)
-        pme_result["VersioningState"]["executionRootModified"][
-            "artifactId"
-        ] = artifact_id
 
     try:
         pme_result["RemovedRepositories"] = util.get_removed_repos(
