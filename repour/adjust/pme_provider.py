@@ -39,16 +39,21 @@ def get_pme_provider(
         pme_and_extra_params.extend(extra_parameters)
         pme_and_extra_params.extend(repour_parameters)
 
+        file_path = None
         if os.path.isfile(result_file_path_alignment_report):
             file_path = result_file_path_alignment_report
-        else:
+        elif os.path.isfile(result_file_path_manipulation):
             file_path = result_file_path_manipulation
 
-        with open(file_path, "r") as file:
-            logger.info("Getting results from file: " + file_path)
-            return parse_pme_result_manipulation_format(
-                work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
-            )
+        if file_path is not None:
+            with open(file_path, "r") as file:
+                logger.info("Getting results from file: " + file_path)
+                return parse_pme_result_manipulation_format(
+                    work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
+                )
+        else:
+            logger.warn("Couldn't capture any result file from PME")
+            return None
 
     def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
         """
@@ -268,7 +273,7 @@ async def get_gav_from_pom(pom_xml_file):
 async def create_pme_result_file(repo_dir):
 
     result_file_folder = repo_dir + "/target"
-    result_file_path = result_file_folder + "/pom-manip-ext-result.json"
+    result_file_path = result_file_folder + "/alignmentReport.json"
 
     # get data by reading the pom.xml directly
     pom_path = repo_dir + "/pom.xml"
@@ -280,12 +285,10 @@ async def create_pme_result_file(repo_dir):
         group_id, artifact_id, version = (None, None, None)
 
     pme_result = {
-        "VersioningState": {
-            "executionRootModified": {
-                "groupId": group_id,
-                "artifactId": artifact_id,
-                "version": version,
-            }
+        "executionRoot": {
+            "groupId": group_id,
+            "artifactId": artifact_id,
+            "version": version,
         }
     }
 
