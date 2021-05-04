@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 EXECUTION_NAME = "GRADLE"
 
 INIT_SCRIPT_FILE_NAME = "analyzer-init.gradle"
-ALIGNMENT_REPORT_FILE_NAME = "alignmentReport.json"
+ALIGNMENT_REPORT_FILE_NAME = "/build/alignmentReport.json"
 GME_MANIPULATION_FILE_NAME = "manipulation.json"
 
 stdout_options = asutil.process_stdout_options
