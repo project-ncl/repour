@@ -153,12 +153,22 @@ def get_gradle_provider(
                 group_id,
                 artifact_id,
             )
-        else:
+        elif os.path.isfile(manipulation_file_path):
             file_path = manipulation_file_path
             logger.info("Reading '{}' file with alignment result".format(file_path))
             return parse_gme_manipulation_json(
                 work_dir, file_path, default_parameters, group_id, artifact_id
             )
+        else:
+            return {
+                "VersioningState": {
+                    "executionRootModified": {
+                        "groupId": group_id,
+                        "artifactId": artifact_id,
+                        "version": None,
+                    }
+                }
+            }
 
     return adjust
 
