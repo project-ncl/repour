@@ -1,5 +1,4 @@
 import logging
-from . import util
 from .. import exception
 import shlex
 
@@ -11,7 +10,8 @@ def get_scala_provider(
     sbt_ext_path,
     default_parameters,
     repour_parameters,
-    specific_indy_group,
+    rest_mode,
+    brew_pull_enabled,
     suffix_prefix,
 ):
     async def get_result_data(work_dir, extra_adjust_parameters, results_file=None):
@@ -49,24 +49,15 @@ def get_scala_provider(
             return params
 
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
-        extra_parameters = await get_extra_parameters(extra_adjust_parameters)
-
-        temp_build_parameters = []
+        alignment_parameters = ["-DrestMode=" + rest_mode]
 
         if suffix_prefix:
-            orig_inc_suffix = util.get_param_value(
-                "-DversionIncrementalSuffix",
-                repour_parameters,
-                extra_parameters,
-                default_parameters,
-            )
-            temp_suffix = ("-" + orig_inc_suffix) if orig_inc_suffix else ""
-            temp_build_parameters.append(
-                "-DversionIncrementalSuffix=" + suffix_prefix + temp_suffix
+            alignment_parameters.append(
+                "-DversionIncrementalSuffix=" + suffix_prefix + "-redhat"
             )
 
-        if specific_indy_group:
-            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
+        if brew_pull_enabled:
+            alignment_parameters.append("-DrestBrewPullActive=true")
 
         logger.info("SKIPPING " + execution_name + " alignment phase.")
 
@@ -76,7 +67,7 @@ def get_scala_provider(
         #     + default_parameters
         #     + extra_parameters
         #     + repour_parameters
-        #     + temp_build_parameters
+        #     + alignment_parameters
         # )
         #
         # logger.info(

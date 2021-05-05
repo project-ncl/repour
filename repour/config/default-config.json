@@ -12,6 +12,13 @@
     "executions": [
       "noop"
     ],
+    "buildCategories": {
+      "STANDARD": {
+        "persistent_mode": "PERSISTENT",
+        "temporary_mode": "TEMPORARY",
+        "suffix_prefix": ""
+      }
+    },
     "noop": {
       "provider": "noop"
     },
@@ -22,8 +29,7 @@
       "temporarySettingsParameters": [""],
       "defaultParameters": [
         "..."
-      ],
-      "temp_build_indy_group": ""
+      ]
     }
   },
   "scm": {

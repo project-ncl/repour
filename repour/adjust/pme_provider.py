@@ -19,8 +19,9 @@ def get_pme_provider(
     pme_jar_path,
     default_parameters,
     repour_parameters,
+    rest_mode,
     output_to_logs=False,
-    specific_indy_group=None,
+    brew_pull_enabled=False,
     suffix_prefix=None,
 ):
     async def get_result_data(
@@ -80,15 +81,15 @@ def get_pme_provider(
     async def adjust(repo_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
 
-        temp_build_parameters = []
+        alignment_parameters = ["-DrestMode=" + rest_mode]
 
         if suffix_prefix:
-            temp_build_parameters.append(
+            alignment_parameters.append(
                 "-DversionIncrementalSuffix=" + suffix_prefix + "-redhat"
             )
 
-        if specific_indy_group:
-            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
+        if brew_pull_enabled:
+            alignment_parameters.append("-DrestBrewPullActive=true")
 
         extra_parameters, subfolder = util.get_extra_parameters(extra_adjust_parameters)
 
@@ -119,7 +120,7 @@ def get_pme_provider(
             + default_parameters
             + extra_parameters
             + repour_parameters
-            + temp_build_parameters
+            + alignment_parameters
             + log_context_parameter
         )
 

@@ -249,30 +249,47 @@ async def adjust(adjustspec, repo_provider):
     return result
 
 
-async def handle_temp_build(adjustspec, adjust_provider_config):
-    temp_build_enabled = util.is_temp_build(adjustspec)
-    logger.info("Temp build status: " + str(temp_build_enabled))
+async def handle_build_mode(adjustspec, adjust_config):
+    build_category_key = "BUILD_CATEGORY"
 
-    specific_indy_group = util.get_specific_indy_group(
-        adjustspec, adjust_provider_config
+    build_category = adjustspec.get("adjustParameters", {}).get(
+        build_category_key, None
     )
-    suffix_prefix = util.get_build_version_suffix_prefix(adjustspec)
+    if build_category is None:
+        logger.error("Build category not specified!")
+        raise Exception("Build category not specified!")
 
-    if temp_build_enabled and not specific_indy_group:
-        logger.error("Temp build enabled but specific Indy group not specified!")
-        logger.error("Suffix prefix: " + suffix_prefix)
+    build_category_config = adjust_config.get("buildCategories", {}).get(
+        build_category, None
+    )
+    if build_category_config is None:
+        logger.error("Unknown build category!")
+        logger.error("Build category: " + build_category)
+        raise Exception("Unknown build category!")
 
-        raise Exception("Temp build enabled but specific indy group not specified!")
+    temp_build_enabled = util.is_temp_build(adjustspec)
+    brew_pull_enabled = util.has_key_true(adjustspec, "brewPullActive")
+    suffix_prefix = util.get_build_version_suffix_prefix(
+        build_category_config, temp_build_enabled
+    )
 
-    return temp_build_enabled, suffix_prefix, specific_indy_group
+    logger.info("Build category: " + build_category)
+    logger.info("Temp build status: " + str(temp_build_enabled))
+    logger.info("Brew pull status: " + str(brew_pull_enabled))
+
+    if temp_build_enabled:
+        rest_mode = build_category_config.temporary_mode
+    else:
+        rest_mode = build_category_config.persistent_mode
+
+    return temp_build_enabled, suffix_prefix, rest_mode, brew_pull_enabled
 
 
 async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
     logger.info("Using Gradle manipulation")
 
-    adjust_provider_config = c.get("adjust", {}).get(
-        gradle_provider.EXECUTION_NAME, None
-    )
+    adjust_config = c.get("adjust", {})
+    adjust_provider_config = adjust_config.get(gradle_provider.EXECUTION_NAME, None)
 
     if adjust_provider_config is None:
         raise Exception(
@@ -281,9 +298,12 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
             )
         )
 
-    temp_build_enabled, suffix_prefix, specific_indy_group = await handle_temp_build(
-        adjustspec, adjust_provider_config
-    )
+    (
+        temp_build_enabled,
+        suffix_prefix,
+        rest_mode,
+        brew_pull_enabled,
+    ) = await handle_build_mode(adjustspec, adjust_config)
 
     for parameter in ["gradleAnalyzerPluginInitFilePath"]:
         if parameter not in adjust_provider_config:
@@ -303,7 +323,8 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
         default_parameters,
         repour_parameters,
         adjust_provider_config["defaultGradlePath"],
-        specific_indy_group,
+        rest_mode,
+        brew_pull_enabled,
         suffix_prefix,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
@@ -317,7 +338,8 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
     executions = c.get("adjust", {}).get("executions", [])
 
     for execution_name in executions:
-        adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
+        adjust_config = c.get("adjust", {})
+        adjust_provider_config = adjust_config.get(execution_name, None)
         if adjust_provider_config is None:
             raise Exception(
                 'Adjust execution "{execution_name}" configuration not available.'.format(
@@ -344,8 +366,9 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
             (
                 temp_build_enabled,
                 suffix_prefix,
-                specific_indy_group,
-            ) = await handle_temp_build(adjustspec, adjust_provider_config)
+                rest_mode,
+                brew_pull_enabled,
+            ) = await handle_build_mode(adjustspec, adjust_config)
 
             # unrewritable repour PME parameters
             repour_parameters = adjust_provider_config.get("defaultParameters", [])
@@ -376,8 +399,9 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 adjust_provider_config["cliJarPathAbsolute"],
                 pme_parameters,
                 repour_parameters,
+                rest_mode,
                 adjust_provider_config.get("outputToLogs", False),
-                specific_indy_group,
+                brew_pull_enabled,
                 suffix_prefix,
             )(work_dir, extra_adjust_parameters, adjust_result)
 
@@ -401,8 +425,8 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
 
     specific_tag_name = None
     execution_name = "project-manipulator"
-
-    adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
+    adjust_config = c.get("adjust", {})
+    adjust_provider_config = adjust_config.get(execution_name, None)
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
     # unrewritable repour project-manipulator parameters
@@ -410,16 +434,20 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
     # default project-manipulator parameters from build config
     default_parameters = get_default_alignment_parameters(adjustspec)
 
-    temp_build_enabled, suffix_prefix, specific_indy_group = await handle_temp_build(
-        adjustspec, adjust_provider_config
-    )
+    (
+        temp_build_enabled,
+        suffix_prefix,
+        rest_mode,
+        brew_pull_enabled,
+    ) = await handle_build_mode(adjustspec, adjust_config)
 
     await project_manipulator_provider.get_project_manipulator_provider(
         execution_name,
         adjust_provider_config["cliJarPathAbsolute"],
         default_parameters,
         repour_parameters,
-        specific_indy_group,
+        rest_mode,
+        brew_pull_enabled,
         suffix_prefix,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
@@ -440,23 +468,26 @@ async def adjust_scala(work_dir, c, adjustspec, adjust_result):
     logger.info("Using Scala manipulation")
 
     execution_name = "SBT"
-
-    adjust_provider_config = c.get("adjust", {}).get(execution_name, None)
+    adjust_config = c.get("adjust", {})
+    adjust_provider_config = adjust_config.get(execution_name, None)
     extra_adjust_parameters = adjustspec.get("adjustParameters", {})
 
     repour_parameters = adjust_provider_config.get("defaultParameters", [])
     default_parameters = get_default_alignment_parameters(adjustspec)
 
-    temp_build_enabled, suffix_prefix, specific_indy_group = await handle_temp_build(
-        adjustspec, adjust_provider_config
-    )
+    (
+        temp_build_enabled,
+        suffix_prefix,
+        rest_mode,
+        brew_pull_enabled,
+    ) = await handle_build_mode(adjustspec, adjust_config)
 
     result = await get_scala_provider(
         execution_name,
         adjust_provider_config["cliJarPathAbsolute"],
         default_parameters,
         repour_parameters,
-        specific_indy_group,
+        rest_mode,
         suffix_prefix,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
