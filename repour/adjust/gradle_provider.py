@@ -29,7 +29,8 @@ def get_gradle_provider(
     default_parameters,
     repour_parameters,
     default_gradle_path,
-    specific_indy_group=None,
+    rest_mode,
+    brew_pull_enabled=False,
     suffix_prefix=None,
 ):
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
@@ -42,15 +43,15 @@ def get_gradle_provider(
                 )
             )
 
-        temp_build_parameters = []
+        alignment_parameters = ["-DrestMode=" + rest_mode]
 
         if suffix_prefix:
-            temp_build_parameters.append(
+            alignment_parameters.append(
                 "-DversionIncrementalSuffix=" + suffix_prefix + "-redhat"
             )
 
-        if specific_indy_group:
-            temp_build_parameters.append("-DrestRepositoryGroup=" + specific_indy_group)
+        if brew_pull_enabled:
+            alignment_parameters.append("-DrestBrewPullActive=true")
 
         extra_parameters, subfolder = util.get_extra_parameters(
             extra_adjust_parameters, flags=("-t", "--target")
@@ -87,7 +88,7 @@ def get_gradle_provider(
             + target_and_init
             + extra_parameters
             + repour_parameters
-            + temp_build_parameters
+            + alignment_parameters
         )
 
         result = await process_provider.get_process_provider(

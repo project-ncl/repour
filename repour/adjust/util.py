@@ -11,6 +11,7 @@ from .. import asutil, exception
 logger = logging.getLogger(__name__)
 
 REPOUR_JAVA_KEY = "-DRepour_Java="
+SERVICE_BUILD_CATEGORY = "SERVICE"
 
 stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
@@ -71,23 +72,21 @@ def is_temp_build(adjustspec):
 
         return: :bool: whether temp build feature enabled or not
     """
-    key = "tempBuild"
+    return has_key_true(adjustspec, "tempBuild")
+
+
+def has_key_true(adjustspec, key):
+    """ Checks if the key is in the adjustspec and if the key is True.
+
+        return: :bool: if the key is set and is True
+    """
     if (key in adjustspec) and adjustspec[key] is True:
         return True
     else:
         return False
 
 
-def get_specific_indy_group(adjustspec, adjust_provider_config):
-    temp_build_enabled = is_temp_build(adjustspec)
-
-    if temp_build_enabled:
-        return adjust_provider_config.get("temp_build_indy_group", None)
-    else:
-        return None
-
-
-def get_build_version_suffix_prefix(adjustspec):
+def get_build_version_suffix_prefix(build_category_config, temp_build_enabled):
     """ Generate the prefix of version suffix (i.e. suffix prefix) from the adjust request.
 
         If the suffix prefix is set *AND* the one of the special build types is active then
@@ -95,37 +94,15 @@ def get_build_version_suffix_prefix(adjustspec):
 
         Otherwise it will return None
     """
-    temp_build_timestamp_key = "tempBuildTimestamp"
-    build_category_key = "BUILD_CATEGORY"
-    service_build_value = "SERVICE"
-
     temporary_prefix = "temporary"
-    service_prefix = "managedsvc"
 
-    suffix_prefix = None
-    temp_build_enabled = is_temp_build(adjustspec)
-
-    if temp_build_timestamp_key in adjustspec:
-        suffix_prefix = adjustspec[temp_build_timestamp_key]
+    suffix_prefix = build_category_config.suffix_prefix
 
     if temp_build_enabled:
-        if suffix_prefix is None:
-            logger.info("Temp build timestamp set to: " + str(suffix_prefix))
-            suffix_prefix = temporary_prefix
-
-    build_category = None
-    if "adjustParameters" in adjustspec:
-        build_category = adjustspec["adjustParameters"].get(build_category_key, None)
-    else:
-        logger.warning(
-            "No adjustParameters found in adjustspec! Contents: " + str(adjustspec)
-        )
-    service_build_enabled = service_build_value == build_category
-    if service_build_enabled:
         if suffix_prefix:
-            suffix_prefix = service_prefix + "-" + suffix_prefix
+            suffix_prefix = suffix_prefix + "-" + temporary_prefix
         else:
-            suffix_prefix = service_prefix
+            suffix_prefix = temporary_prefix
 
     return suffix_prefix
 

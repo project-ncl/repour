@@ -16,7 +16,7 @@ def get_project_manipulator_provider(
     jar_path,
     default_parameters,
     repour_parameters,
-    specific_indy_group,
+    rest_mode,
     suffix_prefix,
 ):
     async def get_result_data(work_dir, extra_parameters, results_file=None):
@@ -90,7 +90,7 @@ def get_project_manipulator_provider(
 
         extra_parameters = await get_extra_parameters(extra_adjust_parameters)
 
-        temp_build_parameters = []
+        alignment_parameters = ["-DrestMode=" + rest_mode]
 
         if suffix_prefix:
             orig_inc_suffix = util.get_param_value(
@@ -100,12 +100,9 @@ def get_project_manipulator_provider(
                 default_parameters,
             )
             temp_suffix = ("-" + orig_inc_suffix) if orig_inc_suffix else ""
-            temp_build_parameters.append(
+            alignment_parameters.append(
                 "-DversionIncrementalSuffix=" + suffix_prefix + temp_suffix
             )
-
-        if specific_indy_group:
-            temp_build_parameters.append("-DrepositoryGroup=" + specific_indy_group)
 
         filename = tempfile.NamedTemporaryFile(delete=False).name
 
@@ -114,7 +111,7 @@ def get_project_manipulator_provider(
             + default_parameters
             + extra_parameters
             + repour_parameters
-            + temp_build_parameters
+            + alignment_parameters
             + ["--result=" + filename]
         )
 
