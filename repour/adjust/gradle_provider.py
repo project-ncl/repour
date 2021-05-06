@@ -166,7 +166,8 @@ def get_gradle_provider(
                         "artifactId": artifact_id,
                         "version": None,
                     }
-                }
+                },
+                "RemovedRepositories": [],
             }
 
     return adjust
