@@ -89,7 +89,9 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     asyncio.get_event_loop().create_task(cancel.start_cancel_loop())
 
     logger.debug("Creating asyncio server")
-    srv = await loop.create_server(app.make_handler(), bind["address"], bind["port"])
+    srv = await loop.create_server(
+        app.make_handler(access_log=None), bind["address"], bind["port"]
+    )
     for socket in srv.sockets:
         logger.info("Server started on socket: {}".format(socket.getsockname()))
 
