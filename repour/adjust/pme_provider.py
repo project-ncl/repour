@@ -324,6 +324,9 @@ def parse_pme_result_manipulation_format(
         pme_result["VersioningState"]["executionRootModified"]["artifactId"] = data[
             "executionRoot"
         ]["artifactId"]
+
+    # Set version if present in result file
+    if "executionRoot" in data and "version" in data["executionRoot"]:
         pme_result["VersioningState"]["executionRootModified"]["version"] = data[
             "executionRoot"
         ]["version"]
