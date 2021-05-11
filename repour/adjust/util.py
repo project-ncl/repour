@@ -96,7 +96,7 @@ def get_build_version_suffix_prefix(build_category_config, temp_build_enabled):
     """
     temporary_prefix = "temporary"
 
-    suffix_prefix = build_category_config.suffix_prefix
+    suffix_prefix = build_category_config["suffix_prefix"]
 
     if temp_build_enabled:
         if suffix_prefix:

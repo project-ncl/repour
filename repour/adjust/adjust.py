@@ -278,9 +278,9 @@ async def handle_build_mode(adjustspec, adjust_config):
     logger.info("Brew pull status: " + str(brew_pull_enabled))
 
     if temp_build_enabled:
-        rest_mode = build_category_config.temporary_mode
+        rest_mode = build_category_config["temporary_mode"]
     else:
-        rest_mode = build_category_config.persistent_mode
+        rest_mode = build_category_config["persistent_mode"]
 
     return temp_build_enabled, suffix_prefix, rest_mode, brew_pull_enabled
 
