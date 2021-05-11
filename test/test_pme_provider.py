@@ -28,7 +28,7 @@ class TestPMEProvider(unittest.TestCase):
         result = pme_provider.parse_pme_result_manipulation_format(
             "/tmp", "", json.dumps(raw_result_data), "group", "artifact"
         )
-        self.verify_result_format(result, "group", "artifact", None, [])
+        self.verify_result_format(result, "group", "artifact", version, [])
 
     def verify_result_format(
         self, result, group_id, artifact_id, version, removed_repositories
