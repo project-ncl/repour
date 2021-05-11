@@ -253,11 +253,8 @@ async def handle_build_mode(adjustspec, adjust_config):
     build_category_key = "BUILD_CATEGORY"
 
     build_category = adjustspec.get("adjustParameters", {}).get(
-        build_category_key, None
+        build_category_key, "STANDARD"
     )
-    if build_category is None:
-        logger.error("Build category not specified!")
-        raise Exception("Build category not specified!")
 
     build_category_config = adjust_config.get("buildCategories", {}).get(
         build_category, None
