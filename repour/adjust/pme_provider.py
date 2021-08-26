@@ -56,28 +56,6 @@ def get_pme_provider(
             logger.warn("Couldn't capture any result file from PME")
             return None
 
-    def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
-        """
-        Check if PME is disabled via one of the parameters passed to PME by the user
-
-        return: :bool:
-        """
-        paramsString = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", None)
-
-        if paramsString is None:
-            return False
-
-        else:
-
-            params = shlex.split(paramsString)
-
-            for p in params:
-
-                if p.startswith("-Dmanipulation.disable=true"):
-                    return True
-            else:
-                return False
-
     async def adjust(repo_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
 
@@ -341,3 +319,30 @@ def parse_pme_result_manipulation_format(
         logger.error(str(e))
 
     return pme_result
+
+
+def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
+    """
+    Check if PME is disabled via one of the parameters passed to PME by the user
+
+    return: :bool:
+    """
+    paramsString = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", None)
+
+    if paramsString is None:
+        return False
+
+    else:
+
+        try:
+            params = shlex.split(paramsString)
+
+            for p in params:
+
+                if p.startswith("-Dmanipulation.disable=true"):
+                    return True
+            else:
+                return False
+        except Exception as e:
+            # it's a failed user error, not a system error
+            raise exception.AdjustCommandError(str(e), [], 10, stderr=str(e))
