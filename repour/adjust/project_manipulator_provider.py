@@ -64,31 +64,10 @@ def get_project_manipulator_provider(
 
         return result_data
 
-    async def get_extra_parameters(extra_adjust_parameters):
-        """
-        Get the extra ALIGNMENT_PARAMETERS parameters from PNC
-        """
-        subfolder = ""
-
-        paramsString = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", None)
-        if paramsString is None:
-            return []
-        else:
-            params = shlex.split(paramsString)
-            for p in params:
-                if p[0] != "-":
-                    desc = (
-                        'Parameters that do not start with dash "-" are not allowed. '
-                        + 'Found "{p}" in "{params}".'.format(**locals())
-                    )
-                    raise exception.AdjustCommandError(desc, [], 10, stderr=desc)
-
-            return params
-
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         nonlocal execution_name
 
-        extra_parameters = await get_extra_parameters(extra_adjust_parameters)
+        extra_parameters = get_extra_parameters(extra_adjust_parameters)
 
         alignment_parameters = ["-DrestMode=" + rest_mode]
 
@@ -159,3 +138,30 @@ async def get_version_from_result(data):
         )
         logger.error(e)
         return None
+
+
+def get_extra_parameters(extra_adjust_parameters):
+    """
+    Get the extra ALIGNMENT_PARAMETERS parameters from PNC
+    """
+    subfolder = ""
+
+    paramsString = extra_adjust_parameters.get("ALIGNMENT_PARAMETERS", None)
+    if paramsString is None:
+        return []
+    else:
+        try:
+            params = shlex.split(paramsString)
+        except Exception as e:
+            # it's a failed user error, not a system error
+            raise exception.AdjustCommandError(str(e), [], 10, stderr=str(e))
+
+        for p in params:
+            if p[0] != "-":
+                desc = (
+                    'Parameters that do not start with dash "-" are not allowed. '
+                    + 'Found "{p}" in "{params}".'.format(**locals())
+                )
+                raise exception.AdjustCommandError(desc, [], 10, stderr=desc)
+
+        return params
