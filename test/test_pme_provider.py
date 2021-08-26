@@ -2,6 +2,7 @@
 import json
 import unittest
 
+from repour import exception
 import repour.adjust.pme_provider as pme_provider
 
 
@@ -29,6 +30,25 @@ class TestPMEProvider(unittest.TestCase):
             "/tmp", "", json.dumps(raw_result_data), "group", "artifact"
         )
         self.verify_result_format(result, "group", "artifact", version, [])
+
+    def test_pme_disabled(self):
+
+        param = {"ALIGNMENT_PARAMETERS": None}
+        self.assertFalse(pme_provider.is_pme_disabled_via_extra_parameters(param))
+
+        param = {"ALIGNMENT_PARAMETERS": "-Dmanipulation.disable=true --letsgo"}
+        self.assertTrue(pme_provider.is_pme_disabled_via_extra_parameters(param))
+
+        param = {"ALIGNMENT_PARAMETERS": "-Dmanipulation.disable=false --letsgo"}
+        self.assertFalse(pme_provider.is_pme_disabled_via_extra_parameters(param))
+
+        param = {"ALIGNMENT_PARAMETERS": '-DdependencyOverride.*:*@*="'}
+
+        try:
+            pme_provider.is_pme_disabled_via_extra_parameters(param)
+            self.assertFalse(True, msg="An exception should be thrown here")
+        except exception.AdjustCommandError as e:
+            self.assertEqual(e.exit_code, 10)
 
     def verify_result_format(
         self, result, group_id, artifact_id, version, removed_repositories
