@@ -21,7 +21,7 @@ flake8 = "^3.9"
 more-itertools = "^8.8.0"
 giturlparse = "^0.10.0"
 pylru = "^1.2.0"
-cryptography = "3.3.2"
+cryptography = "3.4.8"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.24"
