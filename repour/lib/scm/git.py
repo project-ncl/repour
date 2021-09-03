@@ -6,7 +6,9 @@
 
 import logging
 import os
+import random
 import re
+import string
 import subprocess
 
 from repour import asutil, exception
@@ -63,6 +65,42 @@ async def checkout(dir, ref, force=False):
             desc="Could not checkout ref {ref} with git".format(**locals()),
             print_cmd=True,
         )
+    except exception.CommandError as e:
+        e.exit_code = 10
+        raise
+
+
+async def checkout_pr(dir, ref, remote="origin"):
+    """
+    Checkout a PR ref to a branch. The name of the branch is returned
+
+    The PR ref has to be in a format as specified in 'is_ref_a_pull_request'
+
+    Parameters:
+    - dir: :string: directory of git repo
+    - ref: :string: ref of the PR
+    - remote: :string: the remote to use (default: origin)
+
+    return:
+    - branch where PR is checkout :string:
+    """
+    if not is_ref_a_pull_request(ref):
+        error_desc = "Reference {} is not a PR!".format(ref)
+        raise exception.AdjustCommandError(
+            str(error_desc), [], 10, stderr=str(error_desc)
+        )
+
+    modified_fetch_ref, branch = modify_ref_to_be_fetchable(ref)
+    try:
+        await expect_ok(
+            cmd=["git", "fetch", remote, modified_fetch_ref],
+            cwd=dir,
+            desc="fetch pr to a branch",
+            print_cmd=True,
+        )
+        await checkout(dir, branch)
+        return branch
+
     except exception.CommandError as e:
         e.exit_code = 10
         raise
@@ -199,6 +237,28 @@ async def does_sha_exist(dir, ref):
     try:
         await expect_ok(
             cmd=["git", "cat-file", "-e", ref + "^{commit}"],
+            cwd=dir,
+            desc="Ignore this.",
+            print_cmd=True,
+        )
+        return True
+    except Exception:
+        return False
+
+
+async def does_pr_exist(dir, ref, remote="origin"):
+    if not is_ref_a_pull_request(ref):
+        return False
+
+    try:
+        await expect_ok(
+            cmd=[
+                "git",
+                "fetch",
+                remote,
+                modify_ref_to_be_fetchable(ref)[0],
+                "--dry-run",
+            ],
             cwd=dir,
             desc="Ignore this.",
             print_cmd=True,
@@ -738,3 +798,57 @@ async def submodule_update_init(dir):
         desc="Could not initiate submodules with git in path {}.".format(dir),
         print_cmd=True,
     )
+
+
+def is_ref_a_pull_request(ref):
+    """
+    Check if the ref is a pull request
+
+    Supported ref format:
+    - merge-requests/<number> for Gitlab
+    - pull/<number> for Github
+
+    Parameters:
+    - ref: :string:
+
+    Return:
+    - :bool:
+    """
+    gitlab_check = re.compile(r"merge-requests/\d+")
+    github_check = re.compile(r"pull/\d+")
+
+    if gitlab_check.search(ref):
+        return True
+
+    if github_check.search(ref):
+        return True
+
+    # No match found
+    return False
+
+
+def modify_ref_to_be_fetchable(ref):
+    """
+    Return a tuple (ref to fetch to branch, branch) for a ref which is a pull request.
+
+    For example, if the ref is: merge-requests/10, then the returned value is:
+        ('merge-requests/10/head:random_branch_name', 'random_branch_name')
+
+    The string of the first element of the tuple can then be used in 'git fetch' to pull the pull request locally into branch: random_branch_name
+
+    If the ref is not a pull request, a tupe of (None, None) is returned
+
+    Parameters:
+    - ref: :string: ref of a merge request
+
+    Return:
+    - tuple: first element is a ref that can be 'git fetched', the second is the random branch where the ref is checkout
+    """
+
+    if is_ref_a_pull_request(ref):
+        random_branch_name = "".join(
+            random.choice(string.ascii_letters) for i in range(10)
+        )
+        return (ref + "/head:" + random_branch_name, random_branch_name)
+    else:
+        return (None, None)

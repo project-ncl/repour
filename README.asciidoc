@@ -262,6 +262,12 @@ The response will contain the exact ref name as what was sent
 !===
 |===
 
+If the ref to align is a merge-request (Gitlab, with format '/merge-requests/<number>') or a pull-request (Github with format '/pull/<number>'),
+with sync switched on, the merge-request is checkout into a temporary branch, then the alignment tool is run, and the results are added in a commit
+and pushed in a tag that starts with 'Pull_Request-'. The latter is done to not create any confusing that the tag is from a merge-request.
+
+With sync on for a merge-request, the checkout is not pushed into the downstream repository in a branch, unlike for a regular ref. The commits in
+the checkout are indirectly present via the 'Pull_Request-<tag>' only.
 
 
 === Clone
