@@ -104,6 +104,10 @@ async def check_ref_exists(work_dir, ref):
     if is_sha:
         return True
 
+    is_pr = await git.does_pr_exist(work_dir, ref)
+    if is_pr:
+        return True
+
     return False
 
 
@@ -121,7 +125,12 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # if no, then fail completely
     ref_exists = await check_ref_exists(work_dir, adjustspec["ref"])
     if ref_exists:
-        await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
+        is_pull_request = git.is_ref_a_pull_request(adjustspec["ref"])
+
+        if is_pull_request:
+            await git.checkout_pr(work_dir, adjustspec["ref"])
+        else:
+            await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
         await git.rename_remote(
             work_dir, "origin", "origin_remote"
@@ -134,9 +143,14 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
 
         ref = adjustspec["ref"]
         # Sync
-        await clone.push_sync_changes(
-            work_dir, ref, "origin", origin_remote="origin_remote"
-        )
+        if is_pull_request:
+            logger.info(
+                "Syncing of Pull Request to downstream repository disabled since the ref is a pull request"
+            )
+        else:
+            await clone.push_sync_changes(
+                work_dir, ref, "origin", origin_remote="origin_remote"
+            )
 
     else:
         logger.warn(
@@ -232,6 +246,12 @@ async def adjust(adjustspec, repo_provider):
             specific_tag_name = await adjust_project_manip(
                 work_dir, c, adjustspec, adjust_result
             )
+
+        is_pull_request = git.is_ref_a_pull_request(adjustspec["ref"])
+
+        # if we are aligning from a PR, indicate it as such in the tag name
+        if is_pull_request:
+            specific_tag_name = "Pull_Request-" + specific_tag_name
 
         result = await commit_adjustments(
             repo_dir=work_dir,
