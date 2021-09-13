@@ -10,7 +10,7 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = "^3.6"
 aiohttp = "^3.7"
-asyncssh = "^2.7.0"
+asyncssh = "^2.7.1"
 voluptuous = "^0.12.1"
 python-jose = "^3.3"
 pyyaml = "^5.4"
