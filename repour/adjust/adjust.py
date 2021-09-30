@@ -480,7 +480,7 @@ async def adjust_scala(work_dir, c, adjustspec, adjust_result):
 
     result = await get_scala_provider(
         execution_name,
-        adjust_provider_config["cliJarPathAbsolute"],
+        adjust_provider_config["sbtPathAbsolute"],
         default_parameters,
         repour_parameters,
         rest_mode,

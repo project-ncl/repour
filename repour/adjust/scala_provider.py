@@ -1,31 +1,84 @@
+import json
 import logging
+import os
+
 from .. import exception
 import shlex
 
+from . import process_provider, pme_provider
+
 logger = logging.getLogger(__name__)
+
+SMEG_MANIPULATION_FILE_NAME = "manipulations.json"
 
 
 def get_scala_provider(
     execution_name,
-    sbt_ext_path,
+    sbt_path,
     default_parameters,
     repour_parameters,
     rest_mode,
     brew_pull_enabled,
     suffix_prefix,
 ):
-    async def get_result_data(work_dir, extra_adjust_parameters, results_file=None):
-        template = {
-            "VersioningState": {
-                "executionRootModified": {
-                    "groupId": None,
-                    "artifactId": None,
-                    "version": None,
+    async def get_result_data(
+        work_dir,
+        extra_adjust_parameters,
+        results_file=None,
+        group_id=None,
+        artifact_id=None,
+    ):
+        """ Read the manipulations.json file and return it as an object
+
+        Format is:
+
+        {
+            VersioningState: {
+                executionRootModified: {
+                    groupId: "value",
+                    artifactId: "value",
+                    version: "value"
                 }
             },
-            "RemovedRepositories": [],
+            RemovedRepositories: []
         }
-        return template
+
+        """
+        manipulation_file_path = os.path.join(work_dir, SMEG_MANIPULATION_FILE_NAME)
+
+        if os.path.isfile(manipulation_file_path):
+            file_path = manipulation_file_path
+            logger.info("Reading '{}' file with alignment result".format(file_path))
+
+            with open(file_path, "r") as f:
+                # SMEG returns manipulations.json file already in correct format
+                result = json.load(f)
+                if group_id is not None and artifact_id is not None:
+                    logger.warning(
+                        "Overriding the groupId of the result to: " + group_id
+                    )
+                    result["VersioningState"]["executionRootModified"][
+                        "groupId"
+                    ] = group_id
+
+                    logger.warning(
+                        "Overriding the artifactId of the result to: " + artifact_id
+                    )
+                    result["VersioningState"]["executionRootModified"][
+                        "artifactId"
+                    ] = artifact_id
+                return result
+        else:
+            return {
+                "VersioningState": {
+                    "executionRootModified": {
+                        "groupId": group_id,
+                        "artifactId": artifact_id,
+                        "version": None,
+                    }
+                },
+                "RemovedRepositories": [],
+            }
 
     async def get_extra_parameters(extra_adjust_parameters):
         """
@@ -51,6 +104,8 @@ def get_scala_provider(
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         alignment_parameters = ["-DrestMode=" + rest_mode]
 
+        extra_parameters = await get_extra_parameters(extra_adjust_parameters)
+
         if suffix_prefix:
             alignment_parameters.append(
                 "-DversionIncrementalSuffix=" + suffix_prefix + "-redhat"
@@ -61,36 +116,38 @@ def get_scala_provider(
 
         logger.info("SKIPPING " + execution_name + " alignment phase.")
 
-        # TODO uncomment once ready
-        # cmd = (
-        #     ["java", "-jar", sbt_ext_path]
-        #     + default_parameters
-        #     + extra_parameters
-        #     + repour_parameters
-        #     + alignment_parameters
-        # )
-        #
-        # logger.info(
-        #     'Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals())
-        # )
-        #
-        # result = await process_provider.get_process_provider(
-        #     execution_name,
-        #     cmd,
-        #     get_result_data=get_result_data,
-        #     send_log=True,
-        # )(work_dir, extra_adjust_parameters, adjust_result)
-
-        # TODO mock an empty result and delete once ready
-        result = {"adjustType": [], "resultData": {}}
-        result["resultData"] = await get_result_data(
-            work_dir, extra_adjust_parameters, adjust_result
+        cmd = (
+            [sbt_path]
+            + default_parameters
+            + extra_parameters
+            + repour_parameters
+            + alignment_parameters
+            + ["manipulate"]
+            + ["writeReport"]
         )
-        result["adjustType"].append(execution_name)
 
-        # TODO will I even get adjustType?
+        logger.info(
+            'Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals())
+        )
+
+        result = await process_provider.get_process_provider(
+            execution_name, cmd, get_result_data=get_result_data, send_log=True,
+        )(work_dir, extra_adjust_parameters, adjust_result)
+
+        (
+            override_group_id,
+            override_artifact_id,
+        ) = await pme_provider.get_extra_param_execution_root_name(
+            extra_adjust_parameters
+        )
+
         adjust_result["adjustType"] = result["adjustType"]
-        adjust_result["resultData"] = result["resultData"]
+        adjust_result["resultData"] = await get_result_data(
+            work_dir,
+            extra_parameters,
+            group_id=override_group_id,
+            artifact_id=override_artifact_id,
+        )
 
         return result
 
