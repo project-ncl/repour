@@ -504,6 +504,7 @@ async def adjust_scala(work_dir, c, adjustspec, adjust_result):
         default_parameters,
         repour_parameters,
         rest_mode,
+        brew_pull_enabled,
         suffix_prefix,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
