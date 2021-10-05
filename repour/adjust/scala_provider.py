@@ -83,7 +83,7 @@ def get_scala_provider(
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         alignment_parameters = ["-DrestMode=" + rest_mode]
 
-        extra_parameters = await get_extra_parameters(extra_adjust_parameters)
+        extra_parameters = get_extra_parameters(extra_adjust_parameters)
 
         if suffix_prefix:
             alignment_parameters.append(
