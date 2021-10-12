@@ -97,6 +97,9 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         log_process_context = request.headers.get("log-process-context", "").strip()
         log_expires = request.headers.get("log-expires", "").strip()
         log_tmp = request.headers.get("log-tmp", "").strip()
+        log_process_context_variant = request.headers.get(
+            "process-context-variant", ""
+        ).strip()
 
         callback_id = create_callback_id()
 
@@ -110,6 +113,9 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         log_util.add_update_mdc_key_value_in_task("processContext", log_process_context)
         log_util.add_update_mdc_key_value_in_task("expires", log_expires)
         log_util.add_update_mdc_key_value_in_task("tmp", log_tmp)
+        log_util.add_update_mdc_key_value_in_task(
+            "processContextVariant", log_process_context_variant
+        )
 
         asyncio.Task.current_task().callback_id = callback_id
 
@@ -257,6 +263,9 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             "log-process-context": current_task.mdc["processContext"],
                             "log-expires": current_task.mdc["expires"],
                             "log_tmp": current_task.mdc["tmp"],
+                            "process-context-variant": current_task.mdc[
+                                "processContextVariant"
+                            ],
                         }
 
                         headers.update(context_headers)
