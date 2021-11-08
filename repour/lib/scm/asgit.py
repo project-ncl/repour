@@ -262,7 +262,19 @@ async def transform_git_submodule_into_fat_repository(work_dir):
 
     for location in submodule_locations:
         # Step 1: remove all the submodule locations from cache
-        await git.rm(work_dir, location, cached=True)
+        try:
+            await git.rm(work_dir, location, cached=True)
+        except exception.CommandError as e:
+            # Cases when the submodule is defined in .gitmodules but the actual module is missing, treat
+            # it as a FAILED and not a SYSTEM_ERROR.
+            logger.error(
+                "Submodule directory of module {location} is missing. Consider adding/removing this module or "
+                "removing the entire .gitmodules if it was forgotten.".format(
+                    **locals()
+                )
+            )
+            e.exit_code = 10
+            raise
 
         # Step 2: remove all .git file (it's a file for submodule) in the submodule locations if present
         logger.info("Removing .git folder inside the submodule " + location)
