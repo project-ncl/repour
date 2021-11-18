@@ -93,8 +93,6 @@ def get_scala_provider(
         if brew_pull_enabled:
             alignment_parameters.append("-DrestBrewPullActive=true")
 
-        logger.info("SKIPPING " + execution_name + " alignment phase.")
-
         cmd = (
             [sbt_path]
             + default_parameters
