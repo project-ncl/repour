@@ -52,7 +52,7 @@ class FileCallbackHandler(logging.StreamHandler):
     def emit(self, record):
         try:
             if has_event_loop():
-                task = asyncio.Task.current_task()
+                task = asyncio.current_task()
             else:
                 task = None
 
