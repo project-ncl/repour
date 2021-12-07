@@ -17,7 +17,7 @@ async def handle_socket(request):
     ws_obj = web.WebSocketResponse(autoping=True)
 
     await ws_obj.prepare(request)
-    await websockets.register(callback_id, asyncio.Task.current_task(), ws_obj)
+    await websockets.register(callback_id, asyncio.current_task(), ws_obj)
 
     # Keep websocket alive if client hasn't closed it yet
     while True:

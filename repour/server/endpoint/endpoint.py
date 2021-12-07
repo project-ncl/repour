@@ -103,10 +103,10 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
         callback_id = create_callback_id()
 
-        asyncio.Task.current_task().log_context = log_context
+        asyncio.current_task().log_context = log_context
 
         # required for bifrost for streaming logs
-        asyncio.Task.current_task().loggerName = "org.jboss.pnc._userlog_"
+        asyncio.current_task().loggerName = "org.jboss.pnc._userlog_"
 
         log_util.add_update_mdc_key_value_in_task("userId", log_user_id)
         log_util.add_update_mdc_key_value_in_task("requestContext", log_request_context)
@@ -117,7 +117,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             "processContextVariant", log_process_context_variant
         )
 
-        asyncio.Task.current_task().callback_id = callback_id
+        asyncio.current_task().callback_id = callback_id
 
         try:
             spec = await request.json()
@@ -182,7 +182,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         # Set the task_id if provided in the request
         task_id = spec.get("taskId", None)
         if task_id:
-            asyncio.Task.current_task().task_id = task_id
+            asyncio.current_task().task_id = task_id
 
         async def do_call():
             try:
@@ -242,7 +242,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         # TODO refactor this into auth.py, we cannot use middleware for callbacks
                         headers = {}
 
-                        current_task = asyncio.Task.current_task()
+                        current_task = asyncio.current_task()
 
                         auth_provider = c.get("auth", {}).get("provider", None)
                         if auth_provider == "oauth2_jwt" and request.headers.get(
@@ -330,8 +330,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             )
             callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
             callback_task.log_context = log_context
-            callback_task.loggerName = asyncio.Task.current_task().loggerName
-            callback_task.mdc = asyncio.Task.current_task().mdc
+            callback_task.loggerName = asyncio.current_task().loggerName
+            callback_task.mdc = asyncio.current_task().mdc
             callback_task.callback_id = callback_id
             # Set the task_id if provided in the request
             task_id = spec.get("taskId", None)

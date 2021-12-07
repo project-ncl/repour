@@ -22,7 +22,7 @@ class ContextLogRecord(logging.LogRecord):
         super().__init__(*args, **kwargs)
 
         if self.has_event_loop():
-            task = asyncio.Task.current_task()
+            task = asyncio.current_task()
         else:
             task = None
         if task is not None:
