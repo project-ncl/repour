@@ -86,7 +86,7 @@ def quiet_check_call(cmd, cwd=None):
 
 
 def setup_http(cls, loop, routes):
-    app = aiohttp.web.Application(loop=loop)
+    app = aiohttp.web.Application()
 
     for route in routes:
         app.router.add_route(*route)
