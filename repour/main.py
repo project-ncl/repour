@@ -21,10 +21,7 @@ class ContextLogRecord(logging.LogRecord):
 
         super().__init__(*args, **kwargs)
 
-        if self.has_event_loop():
-            task = asyncio.current_task()
-        else:
-            task = None
+        task = self.get_current_task()
         if task is not None:
             # shallow copy the mdc. this is needed since logging is async and
             # could be sent after changes in the mdc object. So we want to
@@ -39,12 +36,11 @@ class ContextLogRecord(logging.LogRecord):
             self.log_context = self.no_context_found
             self.loggerName = self.no_context_found
 
-    def has_event_loop(self):
+    def get_current_task(self):
         try:
-            asyncio.get_event_loop()
-            return True
+            return asyncio.current_task()
         except RuntimeError:
-            return False
+            return None
 
 
 #
@@ -161,7 +157,6 @@ def configure_logging(
     )
 
     root_logger = logging.getLogger()
-
     if log_path is not None:
         file_log = logging.FileHandler(log_path)
         file_log.setFormatter(formatter)
@@ -174,6 +169,8 @@ def configure_logging(
     callback_id_log = file_callback_log.FileCallbackHandler()
     callback_id_log.setFormatter(formatter_callback)
     root_logger.addHandler(callback_id_log)
+
+    print("Callback handler setup")
 
     # Cleanup of old log files
     asyncio.get_event_loop().create_task(file_callback_log.setup_clean_old_logfiles())

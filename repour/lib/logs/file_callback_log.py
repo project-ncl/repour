@@ -17,15 +17,11 @@ def get_callback_log_path(callback_id):
     return os.path.join(CALLBACK_LOGS_PATH, callback_id + ".log")
 
 
-def has_event_loop():
-    """ If another thread (e.g kafka) is writing a log, the file_callback_log will be invoked inside that thread. In that case,
-    there is no event loop in that other thread and we need to know this
-    """
+def get_current_task():
     try:
-        asyncio.get_event_loop()
-        return True
+        return asyncio.current_task()
     except RuntimeError:
-        return False
+        return None
 
 
 class FileCallbackHandler(logging.StreamHandler):
@@ -46,15 +42,13 @@ class FileCallbackHandler(logging.StreamHandler):
         self.mode = mode
         self.encoding = encoding
         self.delay = delay
+        self.stream = None
         self.cache_file_handler = pylru.lrucache(20, close_file_handler)
         logging.Handler.__init__(self)
 
     def emit(self, record):
         try:
-            if has_event_loop():
-                task = asyncio.current_task()
-            else:
-                task = None
+            task = get_current_task()
 
             if task is not None:
                 callback_id = getattr(task, "callback_id", None)
@@ -64,6 +58,8 @@ class FileCallbackHandler(logging.StreamHandler):
 
                     # need to flush to make sure every reader sees the change
                     self.stream.flush()
+            else:
+                self.stream = None
         except RuntimeError:
             self.handleError(record)
 
