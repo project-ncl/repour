@@ -1,0 +1,18 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "13:00"
+    timezone: America/New_York
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: cryptography
+    versions:
+    - 3.4.5
+    - 3.4.6
+    - 3.4.7
+  - dependency-name: aiohttp
+    versions:
+    - 3.7.4.post0
