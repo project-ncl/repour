@@ -358,7 +358,9 @@ async def push_all(dir, remote, tags_also=False):
 
 
 # TODO merge with above
-async def push_with_tags(dir, branch, config_git_user, remote="origin", tryAtomic=True):
+async def push_with_tags(
+    dir, branch, config_git_user, remote="origin", tryAtomic=False
+):
     """
     Warning: Atomic push is supported since git version 2.4.
     If the atomic push is not supported by git client OR repository provider,
