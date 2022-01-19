@@ -16,6 +16,7 @@
       "STANDARD": {
         "persistent_mode": "PERSISTENT",
         "temporary_mode": "TEMPORARY",
+        "temporary_prefer_persistent_mode": "TEMPORARY_PREFER_PERSISTENT",
         "suffix_prefix": ""
       }
     },
