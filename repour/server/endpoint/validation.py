@@ -64,6 +64,7 @@ adjust_raw = {
     Optional("callback"): callback_raw,
     Optional("tempBuild"): bool,
     Optional("tempBuildTimestamp"): null_or_str,
+    Optional("alignmentPreference"): null_or_str,
     Optional("taskId"): null_or_str,
     Optional("buildType"): nonempty_str,
     Optional("defaultAlignmentParams"): Any(None, str),
