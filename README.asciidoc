@@ -115,6 +115,7 @@ The response will contain the exact ref name as what was sent
     },
     Optional("tempBuild"): bool,
     Optional("tempBuildTimestamp"): null_or_str,
+    Optional("alignmentPreference"): null_or_str,
     Optional("taskId"): null_or_str,
     Optional("buildType"): nonempty_str,
     "internal_url": {
