@@ -75,12 +75,32 @@ def is_temp_build(adjustspec):
     return has_key_true(adjustspec, "tempBuild")
 
 
+def is_alignment_preference(adjustspec, value):
+    """ For temp build to be active, we need to both provide a 'is_temp_build' key
+        in our request and its value must be true
+
+        return: :bool: whether temp build feature enabled or not
+    """
+    return has_key_value(adjustspec, "alignmentPreference", value)
+
+
 def has_key_true(adjustspec, key):
     """ Checks if the key is in the adjustspec and if the key is True.
 
         return: :bool: if the key is set and is True
     """
     if (key in adjustspec) and adjustspec[key] is True:
+        return True
+    else:
+        return False
+
+
+def has_key_value(adjustspec, key, value):
+    """ Checks if the key is in the adjustspec and if the key has given value.
+
+        return: :bool: if the key is set and is True
+    """
+    if (key in adjustspec) and adjustspec[key] == value:
         return True
     else:
         return False

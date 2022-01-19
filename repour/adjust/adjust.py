@@ -285,6 +285,9 @@ async def handle_build_mode(adjustspec, adjust_config):
         raise Exception("Unknown build category!")
 
     temp_build_enabled = util.is_temp_build(adjustspec)
+    temp_build_prefer_persistent = util.is_alignment_preference(
+        adjustspec, "PREFER_PERSISTENT"
+    )
     brew_pull_enabled = util.has_key_true(adjustspec, "brewPullActive")
     suffix_prefix = util.get_build_version_suffix_prefix(
         build_category_config, temp_build_enabled
@@ -295,7 +298,10 @@ async def handle_build_mode(adjustspec, adjust_config):
     logger.info("Brew pull status: " + str(brew_pull_enabled))
 
     if temp_build_enabled:
-        rest_mode = build_category_config["temporary_mode"]
+        if temp_build_prefer_persistent:
+            rest_mode = build_category_config["temporary_prefer_persistent_mode"]
+        else:
+            rest_mode = build_category_config["temporary_mode"]
     else:
         rest_mode = build_category_config["persistent_mode"]
 
