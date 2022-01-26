@@ -59,7 +59,7 @@ async def push_with_tags(expect_ok, repo_dir, branch_name):
     c = await config.get_configuration()
     git_user = c.get("git_username")
 
-    await git.push_with_tags(repo_dir, branch_name, git_user, tryAtomic=True)
+    await git.push_with_tags(repo_dir, branch_name, git_user, tryAtomic=False)
 
 
 #
