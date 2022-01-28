@@ -153,7 +153,7 @@ def configure_logging(
     )
 
     formatter_callback = logging.Formatter(
-        fmt="{asctime} [{levelname}] {name}:{lineno} {message}", style="{"
+        fmt="{asctime} {levelname} {message}", style="{", datefmt="%H:%M:%S"
     )
 
     root_logger = logging.getLogger()
@@ -190,6 +190,7 @@ def configure_logging(
                 log_preprocess=[adjust_kafka_timestamp],
                 ssl_cafile=kafka_cafile,
             )
+            kafka_handler_obj.setFormatter(formatter_callback)
             root_logger.addHandler(kafka_handler_obj)
         except Exception:
             logger.exception("Kafka logging could not be setup")
