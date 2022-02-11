@@ -107,6 +107,12 @@ process_stderr_options = {
 
 
 def expect_ok_closure(exc_type=exception.CommandError):
+    """
+    Uses a custom logger name ('process') when printing live logs to the logging infrastructure.
+    """
+    # Special logger name used to print custom context in the output
+    logger_process = logging.getLogger("process")
+
     async def print_live_log(process):
         """
         Known issues: it doesn't really process stderr, it assumes stderr is redirected
@@ -140,7 +146,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 # decoded contains multiple lines in a string
                 decoded_list = decoded.splitlines()
                 for item in decoded_list:
-                    logger.info(item)
+                    logger_process.info(item)
                 stdout_data_ary.extend(decoded_list)
 
         stdout_text = "\n".join(stdout_data_ary)

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 
 def add_update_mdc_key_value_in_task(key, value):
@@ -23,3 +24,22 @@ def remove_mdc_key_in_task(key):
     if getattr(task, "mdc", None) is not None:
         if key in task.mdc:
             del task.mdc[key]
+
+
+class CustomFormatter(logging.Formatter):
+    """
+    Logging Formatter apply default formatting, unless the logger name is custom_logger_name
+    """
+
+    def __init__(self, default_logger_style, custom_logger_name, custom_logger_style):
+        self.default_logger_style = default_logger_style
+        self.custom_logger_name = custom_logger_name
+        self.custom_logger_style = custom_logger_style
+
+    def format(self, record):
+        if record.name == self.custom_logger_name:
+            formatter = logging.Formatter(self.custom_logger_style, style="{")
+        else:
+            formatter = logging.Formatter(self.default_logger_style, style="{")
+
+        return formatter.format(record)
