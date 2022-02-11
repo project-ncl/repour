@@ -9,6 +9,7 @@ import sys
 from kafka_logger.handlers import KafkaLoggingHandler
 
 from repour.lib.logs import file_callback_log
+from repour.lib.logs import log_util
 
 logger = logging.getLogger(__name__)
 
@@ -147,13 +148,20 @@ def configure_logging(
 ):
     logging.setLogRecordFactory(ContextLogRecord)
 
-    formatter = logging.Formatter(
-        fmt="{asctime} [{levelname}] [{log_context}] {name}:{lineno} {message}",
-        style="{",
+    # stdout
+    # 'process' is the custom logger name used when printing live output from a CLI process started by Repour
+    formatter = log_util.CustomFormatter(
+        "{asctime} [{levelname}] [{log_context}] {name}:{lineno} {message}",
+        "process",
+        "{asctime} {message}",
     )
 
-    formatter_callback = logging.Formatter(
-        fmt="{asctime} [{levelname}] {name}:{lineno} {message}", style="{"
+    # for callback to send full logs to caller, + to kafka logging
+    # 'process' is the custom logger name used when printing live output from a CLI process started by Repour
+    formatter_callback = log_util.CustomFormatter(
+        "{asctime} [{levelname}] {name}:{lineno} {message}",
+        "process",
+        "{asctime} {message}",
     )
 
     root_logger = logging.getLogger()
@@ -190,6 +198,7 @@ def configure_logging(
                 log_preprocess=[adjust_kafka_timestamp],
                 ssl_cafile=kafka_cafile,
             )
+            kafka_handler_obj.setFormatter(formatter_callback)
             root_logger.addHandler(kafka_handler_obj)
         except Exception:
             logger.exception("Kafka logging could not be setup")
