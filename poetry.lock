@@ -292,22 +292,23 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "prometheus-async"
-version = "19.2.0"
+version = "22.1.0"
 description = "Async helpers for prometheus_client."
 category = "main"
 optional = false
-python-versions = ">=2.7, !=3.0, !=3.1, !=3.2, !=3.3, !=3.4"
+python-versions = ">=3.7"
 
 [package.dependencies]
-prometheus-client = ">=0.0.18"
+prometheus_client = ">=0.8.0"
+typing_extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""}
 wrapt = "*"
 
 [package.extras]
 aiohttp = ["aiohttp (>=3)"]
 consul = ["aiohttp (>=3)"]
-dev = ["aiohttp (>=3)", "twisted", "aiohttp", "sphinx", "sphinxcontrib-asyncio", "coverage", "pytest (<4.1)", "pytest-twisted", "pre-commit", "pytest-asyncio"]
-docs = ["aiohttp", "sphinx", "sphinxcontrib-asyncio", "twisted"]
-tests = ["coverage", "pytest (<4.1)", "pytest-asyncio"]
+dev = ["pre-commit", "pytest-twisted", "tomli", "cogapp", "mypy", "coverage", "pytest", "pytest-asyncio", "aiohttp", "furo", "myst-parser", "sphinx-notfound-page", "sphinx", "sphinxcontrib-asyncio", "twisted"]
+docs = ["aiohttp", "furo", "myst-parser", "sphinx-notfound-page", "sphinx", "sphinxcontrib-asyncio", "twisted"]
+tests = ["coverage", "pytest", "pytest-asyncio"]
 twisted = ["twisted"]
 
 [[package]]
@@ -524,7 +525,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "99a62121419963e5d588e5f56203f056b9e12819ccbe657ae519272723c13b65"
+content-hash = "b443846733a81ab6432b88b6b48e59530fd6697fcf1141e40cc591037f2bee1b"
 
 [metadata.files]
 aiohttp = [
@@ -904,8 +905,8 @@ pluggy = [
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
 prometheus-async = [
-    {file = "prometheus_async-19.2.0-py2.py3-none-any.whl", hash = "sha256:227f516e5bf98a0dc602348381e182358f8b2ed24a8db05e8e34d9cf027bab83"},
-    {file = "prometheus_async-19.2.0.tar.gz", hash = "sha256:3cc68d1f39e9bbf16dbd0b51103d87671b3cbd1d75a72cda472cd9a35cc9d0d2"},
+    {file = "prometheus-async-22.1.0.tar.gz", hash = "sha256:2abdf0ffd419aa9889b375b0dd5af4cb5708457a0b19ae21d3968fea68c3faf3"},
+    {file = "prometheus_async-22.1.0-py3-none-any.whl", hash = "sha256:debd4b0a9e963f3118890c1164423b273b3b6c6a746521b925a2e5b5ab8cd96f"},
 ]
 prometheus-client = [
     {file = "prometheus_client-0.13.1-py3-none-any.whl", hash = "sha256:357a447fd2359b0a1d2e9b311a0c5778c330cfbe186d880ad5a6b39884652316"},
