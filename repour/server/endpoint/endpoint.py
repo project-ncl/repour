@@ -15,11 +15,11 @@ from aiohttp import web
 from prometheus_async.aio import time
 from prometheus_client import Counter, Histogram, Summary
 
-from ... import exception
-from ...config import config
+from repour import exception
+from repour.config import config
 from repour.lib.logs import log_util
 from repour.lib.logs import file_callback_log
-from . import validation
+from repour.server import validation
 
 logger = logging.getLogger(__name__)
 

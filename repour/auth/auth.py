@@ -3,7 +3,7 @@ import logging
 
 import aiohttp.web
 
-from . import oauth2_jwt
+from repour.auth import oauth2_jwt
 
 logger = logging.getLogger(__name__)
 

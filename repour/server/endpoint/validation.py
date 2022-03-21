@@ -3,8 +3,8 @@ import logging
 
 from voluptuous import *
 
-from ...adjust import adjust as adjustmodule
-from ... import repo
+from repour.adjust import adjust as adjustmodule
+from repour import repo
 from giturlparse import validate as validate_git_url
 
 

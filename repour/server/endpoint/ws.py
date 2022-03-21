@@ -3,7 +3,7 @@ import asyncio
 
 from aiohttp import web
 
-from ... import websockets
+from repour import websockets
 
 
 async def handle_socket(request):

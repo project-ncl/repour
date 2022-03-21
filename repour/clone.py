@@ -5,8 +5,8 @@ import os
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
 
-from . import asutil, exception
-from .config import config
+from repour import asutil, exception
+from repour.config import config
 from repour.lib.scm import git
 
 logger = logging.getLogger(__name__)

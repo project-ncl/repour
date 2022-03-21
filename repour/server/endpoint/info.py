@@ -7,7 +7,7 @@ from aiohttp import web
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
 
-from ... import exception
+from repour import exception
 from repour.lib.scm import git
 
 REQ_TIME = Summary("info_req_time", "time spent with info endpoint")

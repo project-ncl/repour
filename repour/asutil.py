@@ -9,7 +9,7 @@ import urllib.parse
 
 import aiohttp
 
-from . import exception
+from repour import exception
 
 logger = logging.getLogger(__name__)
 subprocess_logger = logging.getLogger(__name__ + ".stderr")

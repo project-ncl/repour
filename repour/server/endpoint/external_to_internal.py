@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
 
-from ...config import config
+from repour.config import config
 
 REQ_TIME = Summary(
     "external_to_internal_req_time", "time spent with external_to_internal endpoint"

@@ -6,9 +6,8 @@ import shutil
 import subprocess
 from string import Template
 
-from .. import asutil
-from . import process_provider, util
-from . import pme_provider
+from repour import asutil
+from repour.adjust import pme_provider, process_provider, util
 from repour.lib.scm import git
 
 logger = logging.getLogger(__name__)
