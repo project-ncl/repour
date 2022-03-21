@@ -48,7 +48,7 @@ class ContextLogRecord(logging.LogRecord):
 # Subcommands
 #
 def run_container_subcommand(args):
-    from .server import server
+    from repour.server import server
 
     # Log to stdout/stderr only (no file)
     kafka_server = os.environ.get("REPOUR_KAFKA_SERVER")

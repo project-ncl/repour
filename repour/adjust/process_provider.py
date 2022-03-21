@@ -4,7 +4,7 @@ import logging
 import os
 import zipfile
 
-from .. import asutil, exception
+from repour import asutil, exception
 
 logger = logging.getLogger(__name__)
 

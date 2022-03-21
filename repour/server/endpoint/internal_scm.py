@@ -2,7 +2,7 @@ import logging
 
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
-from ...config import config
+from repour.config import config
 
 import asyncssh
 

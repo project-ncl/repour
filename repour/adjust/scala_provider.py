@@ -2,10 +2,10 @@ import json
 import logging
 import os
 
-from .. import exception
+from repour import exception
 import shlex
 
-from . import process_provider, pme_provider
+from repour.adjust import process_provider, pme_provider
 
 logger = logging.getLogger(__name__)
 

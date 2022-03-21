@@ -7,16 +7,13 @@ import shutil
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
 
-from .scala_provider import get_scala_provider
-from .. import asutil, clone, exception
-from ..config import config
+from repour.adjust.scala_provider import get_scala_provider
+from repour import asutil, clone, exception
+from repour.config import config
 from repour.lib.logs import log_util
-from repour.lib.scm import git
-from repour.lib.scm import asgit
+from repour.lib.scm import git, asgit
 
-from repour import asutil
-
-from . import (
+from repour.adjust import (
     gradle_provider,
     noop_provider,
     pme_provider,

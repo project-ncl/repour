@@ -7,11 +7,11 @@ import prometheus_async.aio as aio
 from aiohttp import web
 from prometheus_client.bridge.graphite import GraphiteBridge
 
-from .. import clone, repo, websockets
-from ..adjust import adjust
-from ..auth import auth
-from ..config import config
-from .endpoint import (
+from repour import clone, repo, websockets
+from repour.adjust import adjust
+from repour.auth import auth
+from repour.config import config
+from repour.server.endpoint import (
     cancel,
     endpoint,
     external_to_internal,

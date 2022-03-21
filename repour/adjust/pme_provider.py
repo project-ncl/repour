@@ -7,8 +7,8 @@ import shlex
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
-from .. import exception
-from . import process_provider, util
+from repour import exception
+from repour.adjust import process_provider, util
 
 logger = logging.getLogger(__name__)
 
