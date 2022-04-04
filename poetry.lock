@@ -374,7 +374,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "pylru"
-version = "1.2.0"
+version = "1.2.1"
 description = "A least recently used (LRU) cache implementation"
 category = "main"
 optional = false
@@ -524,7 +524,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f102c3c98eabf999fcdfce1d90941ff710ec8c77149f3d24eaad645b09736b37"
+content-hash = "b05380c4b2143be4ee29210c7c94aa0615fdef0600ac17f028d486eec4c341ed"
 
 [metadata.files]
 aiohttp = [
@@ -973,7 +973,8 @@ pyflakes = [
     {file = "pyflakes-2.4.0.tar.gz", hash = "sha256:05a85c2872edf37a4ed30b0cce2f6093e1d0581f8c19d7393122da7e25b2b24c"},
 ]
 pylru = [
-    {file = "pylru-1.2.0.tar.gz", hash = "sha256:492f934bb98dc6c8b2370c02c95c65516ddc08c8f64d27f70087eb038621d297"},
+    {file = "pylru-1.2.1-py3-none-any.whl", hash = "sha256:b7c75b0676e2fbae647823bc209e23998772867d3679f1583c7350a9b02a59f0"},
+    {file = "pylru-1.2.1.tar.gz", hash = "sha256:47ad140a63ab9389648dadfbb4330700e0ffeeb28ec04664ee47d37ed133b0f4"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.6-py3-none-any.whl", hash = "sha256:04ff808a5b90911829c55c4e26f75fa5ca8a2f5f36aa3a51f68e27033341d3e4"},
