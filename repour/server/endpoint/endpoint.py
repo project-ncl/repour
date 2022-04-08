@@ -21,7 +21,7 @@ from repour.config import config
 from repour.lib.io import file_utils
 from repour.lib.logs import log_util
 from repour.lib.logs import file_callback_log
-from repour.server import validation
+from repour.server.endpoint import validation
 
 logger = logging.getLogger(__name__)
 
