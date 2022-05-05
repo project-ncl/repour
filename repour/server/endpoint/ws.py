@@ -7,10 +7,10 @@ from ... import websockets
 
 
 async def handle_socket(request):
-    """ Websocket handler for live logs. Expects to receive the callback_id
-        as part of the request
+    """Websocket handler for live logs. Expects to receive the callback_id
+    as part of the request
 
-        Request: ws://<link>/ws/<callback_id>
+    Request: ws://<link>/ws/<callback_id>
     """
 
     callback_id = request.match_info["callback_id"]
