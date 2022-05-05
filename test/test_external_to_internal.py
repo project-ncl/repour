@@ -15,6 +15,7 @@ class TestExternalToInternal(unittest.TestCase):
 
         valid_external_urls = [
             "http://github.com/myproject/myrepo.git",
+            "https://github.com/myproject/myrepo/",
             "git+ssh://github.com/myproject/myrepo.git",
             "git@github.com:myproject/myrepo.git",
             "git@github.com/myproject/myrepo.git",
