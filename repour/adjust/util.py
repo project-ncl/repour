@@ -67,27 +67,27 @@ def get_removed_repos(work_dir, parameters):
 
 
 def is_temp_build(adjustspec):
-    """ For temp build to be active, we need to both provide a 'is_temp_build' key
-        in our request and its value must be true
+    """For temp build to be active, we need to both provide a 'is_temp_build' key
+    in our request and its value must be true
 
-        return: :bool: whether temp build feature enabled or not
+    return: :bool: whether temp build feature enabled or not
     """
     return has_key_true(adjustspec, "tempBuild")
 
 
 def is_alignment_preference(adjustspec, value):
-    """ For temp build to be active, we need to both provide a 'is_temp_build' key
-        in our request and its value must be true
+    """For temp build to be active, we need to both provide a 'is_temp_build' key
+    in our request and its value must be true
 
-        return: :bool: whether temp build feature enabled or not
+    return: :bool: whether temp build feature enabled or not
     """
     return has_key_value(adjustspec, "alignmentPreference", value)
 
 
 def has_key_true(adjustspec, key):
-    """ Checks if the key is in the adjustspec and if the key is True.
+    """Checks if the key is in the adjustspec and if the key is True.
 
-        return: :bool: if the key is set and is True
+    return: :bool: if the key is set and is True
     """
     if (key in adjustspec) and adjustspec[key] is True:
         return True
@@ -96,9 +96,9 @@ def has_key_true(adjustspec, key):
 
 
 def has_key_value(adjustspec, key, value):
-    """ Checks if the key is in the adjustspec and if the key has given value.
+    """Checks if the key is in the adjustspec and if the key has given value.
 
-        return: :bool: if the key is set and is True
+    return: :bool: if the key is set and is True
     """
     if (key in adjustspec) and adjustspec[key] == value:
         return True
@@ -107,12 +107,12 @@ def has_key_value(adjustspec, key, value):
 
 
 def get_build_version_suffix_prefix(build_category_config, temp_build_enabled):
-    """ Generate the prefix of version suffix (i.e. suffix prefix) from the adjust request.
+    """Generate the prefix of version suffix (i.e. suffix prefix) from the adjust request.
 
-        If the suffix prefix is set *AND* the one of the special build types is active then
-        this function returns the value of the suffix prefix.
+    If the suffix prefix is set *AND* the one of the special build types is active then
+    this function returns the value of the suffix prefix.
 
-        Otherwise it will return None
+    Otherwise it will return None
     """
     temporary_prefix = "temporary"
 
@@ -226,7 +226,7 @@ async def print_java_version(java_bin_dir=""):
 
 
 async def generate_user_context():
-    """ For now, returns a string of key:value,key:value """
+    """For now, returns a string of key:value,key:value"""
     current_task = asyncio.current_task()
     return "log-user-id:{},log-request-context:{},log-process-context:{},log-expires:{},log-tmp:{}".format(
         current_task.mdc["userId"],

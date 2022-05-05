@@ -304,7 +304,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             )
                         )
 
-                    sleep_period = 2 ** backoff
+                    sleep_period = 2**backoff
                     logger.debug("Sleeping for {sleep_period}".format(**locals()))
                     await asyncio.sleep(sleep_period)
 

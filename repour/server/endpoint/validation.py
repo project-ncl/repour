@@ -10,8 +10,8 @@ from giturlparse import validate as validate_git_url
 
 @message("expected a GitUrl", cls=UrlInvalid)
 def GitUrl(value):
-    """ Validates whether passed value is valid url for git
-        If the value is invalid, the method raises an Exception
+    """Validates whether passed value is valid url for git
+    If the value is invalid, the method raises an Exception
     """
     t = validate_git_url(value)
     if not t:
