@@ -26,18 +26,18 @@ REQ_HISTOGRAM_TIME = Histogram(
 
 
 async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origin"):
-    """ This function is used when we want to sync a repository with another one
-        It assumes that you have already set the remote to be the 'other' repository
+    """This function is used when we want to sync a repository with another one
+    It assumes that you have already set the remote to be the 'other' repository
 
-        If the ref is a tag, the tag is pushed to the remote
-        If the ref is a branch, the branch, and its changes, are pushed to the remote
-        If the ref is a SHA, the SHA is pushed to the remote indirectly via the creation of a tag
+    If the ref is a tag, the tag is pushed to the remote
+    If the ref is a branch, the branch, and its changes, are pushed to the remote
+    If the ref is a SHA, the SHA is pushed to the remote indirectly via the creation of a tag
 
-        Parameters:
-        - work_dir: :str: location of git repository
-        - ref: Git ref to sync
-        - remote: remote to push the ref to
-        - origin_remote: remote that was cloned from
+    Parameters:
+    - work_dir: :str: location of git repository
+    - ref: Git ref to sync
+    - remote: remote to push the ref to
+    - origin_remote: remote that was cloned from
     """
 
     isRefBranch = await git.is_branch(
@@ -85,7 +85,7 @@ async def clone(clonespec, repo_provider):
 
 
 async def clone_git(clonespec):
-    """ Note: we ignore transforming git submodules into fat repository here since we'll rewrite history for the branch if we do that """
+    """Note: we ignore transforming git submodules into fat repository here since we'll rewrite history for the branch if we do that"""
     with asutil.TemporaryDirectory(suffix="git") as clone_dir:
 
         c = await config.get_configuration()

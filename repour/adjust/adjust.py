@@ -61,10 +61,10 @@ expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 
 
 async def is_sync_on(adjustspec):
-    """ For sync to be active, we need to both have the originRepoUrl information
-        and the 'sync' key to be set to on.
+    """For sync to be active, we need to both have the originRepoUrl information
+    and the 'sync' key to be set to on.
 
-        return: :bool: whether sync feature enabled or disabled
+    return: :bool: whether sync feature enabled or disabled
     """
     if (
         ("originRepoUrl" in adjustspec)
@@ -109,8 +109,7 @@ async def check_ref_exists(work_dir, ref):
 
 
 async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
-    """ Get external repository and its ref into the internal repository
-    """
+    """Get external repository and its ref into the internal repository"""
     internal_repo_url = await repo_provider(adjustspec, create=False)
     git_user = configuration.get("git_username")
 

@@ -33,7 +33,7 @@ async def translate(external_to_internal_spec, repo_provider):
 
 
 async def translate_external_to_internal(external_git_url):
-    """ Logic from original maitai code to do this: found in GitUrlParser.java#generateInternalGitRepoName """
+    """Logic from original maitai code to do this: found in GitUrlParser.java#generateInternalGitRepoName"""
 
     c = await config.get_configuration()
     gerrit_server = c.get("git_url_internal_template", None)

@@ -151,7 +151,7 @@ async def check_if_other_repour_replicas_cancelled(task_id):
 
 
 async def remove_old_cancel_indicator_files():
-    """ In case there are old cancel indicator files that are present and wasn't cleaned up properly, delete them
+    """In case there are old cancel indicator files that are present and wasn't cleaned up properly, delete them
 
     Old files defined as having an age greater than 1 hour
     """
