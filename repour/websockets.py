@@ -17,22 +17,22 @@ websocket_taillog_workers = {}
 
 
 async def register(callback_id, task, websocket_handler):
-    """ Register a websocket handler with a callback_id and the task where
-        the websocket handler was spawn
+    """Register a websocket handler with a callback_id and the task where
+    the websocket handler was spawn
 
-        We are going to use this information in the `send` function to send
-        log events for a particular callback to the appropriate websocket.
+    We are going to use this information in the `send` function to send
+    log events for a particular callback to the appropriate websocket.
 
-        We need to get the task because that's the only way to figure out if a
-        websocket is closed or not. If the task is done, the websocket is closed
+    We need to get the task because that's the only way to figure out if a
+    websocket is closed or not. If the task is done, the websocket is closed
 
-        Parameters:
-        - callback_id: :str: id
-        - task: :asyncio_task: task where websocket handler created
-        - websocket_handler: :aiohttp_websocket: websocket handler
+    Parameters:
+    - callback_id: :str: id
+    - task: :asyncio_task: task where websocket handler created
+    - websocket_handler: :aiohttp_websocket: websocket handler
 
-        Returns:
-        - None
+    Returns:
+    - None
     """
     global websocket_handlers
     global websocket_taillog_workers
@@ -96,16 +96,16 @@ async def readline(path, next_seek):
 
 
 async def periodic_cleanup():
-    """ Cleanup the websocket_handlers datastructure by removing closed
-        websocket handlers and callback_ids with empty websocket list
+    """Cleanup the websocket_handlers datastructure by removing closed
+    websocket handlers and callback_ids with empty websocket list
 
-        It runs every 30 seconds. It needs to be launched inside its own task
+    It runs every 30 seconds. It needs to be launched inside its own task
 
-        Parameters:
-        - None
+    Parameters:
+    - None
 
-        Returns:
-        - None
+    Returns:
+    - None
     """
     global websocket_handlers
     global websocket_taillog_workers
@@ -147,14 +147,14 @@ async def periodic_cleanup():
 
 
 async def send(callback_id, message):
-    """ Send the message to the websocket handlers linked to a callback_id
+    """Send the message to the websocket handlers linked to a callback_id
 
-        Parameters:
-        - callback_id: :str: id
-        - message: :str: message to send
+    Parameters:
+    - callback_id: :str: id
+    - message: :str: message to send
 
-        Returns:
-        - None
+    Returns:
+    - None
     """
     global websocket_handlers
 
@@ -171,13 +171,13 @@ async def send(callback_id, message):
 
 
 async def close(callback_id):
-    """ Delete all the websocket handler information for a callback_id
+    """Delete all the websocket handler information for a callback_id
 
-        Parameters:
-        - callback_id: :str: id
+    Parameters:
+    - callback_id: :str: id
 
-        Returns:
-        - None
+    Returns:
+    - None
     """
     global websocket_handlers
     global websocket_taillog_workers

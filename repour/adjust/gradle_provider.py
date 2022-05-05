@@ -91,7 +91,10 @@ def get_gradle_provider(
         )
 
         result = await process_provider.get_process_provider(
-            EXECUTION_NAME, cmd, get_result_data=get_result_data, send_log=True,
+            EXECUTION_NAME,
+            cmd,
+            get_result_data=get_result_data,
+            send_log=True,
         )(work_dir, extra_adjust_parameters, adjust_result)
 
         if gme_repos_dot_gradle_present(work_dir):
@@ -123,7 +126,7 @@ def get_gradle_provider(
     async def get_result_data(
         work_dir, extra_parameters, results_file=None, group_id=None, artifact_id=None
     ):
-        """ Read the manipulation.json file and return it as an object
+        """Read the manipulation.json file and return it as an object
 
         Format is:
 

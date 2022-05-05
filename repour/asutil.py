@@ -226,7 +226,7 @@ def expect_ok_closure(exc_type=exception.CommandError):
 
 
 def add_username_url(url, username):
-    """ Given a url, add username to the url if not already in url
+    """Given a url, add username to the url if not already in url
 
     If username is empty (None or ""), do nothing, return url as is
 

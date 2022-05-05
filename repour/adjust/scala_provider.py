@@ -28,7 +28,7 @@ def get_scala_provider(
         group_id=None,
         artifact_id=None,
     ):
-        """ Read the manipulations.json file and return it as an object
+        """Read the manipulations.json file and return it as an object
 
         Format is:
 
@@ -108,7 +108,10 @@ def get_scala_provider(
         )
 
         result = await process_provider.get_process_provider(
-            execution_name, cmd, get_result_data=get_result_data, send_log=True,
+            execution_name,
+            cmd,
+            get_result_data=get_result_data,
+            send_log=True,
         )(work_dir, extra_adjust_parameters, adjust_result)
 
         (
