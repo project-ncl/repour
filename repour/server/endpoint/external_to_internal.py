@@ -57,10 +57,12 @@ async def translate_external_to_internal(external_git_url):
     if scheme not in acceptable_schemes:
         raise Exception("Scheme '{0}' not accepted!'".format(scheme))
 
-    path_parts = path.split("/")
+    # list comprehension is to remove empty strings
+    path_parts = [x for x in path.split("/") if x]
 
     repository = None
 
+    # extract repository part
     if path_parts[-1]:
         repository = re.sub(r"\.git$", "", path_parts[-1])
 
