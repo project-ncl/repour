@@ -120,7 +120,7 @@ async def push_new_dedup_branch(
     # find the tag using the tree SHA
     if tag_name is None:
         logger.info(
-            "No existing commit/tag with changes to commit ispresent. Creating new commit/tag"
+            "No existing commit/tag with changes to commit is present. Creating new commit/tag"
         )
         tag_name = await commit_push_tag(
             expect_ok,
@@ -225,7 +225,7 @@ async def commit_push_tag(
     # already exist, git will return quickly with an 0 (success) status
     # instead of uploading the objects.
     try:
-        await push_with_tags(expect_ok, repo_dir, None)
+        await push_with_tags(expect_ok, repo_dir, tag_name)
     except exception.CommandError as e:
         # Modify the exit code to 10. This tells Maitai to not treat this as
         # a SYSTEM_ERROR (NCL-2871)
