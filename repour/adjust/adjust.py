@@ -301,7 +301,13 @@ async def handle_build_mode(adjustspec, adjust_config):
     else:
         rest_mode = build_category_config["persistent_mode"]
 
-    return temp_build_enabled, suffix_prefix, rest_mode, brew_pull_enabled
+    return (
+        temp_build_enabled,
+        suffix_prefix,
+        rest_mode,
+        brew_pull_enabled,
+        temp_build_prefer_persistent,
+    )
 
 
 async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
@@ -322,6 +328,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
         suffix_prefix,
         rest_mode,
         brew_pull_enabled,
+        temp_prefer_persistent_enabled,
     ) = await handle_build_mode(adjustspec, adjust_config)
 
     for parameter in ["gradleAnalyzerPluginInitFilePath"]:
@@ -345,6 +352,7 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
         rest_mode,
         brew_pull_enabled,
         suffix_prefix,
+        temp_prefer_persistent_enabled,
     )(work_dir, extra_adjust_parameters, adjust_result)
 
     return result["resultData"]["VersioningState"]["executionRootModified"]["version"]
@@ -387,6 +395,7 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 suffix_prefix,
                 rest_mode,
                 brew_pull_enabled,
+                temp_prefer_persistent_enabled,
             ) = await handle_build_mode(adjustspec, adjust_config)
 
             # unrewritable repour PME parameters
@@ -422,6 +431,7 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
                 adjust_provider_config.get("outputToLogs", False),
                 brew_pull_enabled,
                 suffix_prefix,
+                temp_prefer_persistent_enabled,
             )(work_dir, extra_adjust_parameters, adjust_result)
 
             version = await pme_provider.get_version_from_pme_result(
@@ -458,6 +468,7 @@ async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
         suffix_prefix,
         rest_mode,
         brew_pull_enabled,
+        temp_prefer_persistent_enabled,
     ) = await handle_build_mode(adjustspec, adjust_config)
 
     await project_manipulator_provider.get_project_manipulator_provider(
@@ -498,6 +509,7 @@ async def adjust_scala(work_dir, c, adjustspec, adjust_result):
         suffix_prefix,
         rest_mode,
         brew_pull_enabled,
+        temp_prefer_persistent_enabled,
     ) = await handle_build_mode(adjustspec, adjust_config)
 
     result = await get_scala_provider(
