@@ -31,6 +31,7 @@ def get_gradle_provider(
     rest_mode,
     brew_pull_enabled=False,
     suffix_prefix=None,
+    temp_prefer_persistent_enabled=False,
 ):
     async def adjust(work_dir, extra_adjust_parameters, adjust_result):
         """Generate the manipulation.json file with information about aligned versions"""
@@ -51,6 +52,13 @@ def get_gradle_provider(
 
         if brew_pull_enabled:
             alignment_parameters.append("-DrestBrewPullActive=true")
+
+        if temp_prefer_persistent_enabled:
+            alignment_parameters.append(
+                "-DversionSuffixAlternatives=redhat,"
+                + util.strip_temporary_from_prefix(suffix_prefix)
+                + "-redhat"
+            )
 
         extra_parameters, subfolder = util.get_extra_parameters(
             extra_adjust_parameters, flags=("-t", "--target")
@@ -188,7 +196,6 @@ def gme_repos_dot_gradle_present(work_dir):
 def parse_gme_manipulation_json(
     work_dir, file_path, default_parameters, group_id=None, artifact_id=None
 ):
-
     template = {
         "VersioningState": {
             "executionRootModified": {

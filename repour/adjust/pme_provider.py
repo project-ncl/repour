@@ -23,6 +23,7 @@ def get_pme_provider(
     output_to_logs=False,
     brew_pull_enabled=False,
     suffix_prefix=None,
+    temp_prefer_persistent_enabled=False,
 ):
     async def get_result_data(
         work_dir, extra_parameters, group_id=None, artifact_id=None, results_file=None
@@ -68,6 +69,13 @@ def get_pme_provider(
 
         if brew_pull_enabled:
             alignment_parameters.append("-DrestBrewPullActive=true")
+
+        if temp_prefer_persistent_enabled:
+            alignment_parameters.append(
+                "-DversionSuffixAlternatives=redhat,"
+                + util.strip_temporary_from_prefix(suffix_prefix)
+                + "-redhat"
+            )
 
         extra_parameters, subfolder = util.get_extra_parameters(extra_adjust_parameters)
 
