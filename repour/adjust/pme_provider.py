@@ -70,7 +70,7 @@ def get_pme_provider(
         if brew_pull_enabled:
             alignment_parameters.append("-DrestBrewPullActive=true")
 
-        if temp_prefer_persistent_enabled:
+        if temp_prefer_persistent_enabled and suffix_prefix:
             alignment_parameters.append(
                 "-DversionSuffixAlternatives=redhat,"
                 + util.strip_temporary_from_prefix(suffix_prefix)
