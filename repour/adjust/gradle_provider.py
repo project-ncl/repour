@@ -53,10 +53,13 @@ def get_gradle_provider(
         if brew_pull_enabled:
             alignment_parameters.append("-DrestBrewPullActive=true")
 
-        if temp_prefer_persistent_enabled and suffix_prefix:
+        suffix_prefix_no_temporary = util.strip_temporary_from_prefix(suffix_prefix)
+        # NCLSUP-669: specify the versionSuffixAlternatives if we prefer persistent build alignment for the temp build
+        # and the suffix_prefix without the temporary string is not empty (e.g for managedsvc)
+        if temp_prefer_persistent_enabled and suffix_prefix_no_temporary:
             alignment_parameters.append(
                 "-DversionSuffixAlternatives=redhat,"
-                + util.strip_temporary_from_prefix(suffix_prefix)
+                + suffix_prefix_no_temporary
                 + "-redhat"
             )
 
