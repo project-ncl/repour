@@ -550,7 +550,13 @@ def process_mdc(step, name):
     log_util.add_update_mdc_key_value_in_task("process_stage_name", name)
     log_util.add_update_mdc_key_value_in_task("process_stage_step", step)
 
+    # set the logger to what we want
+    current_logger_name = getattr(asyncio.current_task(), "loggerName", None)
+    # NCL-7133: use different logger name for process stage update
+    asyncio.current_task().loggerName = "org.jboss.pnc._userlog_.process-stage-update"
     logger.info(step + ": " + name)
+    if current_logger_name:
+        asyncio.current_task().loggerName = current_logger_name
 
     # Remove the fields now
     log_util.remove_mdc_key_in_task("process_stage_step")
