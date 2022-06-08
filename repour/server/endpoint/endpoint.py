@@ -106,7 +106,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         asyncio.current_task().log_context = log_context
 
         # required for bifrost for streaming logs
-        asyncio.current_task().loggerName = "org.jboss.pnc._userlog_"
+        asyncio.current_task().loggerName = "org.jboss.pnc._userlog_.alignment-log"
 
         log_util.add_update_mdc_key_value_in_task("userId", log_user_id)
         log_util.add_update_mdc_key_value_in_task("requestContext", log_request_context)
