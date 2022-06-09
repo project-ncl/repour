@@ -12,13 +12,13 @@ class TestAdjustUtil(unittest.TestCase):
         remaining_args, filepath = util.get_extra_parameters(param)
 
         self.assertEqual(remaining_args, ["-Dtest=test"])
-        self.assertEqual(filepath, "haha/")
+        self.assertEqual(filepath, "haha/pom.xml")
 
-        param_file = {"ALIGNMENT_PARAMETERS": "--file hoho/pom.xml -Dtest=test"}
+        param_file = {"ALIGNMENT_PARAMETERS": "--file hoho/test.xml -Dtest=test"}
 
         remaining_args, filepath = util.get_extra_parameters(param_file)
         self.assertEqual(remaining_args, ["-Dtest=test"])
-        self.assertEqual(filepath, "hoho/")
+        self.assertEqual(filepath, "hoho/test.xml")
 
         param_file_equal = {
             "ALIGNMENT_PARAMETERS": "-Dtest2=test2 --file=hihi -Dtest=test"
