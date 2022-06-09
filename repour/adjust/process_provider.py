@@ -29,7 +29,12 @@ def get_process_provider(
         get_result_data if get_result_data is not None else get_result_data_default
     )
 
-    async def adjust(repo_dir, extra_adjust_parameters, adjust_result, env=None):
+    async def adjust(
+        repo_dir, extra_adjust_parameters, adjust_result, dir_results=None, env=None
+    ):
+        """
+        dir_results is used to define where to get the results data from. By default it is 'repo_dir'
+        """
         # TODO: Why 'adjust_result' is ignored?
         nonlocal execution_name
         logger.info(
@@ -69,11 +74,15 @@ def get_process_provider(
 
         logger.info("Adjust subprocess exited OK!")
 
+        dir_where_results_are = repo_dir
+        if dir_results:
+            dir_where_results_are = dir_results
+
         adjust_result_data = {}
 
         adjust_result_data["adjustType"] = execution_name
         adjust_result_data["resultData"] = await get_result_data(
-            repo_dir, extra_adjust_parameters, results_file=results_file
+            dir_results, extra_adjust_parameters, results_file=results_file
         )
 
         return adjust_result_data

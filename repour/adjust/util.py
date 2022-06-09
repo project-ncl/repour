@@ -166,7 +166,7 @@ def get_extra_parameters(extra_adjust_parameters, flags=("-f", "--file")):
         option_title = re.sub(r"^-*", "", flags[-1])
 
         if getattr(options, option_title) is not None:
-            subfolder = getattr(options, option_title).replace("pom.xml", "")
+            subfolder = getattr(options, option_title)
 
         return remaining_args, subfolder
 

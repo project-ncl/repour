@@ -6,6 +6,7 @@ import re
 import shlex
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+from pathlib import Path
 
 from repour import exception
 from repour.adjust import process_provider, util
@@ -80,7 +81,14 @@ def get_pme_provider(
                 + "-redhat"
             )
 
-        extra_parameters, subfolder = util.get_extra_parameters(extra_adjust_parameters)
+        extra_parameters, subfolder_or_file = util.get_extra_parameters(
+            extra_adjust_parameters
+        )
+
+        # [NCLSUP-626] for PME, we re-add the --file option inside extra_parameters
+        # since the user can specify any xml file to align, not just the specific file name 'pom.xml'
+        if subfolder_or_file:
+            extra_parameters.append("--file=" + subfolder_or_file)
 
         jvm_version = util.get_jvm_from_extra_parameters(extra_parameters)
 
@@ -94,15 +102,15 @@ def get_pme_provider(
 
         # readjust the repo_dir to run PME from the folder where the root pom.xml is located
         # See: PRODTASKS-361
-        repo_dir = os.path.join(repo_dir, subfolder)
         log_context_value = await util.generate_user_context()
         log_context_parameter = ["-DrestHeaders=" + log_context_value]
-        util.verify_folder_exists(
-            repo_dir,
-            "'{}' path specified in alignment parameters doesn't exist".format(
-                subfolder
-            ),
-        )
+
+        if not os.path.exists(os.path.join(repo_dir, subfolder_or_file)):
+            logger.error(
+                "'{}' path specified in alignment parameters doesn't exist".format(
+                    subfolder_or_file
+                )
+            )
 
         cmd = (
             [location + "java", "-jar", pme_jar_path]
@@ -122,12 +130,22 @@ def get_pme_provider(
             )
         )
 
+        folder_where_results_are = os.path.join(repo_dir, subfolder_or_file)
+        # if folder_where_results_are is actually a file, use the parent folder instead
+        if os.path.isfile(folder_where_results_are):
+            folder_where_results_are = str(Path(folder_where_results_are).parent)
+
         res = await process_provider.get_process_provider(
             execution_name,
             cmd,
             get_result_data=get_result_data,
             send_log=output_to_logs,
-        )(repo_dir, extra_adjust_parameters, adjust_result)
+        )(
+            repo_dir,
+            extra_adjust_parameters,
+            adjust_result,
+            dir_results=folder_where_results_are,
+        )
 
         pme_disabled = is_pme_disabled_via_extra_parameters(extra_adjust_parameters)
 
@@ -140,7 +158,10 @@ def get_pme_provider(
         ) = await get_extra_param_execution_root_name(extra_adjust_parameters)
 
         adjust_result["resultData"] = await get_result_data(
-            repo_dir, extra_parameters, override_group_id, override_artifact_id
+            folder_where_results_are,
+            extra_parameters,
+            override_group_id,
+            override_artifact_id,
         )
         return res
 
