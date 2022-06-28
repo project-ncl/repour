@@ -217,8 +217,8 @@ def adjust_kafka_metadata(data):
             data["@timestamp"] = data["timestamp"]
 
         # NCL-7150: rename fields for consistency
-        if "levelName" in data:
-            data["level"] = data["levelName"]
+        if "levelname" in data:
+            data["level"] = data["levelname"]
         # NCL-7150: rename fields for consistency
         if "host" in data:
             data["hostName"] = data["host"]
