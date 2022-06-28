@@ -6,10 +6,10 @@ import logging
 import os
 import sys
 
-from pythonjsonlogger import jsonlogger
 from kafka_logger.handlers import KafkaLoggingHandler
 
 from repour.lib.logs import file_callback_log
+from repour.lib.logs import json_custom_formatter
 from repour.lib.logs import log_util
 
 logger = logging.getLogger(__name__)
@@ -156,7 +156,9 @@ def configure_logging(
         "process",
         "{asctime} {message}",
     )
-    json_formatter = jsonlogger.JsonFormatter()
+    json_formatter = json_custom_formatter.JsonCustomFormatter(
+        "%(timestamp)s %(level)s %(name)s %(message)s %(hostName)s %(mdc)s"
+    )
 
     # for callback to send full logs to caller, + to kafka logging
     # 'process' is the custom logger name used when printing live output from a CLI process started by Repour
