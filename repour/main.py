@@ -197,7 +197,7 @@ def configure_logging(
             kafka_handler_obj = KafkaLoggingHandler(
                 kafka_server,
                 kafka_topic,
-                log_preprocess=[adjust_kafka_timestamp],
+                log_preprocess=[adjust_kafka_metadata],
                 ssl_cafile=kafka_cafile,
             )
             kafka_handler_obj.setFormatter(formatter_callback)
@@ -206,13 +206,22 @@ def configure_logging(
             logger.exception("Kafka logging could not be setup")
 
 
-def adjust_kafka_timestamp(data):
+def adjust_kafka_metadata(data):
     """
     This is needed for the log-event-duration service to work properly
     """
-    if data is not None and "timestamp" in data:
-        data["@timestamp"] = data["timestamp"]
-        return data
+    if data is not None:
+        if "timestamp" in data:
+            data["@timestamp"] = data["timestamp"]
+
+        # NCL-7150: rename fields for consistency
+        if "levelName" in data:
+            data["level"] = data["levelName"]
+        # NCL-7150: rename fields for consistency
+        if "host" in data:
+            data["hostName"] = data["host"]
+
+    return data
 
 
 def main():
