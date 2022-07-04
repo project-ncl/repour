@@ -55,12 +55,16 @@ def run_container_subcommand(args):
     kafka_server = os.environ.get("REPOUR_KAFKA_SERVER")
     kafka_topic = os.environ.get("REPOUR_KAFKA_TOPIC")
     kafka_cafile = os.environ.get("REPOUR_KAFKA_CAFILE")
+    kafka_sasl_username = os.environ.get("REPOUR_KAFKA_SASL_USERNAME")
+    kafka_sasl_password = os.environ.get("REPOUR_KAFKA_SASL_PASSWORD")
 
     configure_logging(
         args.log,
         kafka_server=kafka_server,
         kafka_topic=kafka_topic,
         kafka_cafile=kafka_cafile,
+        kafka_sasl_username=kafka_sasl_username,
+        kafka_sasl_password=kafka_sasl_password,
     )
 
     # Read required config from env vars, most of it is hardcoded though
@@ -146,6 +150,8 @@ def configure_logging(
     kafka_server=None,
     kafka_topic=None,
     kafka_cafile=None,
+    kafka_sasl_username=None,
+    kafka_sasl_password=None,
 ):
     logging.setLogRecordFactory(ContextLogRecord)
 
@@ -189,11 +195,27 @@ def configure_logging(
 
     root_logger.setLevel(getattr(logging, default_level))
 
-    if kafka_server and kafka_topic and kafka_cafile:
+    if (
+        kafka_server
+        and kafka_topic
+        and (kafka_cafile or (kafka_sasl_username and kafka_sasl_password))
+    ):
         logger.info("Setting up Kafka logging handler")
         # we only care if you fail, kafka
         logger_kafka = logging.getLogger("kafka")
         logger_kafka.setLevel(logging.ERROR)
+
+        kwargs = {}
+
+        security_protocol = None
+        if kafka_sasl_username and kafka_sasl_password:
+            logger.info("Configuring Kafka logging with SASL authentication")
+            kwargs["sasl_mechanism"] = "PLAIN"
+            kwargs["sasl_plain_username"] = kafka_sasl_username
+            kwargs["sasl_plain_password"] = kafka_sasl_password
+            security_protocol = "SASL_SSL"
+        else:
+            security_protocol = "SSL"
 
         try:
             kafka_handler_obj = KafkaLoggingHandler(
@@ -201,6 +223,8 @@ def configure_logging(
                 kafka_topic,
                 log_preprocess=[adjust_kafka_metadata],
                 ssl_cafile=kafka_cafile,
+                security_protocol=security_protocol,
+                kafka_producer_args=kwargs,
             )
             kafka_handler_obj.setFormatter(formatter_callback)
             root_logger.addHandler(kafka_handler_obj)
