@@ -57,6 +57,9 @@ def run_container_subcommand(args):
     kafka_cafile = os.environ.get("REPOUR_KAFKA_CAFILE")
     kafka_sasl_username = os.environ.get("REPOUR_KAFKA_SASL_USERNAME")
     kafka_sasl_password = os.environ.get("REPOUR_KAFKA_SASL_PASSWORD")
+    kafka_connection_max_idle_ms = os.environ.get(
+        "REPOUR_KAFKA_CONNECTIONS_MAX_IDLE_MS"
+    )
 
     configure_logging(
         args.log,
@@ -65,6 +68,7 @@ def run_container_subcommand(args):
         kafka_cafile=kafka_cafile,
         kafka_sasl_username=kafka_sasl_username,
         kafka_sasl_password=kafka_sasl_password,
+        kafka_connection_max_idle_ms=kafka_connection_max_idle_ms,
     )
 
     # Read required config from env vars, most of it is hardcoded though
@@ -152,6 +156,7 @@ def configure_logging(
     kafka_cafile=None,
     kafka_sasl_username=None,
     kafka_sasl_password=None,
+    kafka_connection_max_idle_ms=None,
 ):
     logging.setLogRecordFactory(ContextLogRecord)
 
@@ -210,9 +215,14 @@ def configure_logging(
         security_protocol = None
         if kafka_sasl_username and kafka_sasl_password:
             logger.info("Configuring Kafka logging with SASL authentication")
+            # kwargs keys obtained from: https://github.com/dpkp/kafka-python/blob/master/kafka/producer/kafka.py
             kwargs["sasl_mechanism"] = "PLAIN"
             kwargs["sasl_plain_username"] = kafka_sasl_username
             kwargs["sasl_plain_password"] = kafka_sasl_password
+
+            if kafka_connection_max_idle_ms is not None:
+                kwargs["connections_max_idle_ms"] = kafka_connection_max_idle_ms
+
             security_protocol = "SASL_SSL"
         else:
             security_protocol = "SSL"

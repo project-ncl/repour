@@ -596,6 +596,7 @@ are defined as env variables:
 - REPOUR_KAFKA_SASL_USERNAME
 - REPOUR_KAFKA_SASL_PASSWORD
 - REPOUR_KAFKA_CAFILE (location of the ca file to talk to kafka)
+- REPOUR_KAFKA_CONNECTIONS_MAX_IDLE_MS (optional)
 
 If both REPOUR_KAFKA_SASL_USERNAME and REPOUR_KAFKA_SASL_PASSWORD are defined, then Repour authenticates to Kafka using the SASL_PLAIN method. Otherwise it'll use the kafka-cafile to authenticate with authentication 'SSL'
 
