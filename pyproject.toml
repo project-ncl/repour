@@ -22,7 +22,7 @@ more-itertools = "^8.13.0"
 giturlparse = "^0.10.0"
 pylru = "^1.2.1"
 cryptography = "37.0.2"
-python-json-logger = "^2.0.2"
+python-json-logger = "^2.0.4"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.25"
