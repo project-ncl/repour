@@ -119,7 +119,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "cryptography"
-version = "37.0.2"
+version = "37.0.4"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
 category = "main"
 optional = false
@@ -533,7 +533,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "cf14a4862e4b5c1665efd1fae14b6a39134fba5ae3b1f4b2d79af8c2aa6aa074"
+content-hash = "d39e3b30448ecb8f23fb008db634dc1a99c6c4b387d2c14d47dca95088748f30"
 
 [metadata.files]
 aiohttp = []
