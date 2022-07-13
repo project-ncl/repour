@@ -221,7 +221,7 @@ def configure_logging(
             kwargs["sasl_plain_password"] = kafka_sasl_password
 
             if kafka_connection_max_idle_ms is not None:
-                kwargs["connections_max_idle_ms"] = kafka_connection_max_idle_ms
+                kwargs["connections_max_idle_ms"] = int(kafka_connection_max_idle_ms)
 
             security_protocol = "SASL_SSL"
         else:
