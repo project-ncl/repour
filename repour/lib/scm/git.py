@@ -273,12 +273,14 @@ async def is_branch(dir, ref, remote="origin"):
     # Need to run this for show-branch to work effectively
     await fetch(dir)
 
+    # do not log stderr to output on failure. this causes useless error logs to be printed if ref is not a branch
     try:  # TODO improve, its ugly
         await expect_ok(
             cmd=["git", "show-branch", "remotes/" + remote + "/" + ref],
             cwd=dir,
             desc="Ignore this.",
             print_cmd=True,
+            stderr=None,
         )
         return True
     except Exception:
@@ -292,6 +294,7 @@ async def is_tag(dir, ref):
             cwd=dir,
             desc="Ignore this.",
             print_cmd=True,
+            stderr=None,
         )
         return True
     except Exception:
