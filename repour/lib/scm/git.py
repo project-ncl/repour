@@ -536,6 +536,7 @@ async def fetch_tags(dir, remote="origin"):
             desc="Could not fetch tags with git",
             cwd=dir,
             print_cmd=True,
+            stderr="log_on_error_as_info",
         )
     except exception.CommandError as e:
         e.exit_code = 10

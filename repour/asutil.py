@@ -162,6 +162,11 @@ def expect_ok_closure(exc_type=exception.CommandError):
         live_log=False,
         print_cmd=False,
     ):
+        """
+        If stderr is set to 'log_on_error', the text in stderr will be logged as ERROR if the cmd return code is not zero
+        If stderr is set to 'log_on_error_as_info', the text in stderr will be logged as a INFO if the cmd return code is not zero
+        If stderr is set to 'log', the text in stderr will be logged as an error irrespective of the cmd return code value
+        """
         if env is None:
             sub_env = None
         else:
@@ -199,11 +204,19 @@ def expect_ok_closure(exc_type=exception.CommandError):
             )
 
         if stderr_text != "" and (
-            stderr == "log" or (stderr == "log_on_error" and p.returncode != 0)
+            stderr == "log"
+            or (
+                stderr is not None
+                and stderr.startswith("log_on_error")
+                and p.returncode != 0
+            )
         ):
             for line in stderr_text.split("\n"):
                 if line != "":
-                    subprocess_logger.error(line)
+                    if stderr == "log_on_error_as_info":
+                        subprocess_logger.info(line)
+                    else:
+                        subprocess_logger.error(line)
 
         if not p.returncode == 0:
             raise exc_type(
