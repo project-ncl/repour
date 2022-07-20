@@ -1,3 +1,3 @@
 # flake8: noqa
-version = "2.3.3.FINAL"
+version = "2.3.4.FINAL"
 __version__ = version
