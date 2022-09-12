@@ -100,10 +100,6 @@ def start_server(bind, repo_provider, repour_url, adjust_provider):
     logger.debug("Starting server")
     loop = asyncio.get_event_loop()
 
-    #  # Monkey patch for Python 3.4.1
-    #  if not hasattr(loop, "create_task"):
-    #  loop.create_task = lambda c: asyncio.async(c, loop=loop)
-
     loop.run_until_complete(
         init(
             loop=loop,
@@ -121,7 +117,7 @@ def start_server(bind, repo_provider, repour_url, adjust_provider):
     except KeyboardInterrupt:
         logger.debug("KeyboardInterrupt")
     finally:
-        logger.info("Stopping tasks")
+        logger.info("Stopping tasks and shutting down")
         tasks = asyncio.Task.all_tasks()
         for task in tasks:
             task.cancel()
