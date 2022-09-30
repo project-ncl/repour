@@ -532,7 +532,7 @@ async def add_file(dir, file_path, force=False):
 async def fetch_tags(dir, remote="origin"):
     try:
         await expect_ok(
-            cmd=["git", "fetch", remote, "--tags", "--all"],
+            cmd=["git", "fetch", remote, "--tags"],
             desc="Could not fetch tags with git",
             cwd=dir,
             print_cmd=True,
