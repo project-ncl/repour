@@ -208,7 +208,7 @@ def configure_logging(
         logger.info("Setting up Kafka logging handler")
         # we only care if you fail, kafka
         logger_kafka = logging.getLogger("kafka")
-        logger_kafka.setLevel(logging.ERROR)
+        logger_kafka.setLevel(logging.CRITICAL)
 
         kwargs = {}
 
