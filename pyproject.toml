@@ -25,7 +25,7 @@ cryptography = "38.0.1"
 python-json-logger = "^2.0.4"
 
 [tool.poetry.dev-dependencies]
-tox = "^3.26"
+tox = "^3.27"
 
 [tool.tox]
 legacy_tox_ini = """
