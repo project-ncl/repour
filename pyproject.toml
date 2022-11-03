@@ -23,6 +23,7 @@ giturlparse = "^0.10.0"
 pylru = "^1.2.1"
 cryptography = "38.0.1"
 python-json-logger = "^2.0.4"
+opentelemetry-distro = {extras = ["otlp"], version = "^0.34b0"}
 
 [tool.poetry.dev-dependencies]
 tox = "^3.27"
@@ -49,3 +50,4 @@ commands =
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
