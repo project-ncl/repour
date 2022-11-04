@@ -102,6 +102,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         log_process_context_variant = request.headers.get(
             "process-context-variant", ""
         ).strip()
+        trace_id = request.headers.get("trace-id", "").strip()
+        span_id = request.headers.get("span-id", "").strip()
+        # Some implementations use parent-id instead of span-id
+        if span_id == "":
+            span_id = request.headers.get("parent-id", "").strip()
 
         callback_id = create_callback_id()
 
@@ -118,6 +123,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         log_util.add_update_mdc_key_value_in_task(
             "processContextVariant", log_process_context_variant
         )
+        log_util.add_update_mdc_key_value_in_task("trace_id", trace_id)
+        log_util.add_update_mdc_key_value_in_task("span_id", span_id)
 
         asyncio.current_task().callback_id = callback_id
 
@@ -282,6 +289,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             "process-context-variant": current_task.mdc[
                                 "processContextVariant"
                             ],
+                            "trace-id": current_task.mdc["trace_id"],
+                            "span-id": current_task.mdc["span_id"],
                         }
 
                         headers.update(context_headers)
