@@ -699,6 +699,19 @@ async def cleanup(dir):
     await asutil.rmtree(os.path.join(dir, ".git"))
 
 
+async def show_current_commit(repo_dir):
+
+    commit = await expect_ok(
+        cmd=["git", "rev-parse", "HEAD"],
+        desc="Couldn't get the commit from the repository",
+        stdout="text",
+        cwd=repo_dir,
+        print_cmd=True,
+    )
+
+    return commit.strip()
+
+
 async def version():  # TODO cache?
     """
     Return an array with components of the current git version (as numbers, ordered from most significant)
