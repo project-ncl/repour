@@ -168,7 +168,7 @@ def configure_logging(
         "{asctime} {message}",
     )
     json_formatter = json_custom_formatter.JsonCustomFormatter(
-        "%(timestamp)s %(level)s %(name)s %(message)s %(hostName)s %(mdc)s %(otelSpanID)s %(otelTraceID)s"
+        "%(timestamp)s %(level)s %(name)s %(message)s %(hostName)s %(mdc)s"
     )
 
     # for callback to send full logs to caller, + to kafka logging
