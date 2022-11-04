@@ -226,6 +226,9 @@ async def adjust(adjustspec, repo_provider):
         await asgit.transform_git_submodule_into_fat_repository(work_dir)
         process_mdc("END", "SCM_CLONE")
 
+        commit_id = await git.show_current_commit(work_dir)
+        logger.info("Current Commit ID of repo is: {}", commit_id)
+
         process_mdc("BEGIN", "ALIGNMENT_ADJUST")
         ### Adjust Phase ###
         if build_type == "MVN":
