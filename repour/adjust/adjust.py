@@ -227,7 +227,7 @@ async def adjust(adjustspec, repo_provider):
         process_mdc("END", "SCM_CLONE")
 
         commit_id = await git.show_current_commit(work_dir)
-        logger.info("Current Commit ID of repo is: {}", commit_id)
+        logger.info("Current Commit ID of repo is: " + commit_id)
 
         process_mdc("BEGIN", "ALIGNMENT_ADJUST")
         ### Adjust Phase ###
