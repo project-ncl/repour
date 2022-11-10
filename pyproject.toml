@@ -27,7 +27,6 @@ opentelemetry-distro = {extras = ["otlp"], version = "^0.35b0"}
 opentelemetry-instrumentation-logging = "^0.35b0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.14.0"
 opentelemetry-instrumentation-aiohttp-client = "^0.35b0"
-lock = "^2018.3.25.2110"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.27"
