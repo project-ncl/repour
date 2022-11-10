@@ -275,6 +275,14 @@ python-versions = "*"
 crc32c = ["crc32c"]
 
 [[package]]
+name = "lock"
+version = "2018.3.25.2110"
+description = "module for enabling file locks"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "mccabe"
 version = "0.7.0"
 description = "McCabe checker, plugin for flake8"
@@ -391,6 +399,25 @@ setuptools = ">=16.0"
 wrapt = ">=1.0.0,<2.0.0"
 
 [[package]]
+name = "opentelemetry-instrumentation-aiohttp-client"
+version = "0.35b0"
+description = "OpenTelemetry aiohttp client instrumentation"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.35b0"
+opentelemetry-semantic-conventions = "0.35b0"
+opentelemetry-util-http = "0.35b0"
+wrapt = ">=1.0.0,<2.0.0"
+
+[package.extras]
+instruments = ["aiohttp (>=3.0,<4.0)"]
+test = ["opentelemetry-instrumentation-aiohttp-client[instruments]"]
+
+[[package]]
 name = "opentelemetry-instrumentation-logging"
 version = "0.35b0"
 description = "OpenTelemetry Logging instrumentation"
@@ -434,6 +461,14 @@ typing-extensions = ">=3.7.4"
 name = "opentelemetry-semantic-conventions"
 version = "0.35b0"
 description = "OpenTelemetry Semantic Conventions"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
+name = "opentelemetry-util-http"
+version = "0.35b0"
+description = "Web util for OpenTelemetry"
 category = "main"
 optional = false
 python-versions = ">=3.7"
@@ -766,7 +801,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "3bb2e74696bc37c37435bfb3100a954864c3eed222cb0e23f357269798679f9d"
+content-hash = "5da3ba8b950c5c54675da7023c52aa3e1ea1c45dd90fdf9ab2997497a74fec34"
 
 [metadata.files]
 aiohttp = [
@@ -1132,6 +1167,9 @@ kafka-python = [
     {file = "kafka-python-2.0.2.tar.gz", hash = "sha256:04dfe7fea2b63726cd6f3e79a2d86e709d608d74406638c5da33a01d45a9d7e3"},
     {file = "kafka_python-2.0.2-py2.py3-none-any.whl", hash = "sha256:2d92418c7cb1c298fa6c7f0fb3519b520d0d7526ac6cb7ae2a4fc65a51a94b6e"},
 ]
+lock = [
+    {file = "lock-2018.3.25.2110.tar.gz", hash = "sha256:cc5ac770930493eed7a8cfd0cf2568a125faf112eb8aa6b6149b3e581523d0c7"},
+]
 mccabe = [
     {file = "mccabe-0.7.0-py2.py3-none-any.whl", hash = "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e"},
     {file = "mccabe-0.7.0.tar.gz", hash = "sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325"},
@@ -1225,6 +1263,10 @@ opentelemetry-instrumentation = [
     {file = "opentelemetry_instrumentation-0.35b0-py3-none-any.whl", hash = "sha256:0ca91ef51c6748e91892cd1322b1fceede77d1300dc718a5ec4c3deee5649beb"},
     {file = "opentelemetry_instrumentation-0.35b0.tar.gz", hash = "sha256:a7cb996b37920911db7534dc739ab3fe18e4f769431481bec01d6538a11cadd9"},
 ]
+opentelemetry-instrumentation-aiohttp-client = [
+    {file = "opentelemetry_instrumentation_aiohttp_client-0.35b0-py3-none-any.whl", hash = "sha256:45913522d4a90c17d450452f73723da797fb617c7ba197a7027af587cbe7f34b"},
+    {file = "opentelemetry_instrumentation_aiohttp_client-0.35b0.tar.gz", hash = "sha256:0f744f28ad664197ad2d9800de0e49e1472e81bc6ac8473165e35b8280daffff"},
+]
 opentelemetry-instrumentation-logging = [
     {file = "opentelemetry_instrumentation_logging-0.35b0-py2.py3-none-any.whl", hash = "sha256:bcd1eed8d1c698eb46b3a26321929927288534031482b2a486ff45381b80e9a7"},
     {file = "opentelemetry_instrumentation_logging-0.35b0.tar.gz", hash = "sha256:16cfeaf5665738bc0f136ed362755f3034bef6225a49838869ade2142c24e183"},
@@ -1240,6 +1282,10 @@ opentelemetry-sdk = [
 opentelemetry-semantic-conventions = [
     {file = "opentelemetry_semantic_conventions-0.35b0-py3-none-any.whl", hash = "sha256:eb5320719d919db2ff8ac60a7577dfa2316cf02bccc6a3b1f50d051885dd96b7"},
     {file = "opentelemetry_semantic_conventions-0.35b0.tar.gz", hash = "sha256:3c24717f2838a6b4db45d68abf69078942e876c2347e0a83a09c1533017d85d2"},
+]
+opentelemetry-util-http = [
+    {file = "opentelemetry_util_http-0.35b0-py3-none-any.whl", hash = "sha256:60652fb093099a8f71e7cfb63fd1d286d4e71f3ffe3e0435678060acd4d151ca"},
+    {file = "opentelemetry_util_http-0.35b0.tar.gz", hash = "sha256:8a38064a32a023ef2f1469c1a615461c4240fa99fd4ea9d0eef4d416af47ccaa"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
