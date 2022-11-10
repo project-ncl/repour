@@ -289,8 +289,8 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             "process-context-variant": current_task.mdc[
                                 "processContextVariant"
                             ],
-                            "trace-id": current_task.mdc["trace_id"],
-                            "span-id": current_task.mdc["span_id"],
+                            "trace_id": current_task.mdc["trace_id"],
+                            "span_id": current_task.mdc["span_id"],
                         }
 
                         headers.update(context_headers)
