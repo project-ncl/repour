@@ -22,6 +22,8 @@ from repour.lib.io import file_utils
 from repour.lib.logs import log_util
 from repour.lib.logs import file_callback_log
 from repour.server.endpoint import validation
+from opentelemetry import trace
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +106,10 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         ).strip()
         trace_id = request.headers.get("trace-id", "").strip()
         span_id = request.headers.get("span-id", "").strip()
+        traceparent = request.headers.get("traceparent", "").strip()
+        tracestate = request.headers.get("tracestate", "").strip()
+        logger.info(">> traceparent: " + traceparent)
+        logger.info(">> tracestate: " + tracestate)
         # Some implementations use parent-id instead of span-id
         if span_id == "":
             span_id = request.headers.get("parent-id", "").strip()
@@ -125,6 +131,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         )
         log_util.add_update_mdc_key_value_in_task("trace_id", trace_id)
         log_util.add_update_mdc_key_value_in_task("span_id", span_id)
+        log_util.add_update_mdc_key_value_in_task("traceparent", traceparent)
 
         asyncio.current_task().callback_id = callback_id
 
@@ -289,8 +296,10 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             "process-context-variant": current_task.mdc[
                                 "processContextVariant"
                             ],
-                            "trace_id": current_task.mdc["trace_id"],
-                            "span_id": current_task.mdc["span_id"],
+                            "trace-id": current_task.mdc["trace_id"],
+                            "span-id": current_task.mdc["span_id"],
+                            # TODO: do we need to include this?
+                            "traceparent": current_task.mdc["traceparent"],
                         }
 
                         headers.update(context_headers)
@@ -353,23 +362,33 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                     **locals()
                 )
             )
-            callback_task = request.app.loop.create_task(do_callback(spec["callback"]))
-            callback_task.log_context = log_context
-            callback_task.loggerName = asyncio.current_task().loggerName
-            callback_task.mdc = asyncio.current_task().mdc
-            callback_task.callback_id = callback_id
-            # Set the task_id if provided in the request
-            task_id = spec.get("taskId", None)
-            if task_id:
-                callback_task.task_id = task_id
 
-            status = 202
-            obj = {
-                "callback": {
-                    "id": callback_id,
-                    "websocket": "ws://" + repour_url + "/callback/" + callback_id,
+            # trying
+            ctx = TraceContextTextMapPropagator().extract(
+                carrier={"traceparent": traceparent}
+            )
+            tracer = trace.get_tracer(__name__)
+            with tracer.start_as_current_span(request.path, ctx) as span:
+
+                callback_task = request.app.loop.create_task(
+                    do_callback(spec["callback"])
+                )
+                callback_task.log_context = log_context
+                callback_task.loggerName = asyncio.current_task().loggerName
+                callback_task.mdc = asyncio.current_task().mdc
+                callback_task.callback_id = callback_id
+                # Set the task_id if provided in the request
+                task_id = spec.get("taskId", None)
+                if task_id:
+                    callback_task.task_id = task_id
+
+                status = 202
+                obj = {
+                    "callback": {
+                        "id": callback_id,
+                        "websocket": "ws://" + repour_url + "/callback/" + callback_id,
+                    }
                 }
-            }
 
         else:
             status, obj = await do_call()
