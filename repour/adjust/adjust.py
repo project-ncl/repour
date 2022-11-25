@@ -236,7 +236,7 @@ async def adjust(adjustspec, repo_provider):
 
         # get the current span, created by flask
         current_span = trace.get_current_span()
-        if current_span.get_span_context().is_valid():
+        if current_span.get_span_context().is_valid:
             trace_id = current_span.get_span_context().trace_id
             span_id = current_span.get_span_context().span_id
             trace_flags = current_span.get_span_context().trace_flags
