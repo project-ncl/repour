@@ -250,7 +250,9 @@ async def adjust(adjustspec, repo_provider):
 
         ### SET OTEL TRACEPARENT env variable so it can be used by tooling and propagated further
         if trace_id is not None:
-            current_traceparent = "00-{}-{}-{}".format(trace_id, span_id, "01" if sampled else "00")
+            current_traceparent = "00-{}-{}-{}".format(
+                trace_id, span_id, "01" if sampled else "00"
+            )
             os.environ.setdefault("TRACEPARENT", current_traceparent)
             logger.info(
                 "Set environment variable TRACEPARENT to : " + current_traceparent
