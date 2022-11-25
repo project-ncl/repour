@@ -243,5 +243,5 @@ async def generate_user_context():
         current_task.mdc["requestContext"],
         current_task.mdc["processContext"],
         current_task.mdc["expires"],
-        current_task.mdc["tmp"]
+        current_task.mdc["tmp"],
     )
