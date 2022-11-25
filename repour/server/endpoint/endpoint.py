@@ -298,7 +298,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             ],
                             "trace-id": current_task.mdc["trace_id"],
                             "span-id": current_task.mdc["span_id"],
-                            # TODO: do we need to include this?
                             "traceparent": current_task.mdc["traceparent"],
                         }
 
