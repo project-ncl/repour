@@ -25,6 +25,7 @@ def remove_mdc_key_in_task(key):
         if key in task.mdc:
             del task.mdc[key]
 
+
 def get_mdc_value_in_task(key):
     """
     Given a key, returns the mdc value from the task.
@@ -35,6 +36,7 @@ def get_mdc_value_in_task(key):
         if key in task.mdc:
             return task.mdc[key]
     return None
+
 
 class CustomFormatter(logging.Formatter):
     """
