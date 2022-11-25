@@ -167,9 +167,11 @@ def expect_ok_closure(exc_type=exception.CommandError):
         If stderr is set to 'log_on_error_as_info', the text in stderr will be logged as a INFO if the cmd return code is not zero
         If stderr is set to 'log', the text in stderr will be logged as an error irrespective of the cmd return code value
         """
-        if env is None:
-            sub_env = None
-        else:
+
+        # load the system's env vars
+        sub_env = os.environ.copy()
+
+        if env:
             # Only partially override the existing environment
             sub_env = os.environ.copy()
             sub_env.update(env)
