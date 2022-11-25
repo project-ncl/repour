@@ -247,9 +247,13 @@ async def adjust(adjustspec, repo_provider):
 
         ### SET OTEL TRACEPARENT env variable so it can be used by tooling and propagated further
         if trace_id is not None:
-            current_traceparent = "00-{}-{}-{}".format(trace_id, span_id, "".join(trace_flags))
-            os.environ.setdefault('TRACEPARENT', current_traceparent);
-            logger.info("Set environment variable TRACEPARENT to : " + current_traceparent)
+            current_traceparent = "00-{}-{}-{}".format(
+                trace_id, span_id, "".join(trace_flags)
+            )
+            os.environ.setdefault("TRACEPARENT", current_traceparent)
+            logger.info(
+                "Set environment variable TRACEPARENT to : " + current_traceparent
+            )
 
         ### Adjust Phase ###
         if build_type == "MVN":
