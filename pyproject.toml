@@ -39,6 +39,7 @@ skipsdist = True
 # envlist=py36,py37,py38
 
 [testenv]
+allowlist_externals = poetry, pre-commit, flake8
 skip_install = true
 # install pytest in the virtualenv where commands will be executed
 deps =
