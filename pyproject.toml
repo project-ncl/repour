@@ -21,7 +21,7 @@ flake8 = "^5.0"
 more-itertools = "^9.0.0"
 giturlparse = "^0.10.0"
 pylru = "^1.2.1"
-cryptography = "38.0.4"
+cryptography = "39.0.0"
 python-json-logger = "^2.0.4"
 opentelemetry-distro = {extras = ["otlp"], version = "^0.35b0"}
 opentelemetry-instrumentation-logging = "^0.35b0"
