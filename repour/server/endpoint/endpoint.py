@@ -79,10 +79,12 @@ def exception_to_obj(exception):
 
 
 def log_traceback_multi_line():
+    """
+
+    Note: Do not try to create one log line per error. This messes up with splunk logging that shows everything per line
+    """
     text = traceback.format_exc()
-    for line in text.split("\n"):
-        if line != "":
-            logger.error(line)
+    logger.error(text)
 
 
 def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
