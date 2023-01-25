@@ -203,20 +203,13 @@ def expect_ok_closure(exc_type=exception.CommandError):
                 "" if stdout_data is None else _convert_bytes(stdout_data, "text")
             )
 
-        if stderr_text != "" and (
-            stderr == "log"
-            or (
-                stderr is not None
-                and stderr.startswith("log_on_error")
-                and p.returncode != 0
-            )
-        ):
-            for line in stderr_text.split("\n"):
-                if line != "":
-                    if stderr == "log_on_error_as_info":
-                        subprocess_logger.info(line)
-                    else:
-                        subprocess_logger.error(line)
+        if stderr_text != "":
+            if stderr == "log_on_error" and p.returncode != 0:
+                subprocess_logger.error(stderr_text)
+            elif stderr == "log_on_error_as_info" and p.returncode != 0:
+                subprocess_logger.info(stderr_text)
+            elif stderr == "log":
+                subprocess_logger.error(stderr_text)
 
         if not p.returncode == 0:
             raise exc_type(
