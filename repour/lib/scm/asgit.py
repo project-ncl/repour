@@ -55,11 +55,19 @@ async def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=Fal
     await git.tag_annotated(repo_dir, tag_name, message, ok_if_exists=ok_if_exists)
 
 
-async def push_with_tags(expect_ok, repo_dir, branch_name):
+async def push_with_tags(
+    expect_ok, repo_dir, branch_name, ignore_tag_already_exist_error=False
+):
     c = await config.get_configuration()
     git_user = c.get("git_username")
 
-    await git.push_with_tags(repo_dir, branch_name, git_user, tryAtomic=False)
+    await git.push_with_tags(
+        repo_dir,
+        branch_name,
+        git_user,
+        tryAtomic=False,
+        ignore_tag_already_exist_error=ignore_tag_already_exist_error,
+    )
 
 
 #
@@ -140,7 +148,9 @@ async def push_new_dedup_branch(
         # If tag name already exists, make sure it's already present in upstream
         # This happens if we are doing /adjust, with pre-sync enabled.
         # The external repo might have the tag, but not the internal repo
-        await push_with_tags(expect_ok, repo_dir, tag_name)
+        await push_with_tags(
+            expect_ok, repo_dir, tag_name, ignore_tag_already_exist_error=True
+        )
 
     if tag_name is None:
         return None

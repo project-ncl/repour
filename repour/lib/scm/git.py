@@ -362,7 +362,12 @@ async def push_all(dir, remote, tags_also=False):
 
 # TODO merge with above
 async def push_with_tags(
-    dir, branch, config_git_user, remote="origin", tryAtomic=False
+    dir,
+    branch,
+    config_git_user,
+    remote="origin",
+    tryAtomic=False,
+    ignore_tag_already_exist_error=False,
 ):
     """
     Warning: Atomic push is supported since git version 2.4.
@@ -424,7 +429,7 @@ async def push_with_tags(
                 "There is a risk of tag/branch inconsistency."
             )
             await do(False)
-        elif (
+        elif ignore_tag_already_exist_error and (
             "Updates were rejected because the tag already exists in the remote"
             in e.stderr
         ):
