@@ -352,6 +352,8 @@ files = [
     {file = "cryptography-39.0.1-cp36-abi3-win32.whl", hash = "sha256:fe913f20024eb2cb2f323e42a64bdf2911bb9738a15dba7d3cce48151034e3a8"},
     {file = "cryptography-39.0.1-cp36-abi3-win_amd64.whl", hash = "sha256:ced4e447ae29ca194449a3f1ce132ded8fcab06971ef5f618605aacaa612beac"},
     {file = "cryptography-39.0.1-pp38-pypy38_pp73-macosx_10_12_x86_64.whl", hash = "sha256:807ce09d4434881ca3a7594733669bd834f5b2c6d5c7e36f8c00f691887042ad"},
+    {file = "cryptography-39.0.1-pp38-pypy38_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:c5caeb8188c24888c90b5108a441c106f7faa4c4c075a2bcae438c6e8ca73cef"},
+    {file = "cryptography-39.0.1-pp38-pypy38_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:4789d1e3e257965e960232345002262ede4d094d1a19f4d3b52e48d4d8f3b885"},
     {file = "cryptography-39.0.1-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:96f1157a7c08b5b189b16b47bc9db2332269d6680a196341bf30046330d15388"},
     {file = "cryptography-39.0.1-pp39-pypy39_pp73-macosx_10_12_x86_64.whl", hash = "sha256:e422abdec8b5fa8462aa016786680720d78bdce7a30c652b7fadf83a4ba35336"},
     {file = "cryptography-39.0.1-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:b0afd054cd42f3d213bf82c629efb1ee5f22eba35bf0eec88ea9ea7304f511a2"},
@@ -1230,14 +1232,14 @@ pycryptodome = ["pyasn1", "pycryptodome (>=3.3.1,<4.0.0)"]
 
 [[package]]
 name = "python-json-logger"
-version = "2.0.4"
+version = "2.0.5"
 description = "A python library adding a json log formatter"
 category = "main"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
 files = [
-    {file = "python-json-logger-2.0.4.tar.gz", hash = "sha256:764d762175f99fcc4630bd4853b09632acb60a6224acb27ce08cd70f0b1b81bd"},
-    {file = "python_json_logger-2.0.4-py3-none-any.whl", hash = "sha256:3b03487b14eb9e4f77e4fc2a023358b5394b82fd89cecf5586259baed57d8c6f"},
+    {file = "python-json-logger-2.0.5.tar.gz", hash = "sha256:3853e0b73e6c1ba4b1f2543066b24950bf1c21ed104f297a7bff8c74532a6ab2"},
+    {file = "python_json_logger-2.0.5-py3-none-any.whl", hash = "sha256:f389ccb0a8fd26f84c294dc627a999daf58f759b457ee022f698098f6547288d"},
 ]
 
 [[package]]
@@ -1608,4 +1610,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "65b2a8a2daebcdfcfc85be915cbb9e1c74eab8a65a09498da0e84f0440f0521a"
+content-hash = "9f9e040931aabcb474ef89831947a34dd3c92c48f5b8596eef8465c878c2f972"
