@@ -1232,14 +1232,14 @@ pycryptodome = ["pyasn1", "pycryptodome (>=3.3.1,<4.0.0)"]
 
 [[package]]
 name = "python-json-logger"
-version = "2.0.5"
+version = "2.0.7"
 description = "A python library adding a json log formatter"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "python-json-logger-2.0.5.tar.gz", hash = "sha256:3853e0b73e6c1ba4b1f2543066b24950bf1c21ed104f297a7bff8c74532a6ab2"},
-    {file = "python_json_logger-2.0.5-py3-none-any.whl", hash = "sha256:f389ccb0a8fd26f84c294dc627a999daf58f759b457ee022f698098f6547288d"},
+    {file = "python-json-logger-2.0.7.tar.gz", hash = "sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c"},
+    {file = "python_json_logger-2.0.7-py3-none-any.whl", hash = "sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd"},
 ]
 
 [[package]]
@@ -1610,4 +1610,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "004c495841c653e2f88fc69888fd6e52bbe00cabc92386ea714b997534bb8004"
+content-hash = "8abe3476fd4a8aa5749d131b205352c35c9445fe6b388f48532cccc344da1010"
