@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 import shutil
+import shlex
 
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
@@ -636,8 +637,10 @@ def get_default_alignment_parameters(adjustspec):
     """
     Helper method to extract default alignment parameters as passed in spec and return values in a list.
 
-    for e.g if the params is passed as "key=value key2=value2", then the returned list will be:
-        ["key=value", "key2=value2"]
+    for e.g if the params is passed as "key=value key2=value2 key3='value space'", then the returned list will be:
+        ["key=value", "key2=value2", "key3=value space"]
+
+    Values with whitespace need to be escaped before running shell.
     """
 
     default_alignment_parameters = []
@@ -646,6 +649,6 @@ def get_default_alignment_parameters(adjustspec):
         "defaultAlignmentParams" in adjustspec
         and adjustspec["defaultAlignmentParams"] is not None
     ):
-        default_alignment_parameters = adjustspec["defaultAlignmentParams"].split()
+        default_alignment_parameters = shlex.split(adjustspec["defaultAlignmentParams"])
 
     return default_alignment_parameters

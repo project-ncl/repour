@@ -2,6 +2,7 @@
 import io
 import logging
 import os
+import shlex
 import zipfile
 
 from repour import asutil, exception
@@ -41,11 +42,13 @@ def get_process_provider(
             'Executing "{execution_name}" using (sub)process adjust provider as: '.format(
                 **locals()
             )
-            + " ".join(cmd)
+            + shlex.join(cmd)
         )
         log_executable_info(cmd)
         filled_cmd = [
-            p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p
+            p.format(repo_dir=repo_dir)
+            if p.startswith("{repo_dir}")
+            else shlex.quote(p)
             for p in cmd
         ]
 
