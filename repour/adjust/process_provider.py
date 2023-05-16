@@ -46,9 +46,7 @@ def get_process_provider(
         )
         log_executable_info(cmd)
         filled_cmd = [
-            p.format(repo_dir=repo_dir)
-            if p.startswith("{repo_dir}")
-            else shlex.quote(p)
+            p.format(repo_dir=repo_dir) if p.startswith("{repo_dir}") else p
             for p in cmd
         ]
 
