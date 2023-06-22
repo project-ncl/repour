@@ -83,6 +83,7 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
     app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
     app.router.add_route("GET", "/metrics", aio.web.server_stats)
+    app.router.add_route("GET", "/version", info.handle_version)
 
     await setup_graphite_exporter()
     # used for distributed cancel operation
