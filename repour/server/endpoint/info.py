@@ -2,6 +2,7 @@
 import os
 import sys
 
+import json
 import repour
 from aiohttp import web
 from prometheus_async.aio import time
@@ -34,3 +35,24 @@ async def handle_request(request):
 
     html_text = html_text.format(version, git_sha)
     return web.Response(text="" + html_text, content_type="text/html")
+
+
+@time(REQ_TIME)
+@time(REQ_HISTOGRAM_TIME)
+async def version(request):
+    version = repour.__version__
+    path_name = os.path.dirname(sys.argv[0])
+    try:
+        git_sha = await git.rev_parse(path_name)
+    except exception.CommandError:
+        git_sha = "Unknown"
+
+    data = {
+        "name": "Repour",
+        "version": version,
+        "commit": git_sha,
+        "builtOn": None,
+        "components": [],
+    }
+
+    return web.Response(text="" + json.dumps(data), content_type="application/json")
