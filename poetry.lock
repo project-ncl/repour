@@ -135,13 +135,13 @@ files = [
 
 [[package]]
 name = "asyncssh"
-version = "2.13.1"
+version = "2.13.2"
 description = "AsyncSSH: Asynchronous SSHv2 client and server library"
 optional = false
 python-versions = ">= 3.6"
 files = [
-    {file = "asyncssh-2.13.1-py3-none-any.whl", hash = "sha256:c90eb5e2b4f9a7cc6e6af01fd844563d722c0d667f8c5f51fe5b3c2a79fa0575"},
-    {file = "asyncssh-2.13.1.tar.gz", hash = "sha256:ebbb83c05c0b45cf230de1ef2f06059e360f9afa5c3ddf60fc92faf7b94ff887"},
+    {file = "asyncssh-2.13.2-py3-none-any.whl", hash = "sha256:c7dfe9085c0659acb2ef0d177fb12421e92a20d52b98ab83eed4a5916a1d60cc"},
+    {file = "asyncssh-2.13.2.tar.gz", hash = "sha256:991e531c4bb7dbec62b754878d96a3246338aac11a28ce3c3e99018fb2f5828c"},
 ]
 
 [package.dependencies]
@@ -1538,4 +1538,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "94ce468a3ec4761d7ee57e06eec32243d13b13b376917ee6cce7b8049f2e9114"
+content-hash = "3fc506c50d0e0ff81707cf2c5df5594bae42b72d00b25e3f3521448a61f2aa90"
