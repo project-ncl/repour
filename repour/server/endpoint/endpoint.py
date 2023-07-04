@@ -20,7 +20,6 @@ from repour import exception
 from repour.config import config
 from repour.lib.io import file_utils
 from repour.lib.logs import log_util
-from repour.lib.logs import file_callback_log
 from repour.server.endpoint import validation
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -235,27 +234,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 obj = ret
                 logger.info("Completed ok")
 
-            log_file = file_callback_log.get_callback_log_path(callback_id)
-            logs = ""
-
-            if os.path.isfile(log_file):
-
-                # if not defined in log, set it to max size of an int, aka no maximum log size
-                max_size_bytes = c.get("max_log_size_bytes", sys.maxsize)
-                size_log = os.path.getsize(log_file)
-
-                if size_log > max_size_bytes:
-                    # This log should be printed before we grab the final log file so that this error is included in the log file
-                    logger.error(
-                        "Log file is too big: {} > {}".format(size_log, max_size_bytes)
-                    )
-                    logs = file_utils.read_last_bytes_of_file(log_file, max_size_bytes)
-                    status = 400
-                else:
-                    with open(log_file, "r") as f:
-                        logs = f.read()
-
-            obj["log"] = logs
             return status, obj
 
         if callback_mode:
