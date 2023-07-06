@@ -39,7 +39,7 @@ async def handle_request(request):
 
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
-async def version(request):
+async def handle_version(request):
     version = repour.__version__
     path_name = os.path.dirname(sys.argv[0])
     try:
