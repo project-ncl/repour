@@ -42,6 +42,7 @@ async def get_oauth2_jwt_handler(app, next_handler):
             request.path == "/"
             or request.path == "/git-external-to-internal"
             or request.path == "/metrics"
+            or request.path == "/version"
         ):
             # we don't authenticate for request to '/'. We'll show relevant repour information there
             response = await next_handler(request)
