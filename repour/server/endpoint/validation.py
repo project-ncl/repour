@@ -43,10 +43,13 @@ null_or_str = Any(None, nonempty_str)
 #
 # Callback
 #
-
+# this is used to mimic the pnc-api Request object. The "url" is present for legacy reasons
 callback_raw = {
-    "url": Url(),  # pylint: disable=no-value-for-parameter
+    Optional("url"): Url(),  # pylint: disable=no-value-for-parameter
+    Optional("uri"): Url(),  # pylint: disable=no-value-for-parameter
     Optional("method"): Any("PUT", "POST"),
+    Optional("headers"): Any(None, list),
+    Optional("attachment"): Any(None, nonempty_str),
 }
 
 callback = Schema({"callback": callback_raw}, required=True, extra=True)
