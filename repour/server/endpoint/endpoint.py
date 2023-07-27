@@ -284,9 +284,10 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         headers.update(context_headers)
                         headers.update({"Content-Type": "application/json"})
 
+                        # callback url is either from key 'url' or 'uri'. The latter is used in the pnc-api Request object
                         resp = await client_session.request(
                             callback_spec.get("method", "POST"),
-                            callback_spec["url"],
+                            callback_spec.get("url", callback_spec.get("uri")),
                             headers=headers,
                             data=json.dumps(obj=obj, ensure_ascii=False).encode(
                                 "utf-8"
