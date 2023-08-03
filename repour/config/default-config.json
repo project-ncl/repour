@@ -6,7 +6,8 @@
     "oauth2_jwt": {
       "public_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
       "token_issuer": "..."
-    }
+    },
+    "allowed_roles": ["pnc-users-admin"]
   },
   "adjust": {
     "executions": [
