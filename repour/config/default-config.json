@@ -7,6 +7,9 @@
       "public_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
       "token_issuer": "..."
     },
+    "service_account": {
+      "client_id": "..."
+    },
     "allowed_roles": ["pnc-users-admin"]
   },
   "adjust": {
