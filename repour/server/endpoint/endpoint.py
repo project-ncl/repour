@@ -17,6 +17,7 @@ from prometheus_async.aio import time
 from prometheus_client import Counter, Histogram, Summary
 
 from repour import exception
+from repour.auth import auth_client
 from repour.config import config
 from repour.lib.io import file_utils
 from repour.lib.logs import log_util
@@ -280,13 +281,11 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         if auth_provider == "oauth2_jwt" and request.headers.get(
                             "Authorization", None
                         ):
+
                             auth_header = {
-                                "Authorization": request.headers["Authorization"]
+                                "Authorization": "Bearer "
+                                + await auth_client.access_token()
                             }
-                            logger.debug(
-                                "Authorization enabled, adding header to callback: "
-                                + str(auth_header)
-                            )
                             headers.update(auth_header)
 
                         context_headers = {
