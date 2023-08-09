@@ -601,6 +601,13 @@ are defined as env variables:
 
 If both REPOUR_KAFKA_SASL_USERNAME and REPOUR_KAFKA_SASL_PASSWORD are defined, then Repour authenticates to Kafka using the SASL_PLAIN method. Otherwise it'll use the kafka-cafile to authenticate with authentication 'SSL'
 
+== Authentication for callback
+
+The following environment variable needs to be defined for authentication for callback:
+- REPOUR_OIDC_SERVICE_ACCOUNT_SECRET
+
+We are now switching to our own service account for any callback
+
 == License
 
 The content of this repository is released under the ASL 2.0, as provided in the LICENSE file. See the NOTICE file for the copyright statement and a list of contributors. By submitting a "pull request" or otherwise contributing to this repository, you agree to license your contribution under the license identified above.
