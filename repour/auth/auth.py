@@ -61,7 +61,6 @@ async def get_oauth2_jwt_handler(app, next_handler):
 
         response = await next_handler(request)
 
-        # TODO: remove this since we'll use service accounts
         response.headers["Authorization"] = request.headers["Authorization"]
         return response
 
