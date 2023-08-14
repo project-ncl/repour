@@ -30,7 +30,7 @@ opentelemetry-instrumentation-aiohttp-client = "^0.35b0"
 setuptools = "^68.0.0"
 
 [tool.poetry.dev-dependencies]
-tox = "^4.6"
+tox = "^4.8"
 
 [tool.tox]
 legacy_tox_ini = """
