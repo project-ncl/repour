@@ -53,6 +53,10 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
         repour_url,
     )
 
+    clone_source = endpoint.validated_json_endpoint(
+        shutdown_callbacks, validation.clone, clone.clone, repour_url
+    )
+
     adjust_source = endpoint.validated_json_endpoint(
         shutdown_callbacks, validation.adjust_modeb, adjust.adjust, repour_url
     )
@@ -69,15 +73,7 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     app.router.add_route(
         "POST", "/git-external-to-internal", external_to_internal_source
     )
-
-    app.router.add_route(
-        "POST",
-        "/clone",
-        endpoint.validated_json_endpoint(
-            shutdown_callbacks, validation.clone, clone.clone, repour_url
-        ),
-    )
-
+    app.router.add_route("POST", "/clone", clone_source)
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/internal-scm", internal_scm_source)
     app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
