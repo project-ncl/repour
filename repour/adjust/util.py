@@ -242,6 +242,8 @@ async def print_java_version(java_bin_dir=""):
 
 
 async def generate_user_context():
+    """Returns a string of key:value,key:value"""
+
     # get the current span, created by flask
     current_span = trace.get_current_span()
     if current_span.get_span_context().is_valid:
@@ -262,7 +264,6 @@ async def generate_user_context():
     else:
         current_traceparent = ""
 
-    """Returns a string of key:value,key:value"""
     current_task = asyncio.current_task()
     return "log-user-id:{},log-request-context:{},log-process-context:{},log-expires:{},log-tmp:{},trace-id:{},span-id:{},traceparent:{},".format(
         current_task.mdc["userId"],
@@ -274,43 +275,3 @@ async def generate_user_context():
         current_task.mdc["span_id"],
         current_traceparent,
     )
-
-
-async def generatePropagationContext() -> str:
-    import opentelemetry.trace as trace
-    import opentelemetry.propagators as propagators
-    from opentelemetry.trace.status import StatusCode
-    from opentelemetry import trace as trace_api
-
-    class HttpURLConnection:
-        def setRequestProperty(self, key, value):
-            # Simulating setting request property
-            pass
-
-    class TextMapSetter(propagators.textmap.TextMapSetter):
-        def set(self, carrier, key, value):
-            carrier.setRequestProperty(key, value)
-
-    url = "http://127.0.0.1:8080/resource"
-    tracer = trace.get_tracer(__name__)
-
-    # Start a span
-    with tracer.start_as_current_span(
-        "/resource", kind=trace_api.SpanKind.CLIENT
-    ) as span:
-        span.set_attribute("http.method", "GET")
-        span.set_attribute("http.url", url)
-
-        try:
-            # Simulate outgoing call
-            transport_layer = HttpURLConnection()
-
-            # Inject the current span context into the request headers
-            propagators.inject(type(transport_layer), transport_layer, TextMapSetter())
-
-            # Make outgoing call
-            # ... Your outgoing call code here ...
-
-        finally:
-            # End the span
-            span.end()
