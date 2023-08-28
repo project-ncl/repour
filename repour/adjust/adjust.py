@@ -22,10 +22,6 @@ from repour.adjust import (
     util,
 )
 
-from opentelemetry import trace
-from opentelemetry.trace import format_span_id, format_trace_id
-from opentelemetry.trace.span import TraceFlags
-
 REQ_TIME = Summary("adjust_req_time", "time spent with adjust endpoint")
 REQ_HISTOGRAM_TIME = Histogram(
     "adjust_req_histogram",
@@ -234,29 +230,6 @@ async def adjust(adjustspec, repo_provider):
         logger.info("Current Commit ID of repo is: " + commit_id)
 
         process_mdc("BEGIN", "ALIGNMENT_ADJUST")
-
-        # get the current span, created by flask
-        current_span = trace.get_current_span()
-        if current_span.get_span_context().is_valid:
-            trace_id = format_trace_id(current_span.get_span_context().trace_id)
-            span_id = format_span_id(current_span.get_span_context().span_id)
-            trace_flags = current_span.get_span_context().trace_flags
-        else:
-            trace_id = log_util.get_mdc_value_in_task("trace_id")
-            span_id = log_util.get_mdc_value_in_task("span_id")
-            trace_flags = TraceFlags.get_default()
-
-        sampled = (TraceFlags.SAMPLED & trace_flags) != 0
-
-        ### SET OTEL TRACEPARENT env variable so it can be used by tooling and propagated further
-        if trace_id is not None:
-            current_traceparent = "00-{}-{}-{}".format(
-                trace_id, span_id, "01" if sampled else "00"
-            )
-            os.environ.setdefault("TRACEPARENT", current_traceparent)
-            logger.info(
-                "Set environment variable TRACEPARENT to : " + current_traceparent
-            )
 
         ### Adjust Phase ###
         if build_type == "MVN":
