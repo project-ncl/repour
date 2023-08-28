@@ -5,7 +5,7 @@ import os
 from repour import exception
 import shlex
 
-from repour.adjust import process_provider, pme_provider
+from repour.adjust import process_provider, pme_provider, util
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +93,9 @@ def get_scala_provider(
         if brew_pull_enabled:
             alignment_parameters.append("-DrestBrewPullActive=true")
 
+        log_context_value = await util.generate_user_context()
+        log_context_parameter = ["-DrestHeaders=" + log_context_value]
+
         cmd = (
             [sbt_path]
             + default_parameters
@@ -101,6 +104,7 @@ def get_scala_provider(
             + alignment_parameters
             + ["manipulate"]
             + ["writeReport"]
+            + log_context_parameter
         )
 
         logger.info(
