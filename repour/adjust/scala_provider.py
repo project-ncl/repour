@@ -93,9 +93,6 @@ def get_scala_provider(
         if brew_pull_enabled:
             alignment_parameters.append("-DrestBrewPullActive=true")
 
-        log_context_value = await util.generate_user_context()
-        log_context_parameter = ["-DrestHeaders=" + log_context_value]
-
         cmd = (
             [sbt_path]
             + default_parameters
@@ -104,8 +101,9 @@ def get_scala_provider(
             + alignment_parameters
             + ["manipulate"]
             + ["writeReport"]
-            + log_context_parameter
         )
+
+        otel_env = await util.generate_user_context().as_env_dict()
 
         logger.info(
             'Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals())
@@ -116,7 +114,7 @@ def get_scala_provider(
             cmd,
             get_result_data=get_result_data,
             send_log=True,
-        )(work_dir, extra_adjust_parameters, adjust_result)
+        )(work_dir, extra_adjust_parameters, adjust_result, env=otel_env)
 
         (
             override_group_id,
