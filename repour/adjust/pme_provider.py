@@ -102,7 +102,7 @@ def get_pme_provider(
 
         # readjust the repo_dir to run PME from the folder where the root pom.xml is located
         # See: PRODTASKS-361
-        log_context_value = await util.generate_user_context()
+        log_context_value = await util.generate_user_context().as_key_value_string()
         log_context_parameter = ["-DrestHeaders=" + log_context_value]
 
         if not os.path.exists(os.path.join(repo_dir, subfolder_or_file)):

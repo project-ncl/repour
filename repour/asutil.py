@@ -173,7 +173,6 @@ def expect_ok_closure(exc_type=exception.CommandError):
 
         if env:
             # Only partially override the existing environment
-            sub_env = os.environ.copy()
             sub_env.update(env)
 
         if print_cmd:
