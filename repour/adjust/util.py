@@ -241,7 +241,31 @@ async def print_java_version(java_bin_dir=""):
     logger.info(output)
 
 
-async def generate_user_context():
+class UserContextFormatter:
+    def __init__(self, mdc_dict):
+        self.mdc_dict = mdc_dict
+
+    def as_env_dict(self):
+        return {
+            "LOG_USER_ID": self.mdc_dict["log-user-id"],
+            "LOG_REQUEST_CONTEXT": self.mdc_dict["log-request-context"],
+            "LOG_PROCESS_CONTEXT": self.mdc_dict["log-process-context"],
+            "LOG_EXPIRES": self.mdc_dict["log-expires"],
+            "LOG_TMP": self.mdc_dict["log-tmp"],
+            "TRACE_ID": self.mdc_dict["trace-id"],
+            "SPAN_ID": self.mdc_dict["span-id"],
+            "TRACEPARENT": self.mdc_dict["traceparent"],
+        }
+
+    def as_key_value_string(self):
+        result = ""
+        for key, value in self.mdc_dict.items():
+            result += key + ":" + value + ","
+
+        return result
+
+
+async def generate_user_context() -> UserContextFormatter:
     """Returns a string of key:value,key:value"""
 
     # get the current span, created by flask
@@ -265,13 +289,16 @@ async def generate_user_context():
         current_traceparent = ""
 
     current_task = asyncio.current_task()
-    return "log-user-id:{},log-request-context:{},log-process-context:{},log-expires:{},log-tmp:{},trace-id:{},span-id:{},traceparent:{},".format(
-        current_task.mdc["userId"],
-        current_task.mdc["requestContext"],
-        current_task.mdc["processContext"],
-        current_task.mdc["expires"],
-        current_task.mdc["tmp"],
-        current_task.mdc["trace_id"],
-        current_task.mdc["span_id"],
-        current_traceparent,
-    )
+
+    mdc_headers = {
+        "log-user-id": current_task.mdc["userId"],
+        "log-request-context": current_task.mdc["requestContext"],
+        "log-process-context": current_task.mdc["processContext"],
+        "log-expires": current_task.mdc["expires"],
+        "log-tmp": current_task.mdc["tmp"],
+        "trace-id": current_task.mdc["trace_id"],
+        "span-id": current_task.mdc["span_id"],
+        "traceparent": current_traceparent,
+    }
+
+    return UserContextFormatter(mdc_headers)
