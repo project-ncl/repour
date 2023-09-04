@@ -103,7 +103,7 @@ def get_scala_provider(
             + ["writeReport"]
         )
 
-        otel_env = await util.generate_user_context().as_env_dict()
+        otel_context = await util.generate_user_context()
 
         logger.info(
             'Executing "' + execution_name + '" Command is "{cmd}".'.format(**locals())
@@ -114,7 +114,12 @@ def get_scala_provider(
             cmd,
             get_result_data=get_result_data,
             send_log=True,
-        )(work_dir, extra_adjust_parameters, adjust_result, env=otel_env)
+        )(
+            work_dir,
+            extra_adjust_parameters,
+            adjust_result,
+            env=otel_context.as_env_dict(),
+        )
 
         (
             override_group_id,
