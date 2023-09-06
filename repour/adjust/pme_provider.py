@@ -102,9 +102,6 @@ def get_pme_provider(
 
         # readjust the repo_dir to run PME from the folder where the root pom.xml is located
         # See: PRODTASKS-361
-        otel_context = await util.generate_user_context()
-        log_context_parameter = ["-DrestHeaders=" + otel_context.as_key_value_string()]
-
         if not os.path.exists(os.path.join(repo_dir, subfolder_or_file)):
             logger.error(
                 "'{}' path specified in alignment parameters doesn't exist".format(
@@ -118,8 +115,9 @@ def get_pme_provider(
             + extra_parameters
             + repour_parameters
             + alignment_parameters
-            + log_context_parameter
         )
+
+        otel_context = await util.generate_user_context()
 
         logger.info(
             'Executing "'
@@ -145,6 +143,7 @@ def get_pme_provider(
             extra_adjust_parameters,
             adjust_result,
             dir_results=folder_where_results_are,
+            env=otel_context.as_env_dict(),
         )
 
         pme_disabled = is_pme_disabled_via_extra_parameters(extra_adjust_parameters)
