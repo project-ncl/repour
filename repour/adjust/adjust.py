@@ -110,9 +110,14 @@ async def check_ref_exists(work_dir, ref):
 
 
 async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
-    """Get external repository and its ref into the internal repository"""
+    """Get external repository and its ref into the internal repository
+
+    return: <bool> indicate if ref is in upstream repo or not
+    """
     internal_repo_url = await repo_provider(adjustspec, create=False)
     git_user = configuration.get("git_username")
+
+    is_ref_in_upstream_repo = False
 
     await git.clone(work_dir, adjustspec["originRepoUrl"])  # Clone origin
 
@@ -122,6 +127,9 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # if no, then fail completely
     ref_exists = await check_ref_exists(work_dir, adjustspec["ref"])
     if ref_exists:
+
+        is_ref_in_upstream_repo = True
+
         is_pull_request = git.is_ref_a_pull_request(adjustspec["ref"])
 
         if is_pull_request:
@@ -183,6 +191,8 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # need to create tags of format <version>-<sha> if existing tag with name <version> exists after pme changes
     await git.fetch_tags(work_dir, remote="origin")
 
+    return is_ref_in_upstream_repo
+
 
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
@@ -213,8 +223,11 @@ async def adjust(adjustspec, repo_provider):
 
         process_mdc("BEGIN", "SCM_CLONE")
         sync_enabled = await is_sync_on(adjustspec)
+        is_ref_in_upstream_repo = False
         if sync_enabled:
-            await sync_external_repo(adjustspec, repo_provider, work_dir, c)
+            is_ref_in_upstream_repo = await sync_external_repo(
+                adjustspec, repo_provider, work_dir, c
+            )
         else:
             git_user = c.get("git_username")
 
@@ -222,6 +235,8 @@ async def adjust(adjustspec, repo_provider):
                 work_dir, asutil.add_username_url(repo_url.readwrite, git_user)
             )  # Clone origin
             await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
+
+        upstream_commit_id = await git.rev_parse(work_dir)
 
         await asgit.setup_commiter(expect_ok, work_dir)
         await asgit.transform_git_submodule_into_fat_repository(work_dir)
@@ -264,6 +279,9 @@ async def adjust(adjustspec, repo_provider):
         )
 
         result = result if result is not None else {}
+
+        result["upstream_commit"] = upstream_commit_id
+        result["is_ref_in_upstream_repo"] = is_ref_in_upstream_repo
 
         result["adjustResultData"] = adjust_result["resultData"]
         process_mdc("END", "ALIGNMENT_ADJUST")
