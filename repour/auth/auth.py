@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 # Middleware handlers for auth
 
 
-def fail(request):
-    return aiohttp.web.Response(status=403)
+def fail(request, status=403):
+    return aiohttp.web.Response(status=status)
 
 
 def is_websocket(request):
@@ -52,7 +52,7 @@ async def get_oauth2_jwt_handler(app, next_handler):
         prefix_length = len("Bearer ")
 
         if not auth_header_value or len(auth_header_value) <= prefix_length:
-            return fail(request)
+            return fail(request, status=401)
 
         token = auth_header_value[prefix_length:]
         token_verified = await oauth2_jwt.verify_token(token)
