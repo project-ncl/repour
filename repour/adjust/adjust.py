@@ -112,12 +112,12 @@ async def check_ref_exists(work_dir, ref):
 async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration):
     """Get external repository and its ref into the internal repository
 
-    return: <bool> indicate if ref is in upstream repo or not
+    return: <bool> indicate if ref is only in downstream repo (True) or is also present in upstream repo (False)
     """
     internal_repo_url = await repo_provider(adjustspec, create=False)
     git_user = configuration.get("git_username")
 
-    is_ref_in_upstream_repo = False
+    is_ref_revision_internal = True
 
     await git.clone(work_dir, adjustspec["originRepoUrl"])  # Clone origin
 
@@ -128,7 +128,7 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     ref_exists = await check_ref_exists(work_dir, adjustspec["ref"])
     if ref_exists:
 
-        is_ref_in_upstream_repo = True
+        is_ref_revision_internal = False
 
         is_pull_request = git.is_ref_a_pull_request(adjustspec["ref"])
 
@@ -191,7 +191,7 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # need to create tags of format <version>-<sha> if existing tag with name <version> exists after pme changes
     await git.fetch_tags(work_dir, remote="origin")
 
-    return is_ref_in_upstream_repo
+    return is_ref_revision_internal
 
 
 @time(REQ_TIME)
@@ -223,9 +223,9 @@ async def adjust(adjustspec, repo_provider):
 
         process_mdc("BEGIN", "SCM_CLONE")
         sync_enabled = await is_sync_on(adjustspec)
-        is_ref_in_upstream_repo = False
+        is_ref_revision_internal = True
         if sync_enabled:
-            is_ref_in_upstream_repo = await sync_external_repo(
+            is_ref_revision_internal = await sync_external_repo(
                 adjustspec, repo_provider, work_dir, c
             )
         else:
@@ -281,7 +281,7 @@ async def adjust(adjustspec, repo_provider):
         result = result if result is not None else {}
 
         result["upstream_commit"] = upstream_commit_id
-        result["is_ref_in_upstream_repo"] = is_ref_in_upstream_repo
+        result["is_ref_revision_internal"] = is_ref_revision_internal
 
         result["adjustResultData"] = adjust_result["resultData"]
         process_mdc("END", "ALIGNMENT_ADJUST")
