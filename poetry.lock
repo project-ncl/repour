@@ -529,13 +529,13 @@ files = [
 
 [[package]]
 name = "giturlparse"
-version = "0.11.1"
+version = "0.12.0"
 description = "A Git URL parsing module (supports parsing and rewriting)"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "giturlparse-0.11.1-py2.py3-none-any.whl", hash = "sha256:6422f25c8ca563e1a3cb6b85862e48614be804cd1334e6d84be5630eb26b343f"},
-    {file = "giturlparse-0.11.1.tar.gz", hash = "sha256:cdbe0c062096c69e00f08397826dddebc1f73bc15b793994579c13aafc70c990"},
+    {file = "giturlparse-0.12.0-py2.py3-none-any.whl", hash = "sha256:412b74f2855f1da2fefa89fd8dde62df48476077a72fc19b62039554d27360eb"},
+    {file = "giturlparse-0.12.0.tar.gz", hash = "sha256:c0fff7c21acc435491b1779566e038757a205c1ffdcb47e4f81ea52ad8c3859a"},
 ]
 
 [[package]]
@@ -1552,4 +1552,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "d4104e7f464fbcdad71035d57059868d71ad9ab356e9579b14bbed0a845176ad"
+content-hash = "0b3774861b92fca92e474f28ab23fcd1a4381f46a869158e0dae33ffd0f1645f"
