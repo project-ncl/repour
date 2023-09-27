@@ -45,5 +45,6 @@
   },
   "git_username": "",
   "git_url_internal_template": "",
+  "git_origin_urls_internal": [],
   "mode": "devel"
 }
