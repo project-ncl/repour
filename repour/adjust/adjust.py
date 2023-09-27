@@ -115,6 +115,9 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     """
     internal_repo_url = await repo_provider(adjustspec, create=False)
     git_user = configuration.get("git_username")
+    git_origin_repo_urls_internal = configuration.get(
+        "git_origin_repo_urls_internal", []
+    )
 
     is_ref_revision_internal = True
 
@@ -189,6 +192,13 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # from the target repository. We need to sync tags because we use it to know if we have tags with existing changes or if we
     # need to create tags of format <version>-<sha> if existing tag with name <version> exists after pme changes
     await git.fetch_tags(work_dir, remote="origin")
+
+    # [NCL-6947] irrespective of the value of is_ref_revision_internal, if the originRepoUrl matches one of the urls in the config
+    # 'git_origin_repo_urls_internal', the ref must be considered internal
+    for url in git_origin_repo_urls_internal:
+        if url in adjustspec["originRepoUrl"]:
+            is_ref_revision_internal = True
+            break
 
     return is_ref_revision_internal
 
