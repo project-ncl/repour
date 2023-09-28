@@ -7,7 +7,7 @@ import prometheus_async.aio as aio
 from aiohttp import web
 from prometheus_client.bridge.graphite import GraphiteBridge
 
-from repour import clone, repo, websockets
+from repour import clone, repo
 from repour.adjust import adjust
 from repour.auth import auth
 from repour.config import config
@@ -17,7 +17,6 @@ from repour.server.endpoint import (
     external_to_internal,
     info,
     validation,
-    ws,
     internal_scm,
 )
 
@@ -81,7 +80,6 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/internal-scm", internal_scm_source)
     app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
-    app.router.add_route("GET", "/callback/{callback_id}", ws.handle_socket)
     app.router.add_route("GET", "/metrics", aio.web.server_stats)
     app.router.add_route("GET", "/version", info.handle_version)
 
@@ -110,8 +108,6 @@ def start_server(bind, repo_provider, repour_url, adjust_provider):
             adjust_provider=adjust_provider,
         )
     )
-
-    loop.create_task(websockets.periodic_cleanup())
 
     try:
         loop.run_forever()

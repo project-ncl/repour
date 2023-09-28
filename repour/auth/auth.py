@@ -15,28 +15,8 @@ def fail(request, status=403):
     return aiohttp.web.Response(status=status)
 
 
-def is_websocket(request):
-
-    websocket_upgrade = request.headers.get("Upgrade", None)
-    sec_websocket_header = request.headers.get("Sec-WebSocket-Key", None)
-    connection_header = request.headers.get("Connection", None)
-
-    return (
-        websocket_upgrade
-        and sec_websocket_header
-        and connection_header
-        and websocket_upgrade == "websocket"
-        and connection_header == "Upgrade"
-    )
-
-
 async def get_oauth2_jwt_handler(app, next_handler):
     async def handler(request):
-
-        if is_websocket(request):
-            # we don't authenticate for websocket requests
-            response = await next_handler(request)
-            return response
 
         if (
             request.path == "/"
