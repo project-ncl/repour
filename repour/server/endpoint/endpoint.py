@@ -362,12 +362,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                     callback_task.task_id = task_id
 
                 status = 202
-                obj = {
-                    "callback": {
-                        "id": callback_id,
-                        "websocket": "ws://" + repour_url + "/callback/" + callback_id,
-                    }
-                }
+                obj = {"callback": {"id": callback_id}}
 
         else:
             status, obj = await do_call()

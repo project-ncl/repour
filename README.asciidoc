@@ -457,11 +457,6 @@ The body of the usual "Success" or "Processing error" response will then be sent
 }
 |===
 
-=== Callback websocket for live logs
-
-All endpoints that operate in callback mode can be eligible for live logs via websockets. Once the callback id is obtained, you can establish a websocket connection to `/callback/{callback_id}`. The server will then push any logs back to the client. The logs are in string format.
-
-
 == Docker Images and Open Shift
 
 The docker images can be run in plain Docker or OpenShift. Some less-than-ideal design choices were made to fit the applications into the link:https://docs.openshift.com/enterprise/3.1/creating_images/guidelines.html[OSE-compatible] containers:
@@ -535,15 +530,9 @@ Unit tests are self-contained and work without an internet connection. To run th
 
 To run Repour with multiple replicas, you have to define a shared folder (defined with env var SHARED_FOLDER) where all the replicas can write / read to.
 
-There are 2 cases to consider when running multiple instances of Repour:
+There is 1 case to consider when running multiple instances of Repour:
 
-- websocket logging of /clone or /adjust
 - cancel operation
-
-=== Websocket logging
-For the websocket logging, all logs related to the processing of an endpoint is appended into a file in the shared folder with format '<taskid>.log'. Then, any Repour instance that gets the request for live logs via websocket for a particular taskid can look at the shared folder and start sending any logs written to that file.
-
-There is a seperate thread that cleans up log files that haven't been modified in more than 2 days to save space in the shared folder.
 
 === cancel operation
 When a request to cancel a task comes in, we first check if the task is
