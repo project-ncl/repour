@@ -135,17 +135,17 @@ files = [
 
 [[package]]
 name = "asyncssh"
-version = "2.13.2"
+version = "2.14.0"
 description = "AsyncSSH: Asynchronous SSHv2 client and server library"
 optional = false
 python-versions = ">= 3.6"
 files = [
-    {file = "asyncssh-2.13.2-py3-none-any.whl", hash = "sha256:c7dfe9085c0659acb2ef0d177fb12421e92a20d52b98ab83eed4a5916a1d60cc"},
-    {file = "asyncssh-2.13.2.tar.gz", hash = "sha256:991e531c4bb7dbec62b754878d96a3246338aac11a28ce3c3e99018fb2f5828c"},
+    {file = "asyncssh-2.14.0-py3-none-any.whl", hash = "sha256:1d112a93f926069932fecd9842f206fdd023eb860aea4efc95f92b5e031d7fe0"},
+    {file = "asyncssh-2.14.0.tar.gz", hash = "sha256:e03ef2d131fbb4371b4018718452ce8c735a48edfe0139d2abdce4c187a459c3"},
 ]
 
 [package.dependencies]
-cryptography = ">=3.1"
+cryptography = ">=39.0"
 typing-extensions = ">=3.6"
 
 [package.extras]
@@ -154,7 +154,7 @@ fido2 = ["fido2 (>=0.9.2)"]
 gssapi = ["gssapi (>=1.2.0)"]
 libnacl = ["libnacl (>=1.4.2)"]
 pkcs11 = ["python-pkcs11 (>=0.7.0)"]
-pyopenssl = ["pyOpenSSL (>=17.0.0)"]
+pyopenssl = ["pyOpenSSL (>=23.0.0)"]
 pywin32 = ["pywin32 (>=227)"]
 
 [[package]]
@@ -1552,4 +1552,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "0b3774861b92fca92e474f28ab23fcd1a4381f46a869158e0dae33ffd0f1645f"
+content-hash = "9c1c0cbbc6cd3233ab74b238715d17f55c88d4beb59cbaf8b494bf1b973f1cf0"
