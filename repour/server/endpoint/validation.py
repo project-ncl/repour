@@ -89,6 +89,7 @@ internal_scm = Schema(
         Optional("description"): null_or_str,
         Optional("parent_project"): null_or_str,
         Optional("callback"): callback_raw,
+        Optional("taskId"): null_or_str,
     }
 )
 
@@ -102,6 +103,7 @@ clone_raw = {
     "originRepoUrl": Any(Url(), GitUrl()),  # pylint: disable=no-value-for-parameter
     "targetRepoUrl": Url(),  # pylint: disable=no-value-for-parameter
     Optional("callback"): callback_raw,
+    Optional("taskId"): null_or_str,
 }
 
 clone = Schema(clone_raw, required=True, extra=False)
