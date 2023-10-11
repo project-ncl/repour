@@ -53,6 +53,12 @@ callback_raw = {
 }
 
 callback = Schema({"callback": callback_raw}, required=True, extra=True)
+positive_callback = Schema(
+    {"positiveCallback": callback_raw}, required=True, extra=True
+)
+negative_callback = Schema(
+    {"negativeCallback": callback_raw}, required=True, extra=True
+)
 
 #
 # Adjust
@@ -65,6 +71,8 @@ adjust_raw = {
     Optional("originRepoUrl"): Any(None, str),
     Optional("sync"): bool,
     Optional("callback"): callback_raw,
+    Optional("positiveCallback"): callback_raw,
+    Optional("negativeCallback"): callback_raw,
     Optional("tempBuild"): bool,
     Optional("tempBuildTimestamp"): null_or_str,
     Optional("alignmentPreference"): null_or_str,

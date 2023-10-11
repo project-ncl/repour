@@ -191,7 +191,18 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         )
 
         try:
-            validation.callback(spec)
+
+            callback_mode = False
+
+            if ("positiveCallback" in spec) and ("negativeCallback" in spec):
+                validation.positive_callback(spec)
+                validation.negative_callback(spec)
+                callback_mode = True
+
+            if "callback" in spec:
+                validation.callback(spec)
+                callback_mode = True
+
         except voluptuous.MultipleInvalid as x:
             callback_mode = False
         else:
@@ -239,7 +250,21 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
         if callback_mode:
 
-            async def do_callback(callback_spec):
+            async def do_callback(spec):
+
+                # Repour supports you either pass the positiveCallback and negativeCallback information, and if absent, will
+                # fallback to the 'callback' information.
+                # positiveCallback is used when the result is successful, and if not, negativeCallback is used.
+                #
+                # 'callback' will be used for both successful and unsuccessful results
+                callback_spec = spec["callback"]
+                positive_callback_spec = None
+                negative_callback_spec = None
+
+                if ("positiveCallback" in spec) and ("negativeCallback" in spec):
+                    positive_callback_spec = spec["positiveCallback"]
+                    negative_callback_spec = spec["negativeCallback"]
+
                 status, obj = await do_call()
 
                 obj["callback"] = {"status": status, "id": callback_id}
@@ -283,10 +308,19 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         headers.update(context_headers)
                         headers.update({"Content-Type": "application/json"})
 
+                        # Choose which callback request to used based on the information provided by the request and the
+                        # result of the work done
+                        if status == 200 and positive_callback_spec:
+                            callback_to_use = positive_callback_spec
+                        elif negative_callback_spec:
+                            callback_to_use = negative_callback_spec
+                        else:
+                            callback_to_use = callback_spec
+
                         # callback url is either from key 'url' or 'uri'. The latter is used in the pnc-api Request object
                         resp = await client_session.request(
-                            callback_spec.get("method", "POST"),
-                            callback_spec.get("url", callback_spec.get("uri")),
+                            callback_to_use.get("method", "POST"),
+                            callback_to_use.get("url", callback_spec.get("uri")),
                             headers=headers,
                             data=json.dumps(obj=obj, ensure_ascii=False).encode(
                                 "utf-8"
@@ -349,9 +383,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             tracer = trace.get_tracer(__name__)
             with tracer.start_as_current_span(request.path, ctx) as span:
 
-                callback_task = request.app.loop.create_task(
-                    do_callback(spec["callback"])
-                )
+                callback_task = request.app.loop.create_task(do_callback(spec))
                 callback_task.log_context = log_context
                 callback_task.loggerName = asyncio.current_task().loggerName
                 callback_task.mdc = asyncio.current_task().mdc
