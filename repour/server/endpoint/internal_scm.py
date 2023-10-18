@@ -47,7 +47,6 @@ async def internal_scm(spec, repo_provider):
         username=configuration.get("username"),
         known_hosts=None,
     ) as conn:
-
         result = await conn.run(command, check=False)
         exit_status = result.exit_status
 

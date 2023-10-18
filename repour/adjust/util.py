@@ -163,7 +163,6 @@ def get_extra_parameters(extra_adjust_parameters, flags=("-f", "--file")):
     if paramsString is None:
         return [], subfolder
     else:
-
         parser = argparse.ArgumentParser()
         parser.add_argument(*flags)
         (options, remaining_args) = parser.parse_known_args(paramsString.split())
@@ -201,7 +200,6 @@ def get_jvm_from_extra_parameters(extra_parameters):
     """
 
     for parameter in extra_parameters:
-
         if REPOUR_JAVA_KEY in parameter:
             return parameter.replace(REPOUR_JAVA_KEY, "")
     else:
@@ -221,7 +219,6 @@ def get_param_value(name, params1, params2=[], params3=[]):
 
 
 async def print_java_version(java_bin_dir=""):
-
     if java_bin_dir and java_bin_dir.endswith("/"):
         command = java_bin_dir + "java"
     elif java_bin_dir:

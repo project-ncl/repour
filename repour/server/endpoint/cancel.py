@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
 async def handle_cancel(request):
-
     task_id_to_cancel = request.match_info["task_id"]
     logger.info("Cancel request obtained: " + str(task_id_to_cancel))
 
@@ -68,7 +67,6 @@ async def bad_response(error_message):
 
 
 async def success_response(message):
-
     logger.info(message)
 
     response = web.Response(
@@ -93,17 +91,16 @@ async def success_response(message):
 # - if yes -> the cancel was successful
 # - if no -> cancel was unsuccessful. Delete the indicator file and tell the caller the cancel operation was unsuccessful
 
+
 # - that indicator file is seen by other repour replicas (via the shared location) in the 'start_cancel_loop'
 # - the other repour replicas check their event loop, and if they found and cancelled the task, they delete the indicator file
 #
 # The 'start_cancel_loop' runs every PERIOD_CANCEL_LOOP_SLEEP seconds to check
 async def start_cancel_loop():
-
     if not os.path.exists(CANCEL_PATH):
         os.makedirs(CANCEL_PATH)
 
     while True:
-
         cancel_files = os.listdir(CANCEL_PATH)
 
         if len(cancel_files) > 0:
@@ -116,7 +113,6 @@ async def start_cancel_loop():
                     task_id_to_cancel = filename.replace(".cancel", "")
 
                     if task_id_to_cancel in task_id_dict:
-
                         logger.info(
                             "From cancel loop: cancelling task: " + task_id_to_cancel
                         )
@@ -129,7 +125,6 @@ async def start_cancel_loop():
 
 
 async def check_if_other_repour_replicas_cancelled(task_id):
-
     cancel_indicator_filename = os.path.join(CANCEL_PATH, task_id + ".cancel")
 
     if not os.path.exists(cancel_indicator_filename):
@@ -137,7 +132,6 @@ async def check_if_other_repour_replicas_cancelled(task_id):
         f.close()
 
     for _ in range(10):
-
         # task id was cancelled in another repour replica
         if not os.path.exists(cancel_indicator_filename):
             return True
@@ -156,7 +150,6 @@ async def remove_old_cancel_indicator_files():
     Old files defined as having an age greater than 1 hour
     """
     for filename in os.listdir(CANCEL_PATH):
-
         path = os.path.join(CANCEL_PATH, filename)
 
         epoch_filename = int(os.stat(path).st_ctime)
@@ -168,7 +161,6 @@ async def remove_old_cancel_indicator_files():
 
 
 def get_task_id_dict():
-
     all_tasks = asyncio.Task.all_tasks()
     task_id_dict = {}
 

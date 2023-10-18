@@ -8,7 +8,6 @@ import repour.adjust.pme_provider as pme_provider
 
 class TestPMEProvider(unittest.TestCase):
     def test_parse_pme_result_manipulation_format(self):
-
         group_id = "org.apache.activemq"
         artifact_id = "artemis-pom"
         version = "2.6.3.redhat-00021"
@@ -32,7 +31,6 @@ class TestPMEProvider(unittest.TestCase):
         self.verify_result_format(result, "group", "artifact", version, [])
 
     def test_pme_disabled(self):
-
         param = {"ALIGNMENT_PARAMETERS": None}
         self.assertFalse(pme_provider.is_pme_disabled_via_extra_parameters(param))
 
@@ -53,7 +51,6 @@ class TestPMEProvider(unittest.TestCase):
     def verify_result_format(
         self, result, group_id, artifact_id, version, removed_repositories
     ):
-
         result_simplified = result["VersioningState"]["executionRootModified"]
 
         self.assertEqual(result_simplified["groupId"], group_id)

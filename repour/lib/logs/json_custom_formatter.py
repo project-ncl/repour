@@ -5,7 +5,6 @@ from datetime import datetime
 
 class JsonCustomFormatter(jsonlogger.JsonFormatter):
     def add_fields(self, log_record, record, message_dict):
-
         super(JsonCustomFormatter, self).add_fields(log_record, record, message_dict)
 
         if not log_record.get("timestamp"):

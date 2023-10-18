@@ -36,7 +36,6 @@ async def download(url, stream):
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
-
             try:
                 while True:
                     chunk = await resp.content.read(4096)
@@ -124,7 +123,6 @@ def expect_ok_closure(exc_type=exception.CommandError):
         stderr_text = ""
 
         while True:
-
             # Try to read up to BYTES_TO_READ to read in batch rather than reading line by line
             # if the length of data read is exactly BYTES_TO_READ, that probably means the data read didn't finish at the end of a line
             # So read some more to guarantee all the data read ends at the end of a line
@@ -284,7 +282,6 @@ def list_non_origin_urls_from_string(origin_url, text):
     urls = list_urls_from_string(text)
 
     for url in urls:
-
         url_parsed = urllib.parse.urlparse(url)
 
         if not url_parsed.netloc.endswith(origin_url):

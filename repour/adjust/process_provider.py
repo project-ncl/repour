@@ -14,6 +14,7 @@ expect_ok = asutil.expect_ok_closure(exception.AdjustCommandError)
 stdout_options = asutil.process_stdout_options
 stderr_options = asutil.process_stderr_options
 
+
 # This provider MAY be "extended" by other providers.
 def get_process_provider(
     execution_name,

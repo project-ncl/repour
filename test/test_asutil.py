@@ -133,7 +133,6 @@ class TestExpectOk(unittest.TestCase):
         )
 
     def test_list_non_origin_urls_from_string(self):
-
         origin_url = "testme.com"
         text = "-Pgmail -DgroovyScripts=http://hola.testme.com/test?bee=boo&jee=text"
 

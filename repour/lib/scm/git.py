@@ -37,7 +37,6 @@ async def reset_hard(dir):
 
 
 async def clone_deep(dir, url):
-
     desc = "Could not clone {} with git.".format(url)
 
     if "github.com" in url:
@@ -47,7 +46,6 @@ async def clone_deep(dir, url):
 
 
 async def checkout(dir, ref, force=False):
-
     # Checkout tag or branch or commit-id
     cmd = ["git", "checkout"]
 
@@ -107,7 +105,6 @@ async def checkout_pr(dir, ref, remote="origin"):
 
 
 async def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
-
     desc = "Could not clone {} with git.".format(url)
 
     if "github.com" in url:
@@ -132,7 +129,6 @@ async def clone_checkout_branch_tag_shallow(dir, url, branch_or_tag):
 
 
 async def clone_checkout_branch_tag_deep(dir, url, branch_or_tag):
-
     desc = "Could not clone {} with git.".format(url)
 
     if "github.com" in url:
@@ -147,7 +143,6 @@ async def clone_checkout_branch_tag_deep(dir, url, branch_or_tag):
 
 
 async def clone(dir, url):
-
     desc = "Could not clone {} with git.".format(url)
 
     if "github.com" in url:
@@ -161,7 +156,6 @@ async def clone(dir, url):
 
 
 async def clone_mirror(dir, url):
-
     desc = "Could not clone mirror {} with git.".format(url)
 
     if "github.com" in url:
@@ -269,7 +263,6 @@ async def does_pr_exist(dir, ref, remote="origin"):
 
 
 async def is_branch(dir, ref, remote="origin"):
-
     # Need to run this for show-branch to work effectively
     await fetch(dir)
 
@@ -315,7 +308,6 @@ async def push_force(dir, remote, branch_or_tag):  # Warning! --force
 
 
 async def push(dir, remote, branch_or_tag, force=False):
-
     cmd = ["git", "push"]
 
     if force:
@@ -338,7 +330,6 @@ async def push(dir, remote, branch_or_tag, force=False):
 
 
 async def push_all(dir, remote, tags_also=False):
-
     cmd = ["git", "push", "--all"]
 
     cmd.extend([remote, "--"])
@@ -464,7 +455,6 @@ async def set_user_email(dir, email):
 
 
 async def commit(dir, commit_message, commit_date=None):
-
     if commit_date:
         env = {"GIT_AUTHOR_DATE": commit_date, "GIT_COMMITTER_DATE": commit_date}
     else:
@@ -662,7 +652,6 @@ async def get_tag_from_tree_sha(dir, tree_sha):
 
 
 async def get_commit_from_tag_name(repo_dir, tag_name):
-
     commit = await expect_ok(
         cmd=["git", "rev-list", "-n", "1", tag_name],
         desc="Couldn't get the commit from tag with git",
@@ -705,7 +694,6 @@ async def cleanup(dir):
 
 
 async def show_current_commit(repo_dir):
-
     commit = await expect_ok(
         cmd=["git", "rev-parse", "HEAD"],
         desc="Couldn't get the commit from the repository",

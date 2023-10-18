@@ -6,7 +6,6 @@ import repour.adjust.util as util
 
 class TestAdjustUtil(unittest.TestCase):
     def test_util_file_option(self):
-
         param = {"ALIGNMENT_PARAMETERS": "-Dtest=test -f haha/pom.xml"}
 
         remaining_args, filepath = util.get_extra_parameters(param)

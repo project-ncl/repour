@@ -22,7 +22,6 @@ SCP_LIKE_URL_REGEX = (
 @time(REQ_TIME)
 @time(REQ_HISTOGRAM_TIME)
 async def translate(external_to_internal_spec, repo_provider):
-
     external_url = external_to_internal_spec["external_url"]
 
     internal_url = await translate_external_to_internal(external_url)

@@ -8,7 +8,6 @@ import repour.adjust.scala_provider as scala_provider
 
 class TestScalaProvider(unittest.TestCase):
     def test_get_extra_parameters(self):
-
         param = {"ALIGNMENT_PARAMETERS": None}
         self.assertEqual(scala_provider.get_extra_parameters(param), [])
 

@@ -136,7 +136,6 @@ def start_server(bind, repo_provider, repour_url, adjust_provider):
 
 
 async def setup_graphite_exporter():
-
     graphite_server = os.environ.get("GRAPHITE_SERVER", None)
     graphite_key = os.environ.get("GRAPHITE_KEY", None)
     graphite_port = os.environ.get("GRAPHITE_PORT", 2003)

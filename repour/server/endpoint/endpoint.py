@@ -168,7 +168,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         try:
             validator(spec)
         except voluptuous.MultipleInvalid as x:
-
             logger.error(
                 "Rejected {method} {path}: body failed input validation".format(
                     method=request.method, path=request.path
@@ -191,7 +190,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         )
 
         try:
-
             callback_mode = False
 
             if ("positiveCallback" in spec) and ("negativeCallback" in spec):
@@ -251,7 +249,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
         if callback_mode:
 
             async def do_callback(spec):
-
                 # Repour supports you either pass the positiveCallback and negativeCallback information, and if absent, will
                 # fallback to the 'callback' information.
                 # positiveCallback is used when the result is successful, and if not, negativeCallback is used.
@@ -284,7 +281,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         if auth_provider == "oauth2_jwt" and request.headers.get(
                             "Authorization", None
                         ):
-
                             auth_header = {
                                 "Authorization": "Bearer "
                                 + await auth_client.access_token()
@@ -382,7 +378,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
             )
             tracer = trace.get_tracer(__name__)
             with tracer.start_as_current_span(request.path, ctx) as span:
-
                 callback_task = request.app.loop.create_task(do_callback(spec))
                 callback_task.log_context = log_context
                 callback_task.loggerName = asyncio.current_task().loggerName
