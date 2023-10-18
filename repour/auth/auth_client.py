@@ -4,11 +4,11 @@
 #
 # Requires the REPOUR_OIDC_SERVICE_ACCOUNT_SECRET env var to be set
 #
-import aiohttp
 import datetime
 import os
-
 from datetime import timedelta
+
+import aiohttp
 
 from repour.config import config
 

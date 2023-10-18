@@ -1,11 +1,10 @@
 import logging
 
+import asyncssh
 from prometheus_async.aio import time
 from prometheus_client import Histogram, Summary
+
 from repour.config import config
-
-import asyncssh
-
 
 REQ_TIME = Summary("internal_scm_req_time", "time spent with internal-scm endpoint")
 REQ_HISTOGRAM_TIME = Histogram(

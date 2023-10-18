@@ -1,10 +1,6 @@
-# flake8: noqa
 import json
 import logging
 import os
-import shutil
-import subprocess
-from string import Template
 
 from repour import asutil
 from repour.adjust import pme_provider, process_provider, util
