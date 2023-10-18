@@ -20,7 +20,6 @@ def get_project_manipulator_provider(
     suffix_prefix,
 ):
     async def get_result_data(work_dir, extra_parameters, results_file=None):
-
         raw_result_data = "{}"
         if results_file:
             results_file_path = results_file

@@ -90,7 +90,6 @@ class TestCommon(unittest.TestCase):
 class TestPushNewDedupBranch(unittest.TestCase):
     def test_normal(self):
         with util.TemporaryGitDirectory(bare=True, ro_url="fake-ro-url") as remote:
-
             tag = None
 
             with util.TemporaryGitDirectory(origin=remote.readwrite) as repo:

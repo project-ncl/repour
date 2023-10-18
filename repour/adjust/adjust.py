@@ -130,7 +130,6 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     # if no, then fail completely
     ref_exists = await check_ref_exists(work_dir, adjustspec["ref"])
     if ref_exists:
-
         is_ref_revision_internal = False
 
         is_pull_request = git.is_ref_a_pull_request(adjustspec["ref"])
@@ -228,7 +227,6 @@ async def adjust(adjustspec, repo_provider):
         build_type = adjustspec["buildType"]
 
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
-
         repo_url = await repo_provider(adjustspec, create=False)
 
         process_mdc("BEGIN", "SCM_CLONE")
@@ -392,7 +390,6 @@ async def adjust_gradle(work_dir, c, adjustspec, adjust_result):
 
 
 async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
-
     specific_tag_name = None
 
     executions = c.get("adjust", {}).get("executions", [])
@@ -484,7 +481,6 @@ async def adjust_mvn(work_dir, c, adjustspec, adjust_result):
 
 
 async def adjust_project_manip(work_dir, c, adjustspec, adjust_result):
-
     specific_tag_name = None
     execution_name = "project-manipulator"
     adjust_config = c.get("adjust", {})

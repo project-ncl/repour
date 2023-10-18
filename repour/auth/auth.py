@@ -17,7 +17,6 @@ def fail(request, status=403):
 
 async def get_oauth2_jwt_handler(app, next_handler):
     async def handler(request):
-
         if (
             request.path == "/"
             or request.path == "/git-external-to-internal"

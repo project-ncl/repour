@@ -8,7 +8,6 @@ import repour.adjust.project_manipulator_provider as project_manipulator_provide
 
 class TestProjectManipulatorProvider(unittest.TestCase):
     def test_get_extra_parameters(self):
-
         param = {"ALIGNMENT_PARAMETERS": None}
         self.assertEqual(project_manipulator_provider.get_extra_parameters(param), [])
 

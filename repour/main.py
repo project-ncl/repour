@@ -20,7 +20,6 @@ class ContextLogRecord(logging.LogRecord):
 
     # TODO: at some point we'll probably just have to scan for 'log-*' stuff to clean this up
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         task = self.get_current_task()

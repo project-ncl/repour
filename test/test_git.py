@@ -28,7 +28,6 @@ class TestGit(unittest.TestCase):
         self.assertFalse(git.is_ref_a_pull_request("temporary-myself"))
 
     def test_modify_ref_to_be_fetchable(self):
-
         modified, branch = git.modify_ref_to_be_fetchable("not-a-pr")
 
         self.assertIsNone(modified)

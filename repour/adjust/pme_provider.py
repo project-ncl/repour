@@ -29,7 +29,6 @@ def get_pme_provider(
     async def get_result_data(
         work_dir, extra_parameters, group_id=None, artifact_id=None, results_file=None
     ):
-
         if results_file:
             result_file_path_manipulation = results_file
         else:
@@ -220,7 +219,6 @@ async def get_version_from_pme_result(pme_result):
 
 
 async def get_gav_from_pom(pom_xml_file):
-
     tree = ET.parse(pom_xml_file)
     root = tree.getroot()
 
@@ -236,7 +234,6 @@ async def get_gav_from_pom(pom_xml_file):
     # https://maven.apache.org/pom.html#Maven_Coordinates
     # Docs concerning how inheritance of groupId and version from parent
     if parent is not None:
-
         parent_group_id_elem = parent.find(namespace_search + "groupId")
         parent_version_elem = parent.find(namespace_search + "version")
 
@@ -281,7 +278,6 @@ async def get_gav_from_pom(pom_xml_file):
 
 
 async def create_pme_result_file(repo_dir):
-
     result_file_folder = repo_dir + "/target"
     result_file_path = result_file_folder + "/alignmentReport.json"
 
@@ -312,7 +308,6 @@ async def create_pme_result_file(repo_dir):
 def parse_pme_result_manipulation_format(
     work_dir, pme_parameters, raw_result_data, group_id, artifact_id
 ):
-
     logger.info('Got PME result data: "{raw_result_data}".'.format(**locals()))
     data = json.loads(raw_result_data)
 
@@ -364,12 +359,10 @@ def is_pme_disabled_via_extra_parameters(extra_adjust_parameters):
         return False
 
     else:
-
         try:
             params = shlex.split(paramsString)
 
             for p in params:
-
                 if p.startswith("-Dmanipulation.disable=true"):
                     return True
             else:
