@@ -1,6 +1,7 @@
 import socket
-from pythonjsonlogger import jsonlogger
 from datetime import datetime
+
+from pythonjsonlogger import jsonlogger
 
 
 class JsonCustomFormatter(jsonlogger.JsonFormatter):

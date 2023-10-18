@@ -55,3 +55,6 @@ commands =
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.ruff]
+select = ["E4",  "E7", "E9", "F", "I"]

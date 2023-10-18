@@ -13,3 +13,10 @@ repos:
   rev: 23.10.0
   hooks:
   - id: black
+
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.1.0
+  hooks:
+    - id: ruff
+      args: [--fix]
