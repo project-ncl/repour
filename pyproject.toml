@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Repour"
-version = "2.5.1"
+version = "2.6.0"
 description = "Repour"
 authors = ["Alex Szczuczko <alex@szc.ca>",
            "Jakub Senko <jsenko@redhat.com>",
