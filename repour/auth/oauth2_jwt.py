@@ -24,7 +24,6 @@ async def verify_token(token):
         "leeway": 0,
     }
 
-    # the public key is obtained from <sso server>/auth/realms/<realm> :: the json public_key, and then you add the "---- begin public key" and "--- end public key" at the end.
     try:
         token = jwt.decode(
             token,
@@ -33,21 +32,8 @@ async def verify_token(token):
             options=OPTIONS,
             issuer=c["auth"]["oauth2_jwt"]["token_issuer"],
         )
-        logger.info("Got valid token from " + token["preferred_username"])
-
-        realm_roles = token["realm_access"]["roles"]
-
-        allowed_roles = c["auth"]["allowed_roles"]
-
-        for role in allowed_roles:
-            if role in realm_roles:
-                return True
-
-        logger.error(
-            "User doesn't have the required role to login: "
-            + token["preferred_username"]
-        )
-        return False
+        logger.info("Got valid token!")
+        return True
     except JWTError as e:
         logger.info("Got invalid token: " + str(e))
         return False
