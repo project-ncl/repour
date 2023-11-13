@@ -89,6 +89,16 @@ internal_scm = Schema(
     }
 )
 
+internal_scm_gitlab = Schema(
+    {
+        "project": nonempty_noblank_str,
+        Optional("owner_groups"): [nonempty_noblank_str],
+        Optional("description"): null_or_str,
+        Optional("parent_project"): null_or_str,
+        Optional("callback"): callback_raw,
+    }
+)
+
 #
 # Clone
 #
