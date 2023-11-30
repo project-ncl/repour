@@ -18,6 +18,7 @@ from repour.server.endpoint import (
     info,
     validation,
     internal_scm,
+    internal_scm_gitlab,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,10 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
         repour_url,
     )
 
+    clone_source = endpoint.validated_json_endpoint(
+        shutdown_callbacks, validation.clone, clone.clone, repour_url
+    )
+
     adjust_source = endpoint.validated_json_endpoint(
         shutdown_callbacks, validation.adjust_modeb, adjust.adjust, repour_url
     )
@@ -63,22 +68,22 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
         repour_url,
     )
 
+    internal_scm_gitlab_source = endpoint.validated_json_endpoint(
+        shutdown_callbacks,
+        validation.internal_scm_gitlab,
+        internal_scm_gitlab.internal_scm_gitlab,
+        repour_url,
+    )
+
     logger.debug("Setting up handlers")
     app.router.add_route("GET", "/", info.handle_request)
     app.router.add_route(
         "POST", "/git-external-to-internal", external_to_internal_source
     )
-
-    app.router.add_route(
-        "POST",
-        "/clone",
-        endpoint.validated_json_endpoint(
-            shutdown_callbacks, validation.clone, clone.clone, repour_url
-        ),
-    )
-
+    app.router.add_route("POST", "/clone", clone_source)
     app.router.add_route("POST", "/adjust", adjust_source)
     app.router.add_route("POST", "/internal-scm", internal_scm_source)
+    app.router.add_route("POST", "/internal-scm-gitlab", internal_scm_gitlab_source)
     app.router.add_route("POST", "/cancel/{task_id}", cancel.handle_cancel)
     app.router.add_route("GET", "/metrics", aio.web.server_stats)
     app.router.add_route("GET", "/version", info.handle_version)
