@@ -1,23 +1,12 @@
 import logging
 
 import gitlab
-from prometheus_async.aio import time
-from prometheus_client import Histogram, Summary
 
 from repour.config import config
-
-REQ_TIME = Summary(
-    "internal_scm_gitlab_req_time", "time spent with internal-scm-gitlab endpoint"
-)
-REQ_HISTOGRAM_TIME = Histogram(
-    "internal_scm_gitlab_histogram", "Histogram for internal-scm-gitlab endpoint"
-)
 
 logger = logging.getLogger(__name__)
 
 
-@time(REQ_TIME)
-@time(REQ_HISTOGRAM_TIME)
 async def internal_scm_gitlab(spec, repo_provider):
     """
     spec looks like validation.internal_scm_gitlab
@@ -43,7 +32,7 @@ async def internal_scm_gitlab(spec, repo_provider):
         project_name = project_path
 
     gitlab_url = configuration.get("url")
-    gitlab_token = configuration.get("token")
+    gitlab_token = read_token(configuration.get("token_path"))
     namespace_id = configuration.get("namespace_id")
 
     gl = gitlab.Gitlab(url=gitlab_url, private_token=gitlab_token)
@@ -80,6 +69,11 @@ async def internal_scm_gitlab(spec, repo_provider):
             "readwrite_url": readwrite_url.format(REPO_NAME=project_path),
         }
     return result
+
+
+def read_token(token_filepath):
+    with open(token_filepath, "r") as token_file:
+        return token_file.read()
 
 
 def get_group(gitlab, group_id):
