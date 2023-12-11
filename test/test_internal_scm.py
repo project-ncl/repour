@@ -1,11 +1,11 @@
 # flake8: noqa
 import unittest
-import repour.server.endpoint.internal_scm as internal_scm
+import repour.server.endpoint.internal_scm_gerrit as internal_scm_gerrit
 
 
 class TestInternalSCM(unittest.TestCase):
     def test_build_gerrit_command(self):
-        result = internal_scm.build_gerrit_command(
+        result = internal_scm_gerrit.build_gerrit_command(
             "project1",
             "parent-project",
             ["owner1", "owner2"],
