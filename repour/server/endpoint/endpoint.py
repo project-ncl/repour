@@ -203,8 +203,6 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
         except voluptuous.MultipleInvalid as x:
             callback_mode = False
-        else:
-            callback_mode = True
 
         # Set the task_id if provided in the request
         task_id = spec.get("taskId", None)
@@ -254,9 +252,14 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                 # positiveCallback is used when the result is successful, and if not, negativeCallback is used.
                 #
                 # 'callback' will be used for both successful and unsuccessful results
-                callback_spec = spec["callback"]
-                positive_callback_spec = None
-                negative_callback_spec = None
+                if "callback" in spec:
+                    callback_spec = spec["callback"]
+                    positive_callback_spec = None
+                    negative_callback_spec = None
+                else:
+                    # When callback_mode is activated and "callback" not present,
+                    # both "positiveCallback" and "negativeCallback" should be present
+                    assert ("positiveCallback" in spec) and ("negativeCallback" in spec)
 
                 if ("positiveCallback" in spec) and ("negativeCallback" in spec):
                     positive_callback_spec = spec["positiveCallback"]
