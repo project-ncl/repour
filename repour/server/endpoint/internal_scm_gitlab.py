@@ -73,7 +73,7 @@ async def internal_scm_gitlab(spec, repo_provider):
 
 def read_token(token_filepath):
     with open(token_filepath, "r") as token_file:
-        return token_file.read()
+        return token_file.read().strip()
 
 
 def get_group(gitlab, group_id):
