@@ -46,5 +46,6 @@
   "git_username": "",
   "git_url_internal_template": "",
   "git_origin_urls_internal": [],
+  "git_backend": "gerrit",
   "mode": "devel"
 }
