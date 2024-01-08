@@ -55,4 +55,8 @@ async def handle_version(request):
         "components": [],
     }
 
-    return web.Response(text="" + json.dumps(data), content_type="application/json")
+    # allow CORS
+    headers = {"Access-Control-Allow-Origin": "*"}
+    return web.Response(
+        text="" + json.dumps(data), content_type="application/json", headers=headers
+    )
