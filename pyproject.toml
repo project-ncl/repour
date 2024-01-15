@@ -31,7 +31,7 @@ setuptools = "^69.0.3"
 python-gitlab = "^4.3.0"
 
 [tool.poetry.dev-dependencies]
-tox = "^4.11"
+tox = "^4.12"
 
 [tool.tox]
 legacy_tox_ini = """
