@@ -41,7 +41,7 @@ async def internal_scm_gitlab(spec, repo_provider):
     workspace_group = get_group(gl, namespace_id)
 
     # create subgroup
-    if subgroup_name is None:
+    if (subgroup_name is None) or (subgroup_name == workspace_group.path):
         subgroup_id = namespace_id
     else:
         subgroup_id = get_or_create_subgroup(workspace_group, subgroup_name)

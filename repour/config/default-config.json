@@ -44,7 +44,21 @@
     }
   },
   "git_username": "",
-  "git_url_internal_template": "",
+  "gerrit": {
+    "username": "",
+    "hostname": "",
+    "read_only_template": "",
+    "read_write_template": "",
+    "git_url_internal_template": ""
+  },
+  "gitlab": {
+    "url": "",
+    "token_path": "",
+    "namespace_id": 0,
+    "read_only_template": "",
+    "read_write_template": "",
+    "git_url_internal_template": ""
+  },
   "git_origin_urls_internal": [],
   "git_backend": "gerrit",
   "mode": "devel"

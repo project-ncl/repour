@@ -36,12 +36,18 @@ async def translate_external_to_internal(external_git_url):
     """Logic from original maitai code to do this: found in GitUrlParser.java#generateInternalGitRepoName"""
 
     c = await config.get_configuration()
-    gerrit_server = c.get("git_url_internal_template", None)
+    git_backend = c.get("git_backend")
+    if git_backend in c:
+        git_server = c.get(git_backend).get("git_url_internal_template", None)
+    else:
+        raise Exception(
+            "git backend type " + git_backend + " missing in the configuration."
+        )
 
-    if gerrit_server is None:
+    if git_server is None:
         raise Exception("git_url_internal_template not specified in the Repour config!")
-    elif not gerrit_server.endswith("/"):
-        gerrit_server = gerrit_server + "/"
+    elif not git_server.endswith("/"):
+        git_server = git_server + "/"
 
     is_scp_like = re.match(SCP_LIKE_URL_REGEX, external_git_url)
 
@@ -68,8 +74,18 @@ async def translate_external_to_internal(external_git_url):
 
     organization = None
 
-    # if organization name is 'gerrit', don't use it then
-    if len(path_parts) > 1 and path_parts[-2] != "gerrit" and path_parts[-2]:
+    # if organization name is 'gerrit' (in gerrit) or the same as workspace group name (in gitlab), don't use it then
+    if (
+        len(path_parts) > 1
+        and (
+            (git_backend == "gerrit" and path_parts[-2] != "gerrit")
+            or (
+                git_backend == "gitlab"
+                and not git_server.endswith(path_parts[-2] + "/")
+            )
+        )
+        and path_parts[-2]
+    ):
         organization = (
             path_parts[-2] if not is_scp_like else path_parts[-2].split(":")[-1]
         )
@@ -81,4 +97,4 @@ async def translate_external_to_internal(external_git_url):
     else:
         raise Exception("Could not translate the URL: No repository specified!")
 
-    return gerrit_server + repo_name + ".git"
+    return git_server + repo_name + ".git"
