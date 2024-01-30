@@ -44,7 +44,7 @@ async def internal_scm_gitlab(spec, repo_provider):
     if (subgroup_name is None) or (subgroup_name == workspace_group.path):
         subgroup_id = namespace_id
     else:
-        subgroup_id = get_or_create_subgroup(workspace_group, subgroup_name)
+        subgroup_id = get_or_create_subgroup(gl, workspace_group, subgroup_name)
 
     # create project repository
     try:
@@ -76,13 +76,13 @@ def read_token(token_filepath):
         return token_file.read().strip()
 
 
-def get_group(gitlab, group_id):
+def get_group(gl, group_id):
     """
     Tries to find the group with given ID. If not found throws an exception.
     """
 
     try:
-        return gitlab.groups.get(group_id)
+        return gl.groups.get(group_id)
     except Exception as ex:
         if ex.response_code == 404:
             raise Exception(f"Missing PNC Workspace group with id {group_id}.")
@@ -93,7 +93,7 @@ def get_group(gitlab, group_id):
             )
 
 
-def get_or_create_subgroup(gitlab, parent_group, subgroup_name):
+def get_or_create_subgroup(gl, parent_group, subgroup_name):
     """
     Tries to find the subgroup under given parent group by name. If not found it creates a new one.
 
@@ -101,12 +101,12 @@ def get_or_create_subgroup(gitlab, parent_group, subgroup_name):
     """
 
     subgroup = None
-    for s in parent_group.subgroups.list():
+    for s in parent_group.subgroups.list(iterator=True):
         if s.name == subgroup_name:
             subgroup = s
     if subgroup is None:
         try:
-            subgroup = gitlab.groups.create(
+            subgroup = gl.groups.create(
                 {
                     "name": subgroup_name,
                     "path": subgroup_name,
@@ -115,7 +115,7 @@ def get_or_create_subgroup(gitlab, parent_group, subgroup_name):
             )
         except Exception as ex:
             if (ex.response_code == 400) and (
-                ex.args[0]["name"][0] == "has already been taken"
+                '{:name=>["has already been taken"' in ex.args[0]
             ):
                 raise Exception(
                     f"Subgroup {subgroup_name} was not found, but then it was not created because it "
