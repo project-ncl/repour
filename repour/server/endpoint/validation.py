@@ -97,7 +97,7 @@ clone_raw = {
     "type": "git",  # only git supported for now
     Optional("ref"): null_or_str,
     "originRepoUrl": Any(Url(), GitUrl()),  # pylint: disable=no-value-for-parameter
-    "targetRepoUrl": Url(),  # pylint: disable=no-value-for-parameter
+    "targetRepoUrl": Any(Url(), GitUrl()),  # pylint: disable=no-value-for-parameter
     Optional("callback"): callback_raw,
 }
 
