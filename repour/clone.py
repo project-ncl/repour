@@ -89,7 +89,13 @@ async def clone_git(clonespec):
     with asutil.TemporaryDirectory(suffix="git") as clone_dir:
 
         c = await config.get_configuration()
-        git_user = c.get("git_username")
+        git_backend = c.get("git_backend")
+        if git_backend in c:
+            git_user = c.get(git_backend).get("username")
+        else:
+            raise Exception(
+                "git backend type " + git_backend + " missing in the configuration."
+            )
 
         new_internal_repo = await check_new_internal_repo(
             asutil.add_username_url(clonespec["targetRepoUrl"], git_user)
