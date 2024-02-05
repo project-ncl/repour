@@ -56,10 +56,9 @@ async def annotated_tag(expect_ok, repo_dir, tag_name, message, ok_if_exists=Fal
 
 
 async def push_with_tags(
-    expect_ok, repo_dir, branch_name, ignore_tag_already_exist_error=False
+    expect_ok, repo_dir, branch_name, git_backend, ignore_tag_already_exist_error=False
 ):
-    c = await config.get_configuration()
-    git_user = c.get("git_username")
+    git_user = c.get(git_backend).get("username")
 
     await git.push_with_tags(
         repo_dir,
@@ -68,6 +67,19 @@ async def push_with_tags(
         tryAtomic=False,
         ignore_tag_already_exist_error=ignore_tag_already_exist_error,
     )
+
+
+async def detect_backend(url):
+    for backend in ("gitlab", "gerrit"):
+        if backend in c:
+            template = c.get(backend).get("git_url_internal_template")
+            if template.startswith("git@"):
+                prefix = template.split(":")[0] + ":"
+            else:
+                prefix = template
+            if url.startswith(prefix):
+                return backend
+    raise exception.ConfigurationError("No backend found for url " + url)
 
 
 #
@@ -124,6 +136,8 @@ async def push_new_dedup_branch(
         if tag_name and not no_change_ok:
             raise
 
+    git_backend = await detect_backend(repo_url.readwrite)
+
     # we are here either if we are not using real_commit_time or if we couldn't
     # find the tag using the tree SHA
     if tag_name is None:
@@ -138,6 +152,7 @@ async def push_new_dedup_branch(
             no_change_ok,
             force_continue_on_no_changes,
             real_commit_time,
+            git_backend,
             specific_tag_name,
         )
 
@@ -149,7 +164,11 @@ async def push_new_dedup_branch(
         # This happens if we are doing /adjust, with pre-sync enabled.
         # The external repo might have the tag, but not the internal repo
         await push_with_tags(
-            expect_ok, repo_dir, tag_name, ignore_tag_already_exist_error=True
+            expect_ok,
+            repo_dir,
+            tag_name,
+            git_backend,
+            ignore_tag_already_exist_error=True,
         )
 
     if tag_name is None:
@@ -170,6 +189,7 @@ async def commit_push_tag(
     no_change_ok,
     force_continue_on_no_changes,
     real_commit_time,
+    git_backend,
     specific_tag_name=None,
 ):
     try:
@@ -235,7 +255,7 @@ async def commit_push_tag(
     # already exist, git will return quickly with an 0 (success) status
     # instead of uploading the objects.
     try:
-        await push_with_tags(expect_ok, repo_dir, tag_name)
+        await push_with_tags(expect_ok, repo_dir, tag_name, git_backend)
     except exception.CommandError as e:
         # Modify the exit code to 10. This tells Maitai to not treat this as
         # a SYSTEM_ERROR (NCL-2871)
