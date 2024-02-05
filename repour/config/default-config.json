@@ -43,7 +43,6 @@
       "user.email": "<>"
     }
   },
-  "git_username": "",
   "gerrit": {
     "username": "",
     "hostname": "",
@@ -52,7 +51,7 @@
     "git_url_internal_template": ""
   },
   "gitlab": {
-    "username": null,
+    "username": "",
     "url": "",
     "token_path": "",
     "namespace_id": 0,

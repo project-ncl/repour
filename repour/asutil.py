@@ -235,13 +235,13 @@ def expect_ok_closure(exc_type=exception.CommandError):
 def add_username_url(url, username):
     """Given a url, add username to the url if not already in url
 
-    If username is empty (None or ""), do nothing, return url as is
+    If username is empty (None or "") or the url is in SCP-like format, do nothing, return url as is
 
     returns: :str: url with username
     """
 
-    # If username is None or empty, do nothing
-    if not username:
+    # If username is None or empty or url is in SCP-like format, do nothing
+    if not username or url.startswith("git@"):
         return url
 
     parsed = urllib.parse.urlsplit(url)
