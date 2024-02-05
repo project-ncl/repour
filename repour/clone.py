@@ -7,7 +7,7 @@ from prometheus_client import Histogram, Summary
 
 from repour import asutil, exception
 from repour.config import config
-from repour.lib.scm import git
+from repour.lib.scm import asgit, git
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,9 @@ REQ_HISTOGRAM_TIME = Histogram(
 )
 
 
-async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origin"):
+async def push_sync_changes(
+    work_dir, ref, git_backend, remote="origin", origin_remote="origin"
+):
     """This function is used when we want to sync a repository with another one
     It assumes that you have already set the remote to be the 'other' repository
 
@@ -49,7 +51,7 @@ async def push_sync_changes(work_dir, ref, remote="origin", origin_remote="origi
         await git.push(work_dir, remote, ref)  # push it to the remote
     elif isRefTag:
         c = await config.get_configuration()
-        git_user = c.get("git_username")
+        git_user = c.get(git_backend).get("username")
 
         await git.push_with_tags(work_dir, ref, git_user, remote=remote)
     else:
@@ -114,7 +116,7 @@ async def clone_git(clonespec):
             )  # Add target remote
 
             ref = clonespec["ref"]
-            await push_sync_changes(clone_dir, ref, "target")
+            await push_sync_changes(clone_dir, ref, git_backend, "target")
         else:
             # Sync everything if ref not specified or internal repository is new
             # From: https://stackoverflow.com/a/7216269/2907906

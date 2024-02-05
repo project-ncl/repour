@@ -115,7 +115,8 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
     return: <bool> indicate if ref is only in downstream repo (True) or is also present in upstream repo (False)
     """
     internal_repo_url = await repo_provider(adjustspec, create=False)
-    git_user = configuration.get("git_username")
+    git_backend = await asgit.detect_backend(internal_repo_url.readwrite)
+    git_user = configuration.get(git_backend).get("username")
     git_origin_repo_urls_internal = configuration.get(
         "git_origin_repo_urls_internal", []
     )
@@ -156,7 +157,7 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
             )
         else:
             await clone.push_sync_changes(
-                work_dir, ref, "origin", origin_remote="origin_remote"
+                work_dir, ref, git_backend, "origin", origin_remote="origin_remote"
             )
 
     else:
@@ -237,7 +238,8 @@ async def adjust(adjustspec, repo_provider):
                 adjustspec, repo_provider, work_dir, c
             )
         else:
-            git_user = c.get("git_username")
+            git_backend = await asgit.detect_backend(repo_url.readwrite)
+            git_user = c.get(git_backend).get("username")
 
             await git.clone(
                 work_dir, asutil.add_username_url(repo_url.readwrite, git_user)

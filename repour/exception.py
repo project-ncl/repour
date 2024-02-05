@@ -45,6 +45,10 @@ class PullError(DescribedError):
     pass
 
 
+class ConfigurationError(DescribedError):
+    pass
+
+
 class CloneError(DescribedError):
     pass
 
