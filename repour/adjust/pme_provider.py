@@ -27,7 +27,12 @@ def get_pme_provider(
     temp_prefer_persistent_enabled=False,
 ):
     async def get_result_data(
-        work_dir, extra_parameters, group_id=None, artifact_id=None, results_file=None
+        work_dir,
+        extra_parameters,
+        group_id=None,
+        artifact_id=None,
+        results_file=None,
+        verbose=True,
     ):
         if results_file:
             result_file_path_manipulation = results_file
@@ -51,7 +56,12 @@ def get_pme_provider(
             with open(file_path, "r") as file:
                 logger.info("Getting results from file: " + file_path)
                 return parse_pme_result_manipulation_format(
-                    work_dir, pme_and_extra_params, file.read(), group_id, artifact_id
+                    work_dir,
+                    pme_and_extra_params,
+                    file.read(),
+                    group_id,
+                    artifact_id,
+                    verbose=verbose,
                 )
         else:
             logger.warn("Couldn't capture any result file from PME")
@@ -160,6 +170,7 @@ def get_pme_provider(
             extra_parameters,
             override_group_id,
             override_artifact_id,
+            verbose=False,
         )
         return res
 
@@ -306,9 +317,11 @@ async def create_pme_result_file(repo_dir):
 
 
 def parse_pme_result_manipulation_format(
-    work_dir, pme_parameters, raw_result_data, group_id, artifact_id
+    work_dir, pme_parameters, raw_result_data, group_id, artifact_id, verbose=True
 ):
-    logger.info('Got PME result data: "{raw_result_data}".'.format(**locals()))
+    if verbose:
+        logger.info('Got PME result data: "{raw_result_data}".'.format(**locals()))
+
     data = json.loads(raw_result_data)
 
     pme_result = {"VersioningState": {"executionRootModified": {}}}
