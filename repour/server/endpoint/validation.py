@@ -23,7 +23,7 @@ def mode_b_ify(raw):
     clone = raw.copy()
     del clone["name"]
     clone["internal_url"] = {
-        "readwrite": Url(),  # pylint: disable=no-value-for-parameter
+        "readwrite": Any(Url(), GitUrl()),  # pylint: disable=no-value-for-parameter
         "readonly": Url(),  # pylint: disable=no-value-for-parameter
     }
     return clone
