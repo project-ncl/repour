@@ -11,7 +11,7 @@ from repour.adjust.scala_provider import get_scala_provider
 from repour import asutil, clone, exception
 from repour.config import config
 from repour.lib.logs import log_util
-from repour.lib.scm import git, asgit
+from repour.lib.scm import git, asgit, gitlab
 
 from repour.adjust import (
     gradle_provider,
@@ -230,6 +230,23 @@ async def adjust(adjustspec, repo_provider):
     with asutil.TemporaryDirectory(suffix="git") as work_dir:
 
         repo_url = await repo_provider(adjustspec, create=False)
+        git_backend = await asgit.detect_backend(repo_url.readwrite)
+        backend_conf = c.get(git_backend)
+
+        if git_backend == "gitlab":
+            prot_tags_pattern = backend_conf.get("protected_tags_pattern")
+            if prot_tags_pattern:
+                # check protected tags setup
+                complete_path = repo_url.readwrite.split(":")[1]
+                gl = gitlab.client(backend_conf)
+                found = gitlab.check_protected_tags(
+                    backend_conf, gl=gl, project_path=complete_path
+                )
+                if not found:
+                    raise Exception(
+                        f"Cannot proceed because project {complete_path} does not have "
+                        + "protected tags set up according to Repour configuration."
+                    )
 
         process_mdc("BEGIN", "SCM_CLONE")
         sync_enabled = await is_sync_on(adjustspec)
@@ -239,8 +256,7 @@ async def adjust(adjustspec, repo_provider):
                 adjustspec, repo_provider, work_dir, c
             )
         else:
-            git_backend = await asgit.detect_backend(repo_url.readwrite)
-            git_user = c.get(git_backend).get("username")
+            git_user = backend_conf.get("username")
 
             await git.clone(
                 work_dir, asutil.add_username_url(repo_url.readwrite, git_user)
