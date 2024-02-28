@@ -70,15 +70,21 @@ async def push_with_tags(
 
 
 async def detect_backend(url):
+    no_template = True
     for backend in ("gitlab", "gerrit"):
         if backend in c:
             template = c.get(backend).get("git_url_internal_template")
-            if template.startswith("git@"):
-                prefix = template.split(":")[0] + ":"
-            else:
-                prefix = template
-            if url.startswith(prefix):
-                return backend
+            if template:
+                no_template = False
+                if template.startswith("git@"):
+                    prefix = template.split(":")[0] + ":"
+                else:
+                    prefix = template
+                if url.startswith(prefix):
+                    return backend
+    if no_template:
+        logging.warn("No git template urls configured. Using default git backend.")
+        return c.get("git_backend")
     raise exception.ConfigurationError("No backend found for url " + url)
 
 
