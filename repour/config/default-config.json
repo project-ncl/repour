@@ -57,7 +57,9 @@
     "namespace_id": 0,
     "read_only_template": "",
     "read_write_template": "",
-    "git_url_internal_template": ""
+    "git_url_internal_template": "",
+    "protected_tags_pattern": "*",
+    "protected_tags_accepted_patterns": ["*"]
   },
   "git_origin_urls_internal": [],
   "git_backend": "gerrit",
