@@ -272,7 +272,7 @@ def list_urls_from_string(text):
 
     It'll return a list of urls present in the string
     """
-    return re.findall("(?:(?:https?):\\/\\/)[\w/\-?=%.]+\.[\w/\-?=%.]+", text)
+    return re.findall("(?:(?:https?):\\/\\/)[\\w/\\-?=%.]+\\.[\\w/\\-?=%.]+", text)
 
 
 def list_non_origin_urls_from_string(origin_url, text):
