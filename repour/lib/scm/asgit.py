@@ -83,7 +83,7 @@ async def detect_backend(url):
                 if url.startswith(prefix):
                     return backend
     if no_template:
-        logging.warn("No git template urls configured. Using default git backend.")
+        logging.warning("No git template urls configured. Using default git backend.")
         return c.get("git_backend")
     raise exception.ConfigurationError("No backend found for url " + url)
 
