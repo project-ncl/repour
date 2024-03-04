@@ -75,7 +75,7 @@ async def internal_scm_gitlab(spec, repo_provider):
 def get_or_create_project(
     gl, parent_id, complete_path, project_path, readonly_url, readwrite_url
 ):
-    project = gitlab.get_project(complete_path)
+    project = gitlab.get_project(gl, complete_path)
     if project:
         result = {
             "status": "SUCCESS_ALREADY_EXISTS",
