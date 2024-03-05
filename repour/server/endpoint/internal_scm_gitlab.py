@@ -58,9 +58,8 @@ async def internal_scm_gitlab(spec, repo_provider):
 
     # set the protected tags to configured pattern
     prot_tags_pattern = gitlab_config.get("protected_tags_pattern")
-    if (
-        prot_tags_pattern
-    ):  # perform the check/configuration only if the protected tags pattern is configured
+    # perform the check/configuration only if the protected tags pattern is configured
+    if prot_tags_pattern:
         found = False
         if result.get("status") == "SUCCESS_ALREADY_EXISTS":
             # check if the protected tags are configured already (only if the repo already existed)
