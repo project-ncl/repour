@@ -237,6 +237,8 @@ async def adjust(adjustspec, repo_provider):
             if prot_tags_pattern:
                 # check protected tags setup
                 complete_path = repo_url.readwrite.split(":")[1]
+                if complete_path.endwith(".git"):
+                    complete_path = complete_path[0:-4]
                 gl = gitlab.client(backend_conf)
                 found = gitlab.check_protected_tags(
                     backend_conf, gl=gl, project_path=complete_path
