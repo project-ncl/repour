@@ -8,8 +8,6 @@ from repour.server.endpoint import (
     internal_scm_gitlab,
 )
 
-import asyncssh
-
 
 REQ_TIME = Summary("internal_scm_req_time", "time spent with internal-scm endpoint")
 REQ_HISTOGRAM_TIME = Histogram(
