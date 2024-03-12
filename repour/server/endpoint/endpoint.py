@@ -20,7 +20,9 @@ from repour import exception
 from repour.auth import auth_client
 from repour.config import config
 from repour.lib.io import file_utils
+from repour.lib.logs import file_callback_log
 from repour.lib.logs import log_util
+from repour.lib.bifrost import client
 from repour.server.endpoint import validation
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -279,6 +281,37 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                         headers = {}
 
                         current_task = asyncio.current_task()
+                        log_file = file_callback_log.get_callback_log_path(callback_id)
+
+                        if not os.path.isfile(log_file):
+                            logger.error("Logs for callback_id: {} missing!")
+                        else:
+                            log_metadata = client.LogMetadata(
+                                end_time=datetime.datetime.now()
+                                .astimezone()
+                                .isoformat(),
+                                logger_name=asyncio.current_task().loggerName,
+                                user_id=current_task.mdc["userId"],
+                                expires=current_task.mdc["expires"],
+                                process_context=current_task.mdc["processContext"],
+                                process_context_variant=current_task.mdc[
+                                    "processContextVariant"
+                                ],
+                                tmp=current_task.mdc["tmp"],
+                                request_context=current_task.mdc["requestContext"],
+                                trace_id=current_task.mdc["trace_id"],
+                                span_id=current_task.mdc["span_id"],
+                                traceparent=current_task.mdc["traceparent"],
+                                tag="alignment",
+                            )
+
+                            resp = await client.send(
+                                c.get("bifrost_url"),
+                                log_file,
+                                log_metadata,
+                                await auth_client.access_token(),
+                            )
+                            logger.info("Sending logs to Bifrost successful")
 
                         auth_provider = c.get("auth", {}).get("provider", None)
                         if auth_provider == "oauth2_jwt" and request.headers.get(
@@ -295,7 +328,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                             "log-request-context": current_task.mdc["requestContext"],
                             "log-process-context": current_task.mdc["processContext"],
                             "log-expires": current_task.mdc["expires"],
-                            "log_tmp": current_task.mdc["tmp"],
+                            "log-tmp": current_task.mdc["tmp"],
                             "process-context-variant": current_task.mdc[
                                 "processContextVariant"
                             ],
