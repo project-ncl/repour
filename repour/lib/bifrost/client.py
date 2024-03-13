@@ -99,8 +99,12 @@ def __add_file(multipart_writer, filename_path, filename_for_upload=None):
     """
     part = multipart_writer.append(open(filename_path, "rb"))
 
+    part.headers["Content-Type"] = "application/octet-stream"
+
     if filename_for_upload:
-        part.set_content_disposition("attachment", filename=filename_for_upload)
+        part.set_content_disposition("form-data", name=filename_for_upload)
+    else:
+        part.set_content_disposition("form-data", name=filename_path)
 
 
 def __md5sum_of_file(filename):
