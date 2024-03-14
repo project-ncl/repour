@@ -69,6 +69,11 @@ async def send(url, filename, log_metadata: LogMetadata, access_token):
                 if resp is not None and resp.status // 100 == 2:
                     return resp
                 else:
+                    logger.info(
+                        "Unable to send logs to bifrost, status {resp.status}, text {resp.text}, attempt {backoff}/{max_attempts}".format(
+                            **locals()
+                        )
+                    )
                     sleep_period = 2**backoff
                     logger.debug("Sleeping for {sleep_period}".format(**locals()))
                     await asyncio.sleep(sleep_period)
