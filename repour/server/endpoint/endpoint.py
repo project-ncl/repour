@@ -303,7 +303,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                                 trace_id=current_task.mdc["trace_id"],
                                 span_id=current_task.mdc["span_id"],
                                 traceparent=current_task.mdc["traceparent"],
-                                tag="alignment",
+                                tag="alignment-log",
                             )
 
                             resp = await client.send(
