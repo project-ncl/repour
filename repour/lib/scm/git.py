@@ -235,11 +235,13 @@ async def rm(dir, path_in_repository, cached=False):
 
 async def does_sha_exist(dir, ref):
     try:
+        # do not log stderr to output on failure. this causes useless error logs to be printed if ref is not a branch
         await expect_ok(
             cmd=["git", "cat-file", "-e", ref + "^{commit}"],
             cwd=dir,
             desc="Ignore this.",
             print_cmd=True,
+            stderr=None,
         )
         return True
     except Exception:
