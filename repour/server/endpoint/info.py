@@ -44,7 +44,7 @@ async def handle_request(request):
     </ul>
     """
 
-    html_text = html_text.format(version, git_sha)
+    html_text = html_text.format(version, GIT_SHA)
     return web.Response(text="" + html_text, content_type="text/html")
 
 
