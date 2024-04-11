@@ -63,7 +63,7 @@ async def send(url, filename, log_metadata: LogMetadata, access_token):
                 }
 
                 resp = await session.post(
-                    url + "/upload/final-log", data=mp, headers=headers, compress=True
+                    url + "/final-log/upload", data=mp, headers=headers, compress=True
                 )
 
                 if resp is not None and resp.status // 100 == 2:
