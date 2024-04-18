@@ -368,7 +368,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
                                 max_attempts=max_attempts,
                             )
                         )
-                        logger.error(e)
+                        logger.error(e, exc_info=True)
                         resp = None
                     return resp
 
