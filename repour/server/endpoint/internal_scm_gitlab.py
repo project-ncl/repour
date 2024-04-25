@@ -1,7 +1,7 @@
 import logging
 
 from repour.config import config
-from repour.lib.scm import gitlab
+from repour.lib.scm import gitlab as scm_gitlab
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +35,10 @@ async def internal_scm_gitlab(spec, repo_provider):
 
     namespace_id = gitlab_config.get("namespace_id")
 
-    gl = gitlab.client(gitlab_config)
+    gl = scm_gitlab.client(gitlab_config)
 
     # get the workspace group
-    workspace_group = gitlab.get_group(gl, namespace_id)
+    workspace_group = scm_gitlab.get_group(gl, namespace_id)
     if workspace_group is None:
         raise Exception(f"Missing PNC Workspace group with id {namespace_id}.")
 
@@ -47,7 +47,7 @@ async def internal_scm_gitlab(spec, repo_provider):
         parent_id = namespace_id
         complete_path = workspace_group.name + "/" + project_name
     else:
-        subgroup = gitlab.get_or_create_subgroup(gl, workspace_group, subgroup_name)
+        subgroup = scm_gitlab.get_or_create_subgroup(gl, workspace_group, subgroup_name)
         parent_id = subgroup.id
         complete_path = workspace_group.name + "/" + project_path
 
@@ -63,7 +63,7 @@ async def internal_scm_gitlab(spec, repo_provider):
         found = False
         if result.get("status") == "SUCCESS_ALREADY_EXISTS":
             # check if the protected tags are configured already (only if the repo already existed)
-            found = gitlab.check_protected_tags(gitlab_config, project=project)
+            found = scm_gitlab.check_protected_tags(gitlab_config, project=project)
         if not found:
             project.protectedtags.create({"name": prot_tags_pattern})
             project.save()
@@ -74,7 +74,7 @@ async def internal_scm_gitlab(spec, repo_provider):
 def get_or_create_project(
     gl, parent_id, complete_path, project_path, readonly_url, readwrite_url
 ):
-    project = gitlab.get_project(gl, complete_path)
+    project = scm_gitlab.get_project(gl, complete_path)
     if project:
         result = {
             "status": "SUCCESS_ALREADY_EXISTS",
@@ -83,7 +83,7 @@ def get_or_create_project(
         }
     else:
         project_name = complete_path.split("/")[complete_path.count("/")]
-        project = gitlab.create_project(gl, parent_id, project_name)
+        project = scm_gitlab.create_project(gl, parent_id, project_name)
         result = {
             "status": "SUCCESS_CREATED",
             "readonly_url": readonly_url.format(REPO_NAME=project_path),
