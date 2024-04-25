@@ -1,5 +1,7 @@
 import logging
 
+import gitlab
+
 from repour.config import config
 from repour.lib.scm import gitlab as scm_gitlab
 
@@ -65,7 +67,12 @@ async def internal_scm_gitlab(spec, repo_provider):
             # check if the protected tags are configured already (only if the repo already existed)
             found = scm_gitlab.check_protected_tags(gitlab_config, project=project)
         if not found:
-            project.protectedtags.create({"name": prot_tags_pattern})
+            project.protectedtags.create(
+                {
+                    "name": prot_tags_pattern,
+                    "create_access_level": gitlab.const.AccessLevel.DEVELOPER,
+                }
+            )
             project.save()
 
     return result
