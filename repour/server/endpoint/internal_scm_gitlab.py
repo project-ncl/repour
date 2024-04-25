@@ -73,7 +73,6 @@ async def internal_scm_gitlab(spec, repo_provider):
                     "create_access_level": gitlab.const.AccessLevel.DEVELOPER,
                 }
             )
-            project.save()
 
     return result
 
