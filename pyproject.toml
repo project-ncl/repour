@@ -33,11 +33,13 @@ python-gitlab = "^4.4.0"
 [tool.poetry.dev-dependencies]
 tox = "^4.14"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+
 [tool.tox]
 legacy_tox_ini = """
 [tox]
 skipsdist = True
-# envlist=py36,py37,py38
 
 [testenv]
 allowlist_externals = poetry, pre-commit, flake8
