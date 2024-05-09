@@ -377,7 +377,10 @@ async def push_with_tags(
             options = ["--tags"]
             failure_push_msg = "tag"
         else:
-            options = ["--follow-tags", remote, branch]
+            tags = await list_reachable_tags_from_ref(dir, branch)
+            options = [remote, branch]
+            if not tags:
+                options += ["tag"] + tags
             failure_push_msg = "tag+branch"
 
         process = subprocess.Popen(
@@ -780,6 +783,20 @@ async def list_tags(dir):
     """
     tags = await expect_ok(
         cmd=["git", "tag"],
+        desc="Couldn't get the list of tags",
+        stdout="text",
+        cwd=dir,
+        print_cmd=True,
+    )
+    return list(filter(None, [a.strip() for a in tags.split("\n")]))
+
+
+async def list_reachable_tags_from_ref(dir, ref="HEAD"):
+    """
+    Returns list of tags reachable from a ref
+    """
+    tags = await expect_ok(
+        cmd=["git", "tag", "--merged", ref],
         desc="Couldn't get the list of tags",
         stdout="text",
         cwd=dir,
