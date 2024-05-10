@@ -21,6 +21,8 @@ class TemporaryGitDirectory(tempfile.TemporaryDirectory):
             if self.bare:
                 cmd.append("--bare")
             cmd.append(self.name)
+            cmd.append("--initial-branch")
+            cmd.append("main")
             quiet_check_call(cmd)
 
             if self.origin is not None:

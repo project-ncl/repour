@@ -79,7 +79,7 @@ class TestCommon(unittest.TestCase):
                 util.quiet_check_call(["git", "tag", "test-tag"], cwd=repo)
 
                 loop.run_until_complete(
-                    asgit.push_with_tags(expect_ok, repo, "master", "gerrit")
+                    asgit.push_with_tags(expect_ok, repo, "main", "gerrit")
                 )
 
                 remote_tags = subprocess.check_output(
