@@ -53,7 +53,7 @@ class TestAdjust(unittest.TestCase):
 
         d = loop.run_until_complete(
             repour.adjust.adjust.adjust(
-                adjustspec={"name": "test", "ref": "master"},
+                adjustspec={"name": "test", "ref": "main"},
                 repo_provider=repo_provider,
             )
         )
