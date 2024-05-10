@@ -9,7 +9,8 @@ from test import util
 
 import repour.adjust.adjust
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
 
 class TestAdjust(unittest.TestCase):
