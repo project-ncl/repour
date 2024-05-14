@@ -7,6 +7,8 @@ import types
 import unittest
 from test import util
 
+import pytest
+
 import aiohttp
 import aiohttp.web
 import repour.asutil
@@ -56,6 +58,10 @@ class TestDownload(unittest.TestCase):
         fake_resp = self.fake_resp(suggest_filename="foo.tar")
         self.assertEqual(repour.asutil._find_filename("bar.zip", fake_resp), "foo.tar")
 
+    @pytest.mark.filterwarnings(
+        "ignore:The object should be created within an async function:DeprecationWarning"
+    )
+    # Ignore deprecation warning from third-party library (.tox/py/lib64/python3.11/site-packages/aiohttp/web_app.py)
     def test_basename(self):
         fake_resp = self.fake_resp()
         self.assertEqual(repour.asutil._find_filename("bar.zip", fake_resp), "bar.zip")
