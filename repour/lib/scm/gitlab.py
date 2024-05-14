@@ -43,11 +43,13 @@ def get_or_create_subgroup(gl, parent_group, subgroup_name):
             subgroup = s
     if subgroup is None:
         try:
+            # [NCL-8683] default_branch_protection: 0: do not set it
             subgroup = gl.groups.create(
                 {
                     "name": subgroup_name,
                     "path": subgroup_name,
                     "parent_id": parent_group.id,
+                    "default_branch_protection": 0,
                 }
             )
         except Exception as ex:
