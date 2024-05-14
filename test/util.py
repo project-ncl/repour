@@ -89,20 +89,22 @@ def quiet_check_call(cmd, cwd=None):
 
 def setup_http(cls, loop, routes):
     app = aiohttp.web.Application()
-
     for route in routes:
         app.router.add_route(*route)
 
     host = "localhost"
     port = 51854
+    app_runner = aiohttp.web.AppRunner(app)
+    loop.run_until_complete(app_runner.setup())
+    site = aiohttp.web.TCPSite(app_runner, host, port)
+    loop.run_until_complete(site.start())
+
     cls.url = "http://{host}:{port}".format(**locals())
-    cls.handler = app.make_handler()
-    cls.server = loop.run_until_complete(loop.create_server(cls.handler, host, port))
+    cls.app_runner = app_runner
 
 
 def teardown_http(cls, loop):
-    cls.server.close()
-    loop.run_until_complete(cls.server.wait_closed())
+    loop.run_until_complete(cls.app_runner.cleanup())
 
 
 def http_write_handler(stream):
