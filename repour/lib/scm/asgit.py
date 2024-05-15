@@ -177,6 +177,9 @@ async def push_new_dedup_branch(
             ignore_tag_already_exist_error=True,
         )
 
+    # NCLSUP-1074: make sure the commit is part of a branch
+    await create_branch_for_tag_commit(repo_dir, tag_name, commit)
+
     if tag_name is None:
         return None
     else:
@@ -185,6 +188,20 @@ async def push_new_dedup_branch(
             "commit": commit,
             "url": {"readwrite": repo_url.readwrite, "readonly": repo_url.readonly},
         }
+
+
+async def create_branch_for_tag_commit(repo_dir, tag_name, commit):
+    branch_name = "branch-repour-" + tag_name + "-" + commit
+    existing_branches = await git.list_branches(repo_dir)
+
+    # if branch already exists, nothing to do. We're assuming that this means the commit is already in the branch
+    if branch_name in existing_branches:
+        logger.info("Branch: {} already exists. Skipping", branch_name)
+        return
+    else:
+        logger.info("Creating branch: {}", branch_name)
+        await git.create_branch_from_commit(repo_dir, branch_name, commit)
+        await git.push(repo_dir, "origin", branch_name)
 
 
 async def commit_push_tag(
