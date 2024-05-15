@@ -512,6 +512,17 @@ async def create_branch_checkout(dir, branch_name, orphan=False):
     logger.info(str(output))
 
 
+async def create_branch_from_commit(dir, branch_name, commit):
+    output = await expect_ok(
+        cmd=["git", "checkout", "-b", branch_name, commit],
+        desc="Could not create branch with git",
+        stdout="text",
+        cwd=dir,
+        print_cmd=True,
+    )
+    logger.info(str(output))
+
+
 async def add_all(dir):
     await expect_ok(
         cmd=["git", "add", "-A"],
