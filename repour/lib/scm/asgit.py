@@ -196,10 +196,10 @@ async def create_branch_for_tag_commit(repo_dir, tag_name, commit):
 
     # if branch already exists, nothing to do. We're assuming that this means the commit is already in the branch
     if branch_name in existing_branches:
-        logger.info("Branch: {} already exists. Skipping", branch_name)
+        logger.info("Branch: {0} already exists. Skipping".format(branch_name))
         return
     else:
-        logger.info("Creating branch: {}", branch_name)
+        logger.info("Creating branch: {0}".format(branch_name))
         await git.create_branch_from_commit(repo_dir, branch_name, commit)
         await git.push(repo_dir, "origin", branch_name)
 
