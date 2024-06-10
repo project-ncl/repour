@@ -23,6 +23,8 @@ followed:
 1. Update the file `repour/__init__.py` inside our git maintenance branch for
    the version. The qualifier should be set to 'FINAL' and not 'SNAPSHOT'.
 
+   Also update the `pyproject.toml`
+
 2. Update the Changelog with the correct version + release date
 
 3. Commit the changes and push to upstream git repository
