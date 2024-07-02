@@ -90,7 +90,9 @@ def log_traceback_multi_line():
     logger.error(text)
 
 
-def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
+def validated_json_endpoint(
+    shutdown_callbacks, validator, coro, repour_url, send_logs_to_bifrost=True
+):
     client_session = aiohttp.ClientSession()  # pylint: disable=no-member
     shutdown_callbacks.append(client_session.close)
 
@@ -286,7 +288,7 @@ def validated_json_endpoint(shutdown_callbacks, validator, coro, repour_url):
 
                         if not os.path.isfile(log_file):
                             logger.error("Logs for callback_id: {} missing!")
-                        else:
+                        elif send_logs_to_bifrost:
                             log_metadata = client.LogMetadata(
                                 end_time=datetime.datetime.now()
                                 .astimezone()
