@@ -53,7 +53,11 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
     )
 
     clone_source = endpoint.validated_json_endpoint(
-        shutdown_callbacks, validation.clone, clone.clone, repour_url
+        shutdown_callbacks,
+        validation.clone,
+        clone.clone,
+        repour_url,
+        send_logs_to_bifrost=False,
     )
 
     adjust_source = endpoint.validated_json_endpoint(
@@ -65,6 +69,7 @@ async def init(loop, bind, repo_provider, repour_url, adjust_provider):
         validation.internal_scm,
         internal_scm.internal_scm,
         repour_url,
+        send_logs_to_bifrost=False,
     )
 
     logger.debug("Setting up handlers")
