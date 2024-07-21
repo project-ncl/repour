@@ -111,18 +111,18 @@ frozenlist = ">=1.1.0"
 
 [[package]]
 name = "asyncssh"
-version = "2.14.2"
+version = "2.15.0"
 description = "AsyncSSH: Asynchronous SSHv2 client and server library"
 optional = false
-python-versions = ">= 3.6"
+python-versions = ">=3.6"
 files = [
-    {file = "asyncssh-2.14.2-py3-none-any.whl", hash = "sha256:6ff9923389a16bda4f681c1fc253386cc4e1f19fb74fd0684dd0d31943ebe5e4"},
-    {file = "asyncssh-2.14.2.tar.gz", hash = "sha256:e956bf8988d07a06ba3305f6604e261f4ca014c4a232f0873f1c7692fbe3cfc2"},
+    {file = "asyncssh-2.15.0-py3-none-any.whl", hash = "sha256:72d140a4a4f6d246d04eabfe0052a9b94475d6d814ef1cc7bb8b3860d0ce39e5"},
+    {file = "asyncssh-2.15.0.tar.gz", hash = "sha256:0a13a43816f46cf084657fb05596823b93d5b48e75ef7763c8a756ec1217837a"},
 ]
 
 [package.dependencies]
 cryptography = ">=39.0"
-typing-extensions = ">=3.6"
+typing-extensions = ">=4.0.0"
 
 [package.extras]
 bcrypt = ["bcrypt (>=3.1.3)"]
@@ -1756,4 +1756,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "6c508ced71dedd3ad122d019936dc460c3265b8b95450e81389d80bf4aa8cb9b"
+content-hash = "7057d3b0c975c109e145990fead9baa3ff25c39e95f802f00f2a6992db6d7a70"
