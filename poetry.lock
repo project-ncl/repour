@@ -1294,13 +1294,13 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments
 
 [[package]]
 name = "python-gitlab"
-version = "4.8.0"
+version = "4.9.0"
 description = "A python wrapper for the GitLab API"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "python_gitlab-4.8.0-py3-none-any.whl", hash = "sha256:89d7e24ff8fcb2b6845f1379350d0e0cdfbdae42b824bc4fa194c5a7a9a774bc"},
-    {file = "python_gitlab-4.8.0.tar.gz", hash = "sha256:c2c4d7b1cd503d905afe5dfc0f3f6619934361f76ae855c6cec9a666864d37cf"},
+    {file = "python_gitlab-4.9.0-py3-none-any.whl", hash = "sha256:0c8b7220055072bc44a344ea944237f1251f8dcdd9eae88c4b2fb5c1af2085fa"},
+    {file = "python_gitlab-4.9.0.tar.gz", hash = "sha256:df44dbb6e9c941e7ebfb9244e7ed4aa4db90f5c16498cb2d135b8e6e7f089a1a"},
 ]
 
 [package.dependencies]
@@ -1764,4 +1764,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "0482a11d969c6a2e3c202ad4cba85cd9817d511f2aba6f192d9c183bdeb74a0b"
+content-hash = "49c98c8e735a1f8e7cc32c68672edc5d4d473ae4064f8ac576acf5ee086df48c"
