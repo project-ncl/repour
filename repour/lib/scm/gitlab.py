@@ -39,7 +39,7 @@ def get_or_create_subgroup(gl, parent_group, subgroup_name):
 
     subgroup = None
     for s in parent_group.subgroups.list(iterator=True):
-        if s.name == subgroup_name:
+        if s.name.casefold() == subgroup_name.casefold():
             subgroup = s
     if subgroup is None:
         try:
