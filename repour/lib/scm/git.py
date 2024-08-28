@@ -155,6 +155,19 @@ async def clone(dir, url):
         raise
 
 
+async def shallow_clone_with_tags(dir, url, ref):
+    """
+    From: NCL-8810: do a shallow clone with shallow tag information for adjust endpoint where internal url
+    is used only
+    """
+    os.makedirs(dir, exist_ok=True)
+    await init(dir)
+    await add_remote(dir, "origin", url)
+    await fetch_shallow_ref(dir, "origin", ref)
+    await checkout(dir, "FETCH_HEAD")
+    await fetch_tags(dir, "origin", shallow=True)
+
+
 async def clone_mirror(dir, url):
     desc = "Could not clone mirror {} with git.".format(url)
 
@@ -540,10 +553,15 @@ async def add_file(dir, file_path, force=False):
     )
 
 
-async def fetch_tags(dir, remote="origin"):
+async def fetch_tags(dir, remote="origin", shallow=False):
+    cmd = ["git", "fetch", remote, "--tags"]
+
+    if shallow:
+        cmd.extend(["--depth", "1"])
+
     try:
         await expect_ok(
-            cmd=["git", "fetch", remote, "--tags"],
+            cmd=cmd,
             desc="Could not fetch tags with git",
             cwd=dir,
             print_cmd=True,
@@ -559,6 +577,20 @@ async def fetch(dir):
         await expect_ok(
             cmd=["git", "fetch"],
             desc="Could not fetch tags with git",
+            cwd=dir,
+            print_cmd=True,
+        )
+    except exception.CommandError as e:
+        e.exit_code = 10
+        raise
+
+
+async def fetch_shallow_ref(dir, remote, ref):
+    """ref has to be the full sha, branch, or tag name"""
+    try:
+        await expect_ok(
+            cmd=["git", "fetch", "--depth", "1", remote, ref],
+            desc="Could not fetch shallow ref with git",
             cwd=dir,
             print_cmd=True,
         )

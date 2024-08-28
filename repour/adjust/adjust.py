@@ -258,11 +258,11 @@ async def adjust(adjustspec, repo_provider):
             )
         else:
             git_user = backend_conf.get("username")
-
-            await git.clone(
-                work_dir, asutil.add_username_url(repo_url.readwrite, git_user)
-            )  # Clone origin
-            await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
+            await git.shallow_clone_with_tags(
+                work_dir,
+                asutil.add_username_url(repo_url.readwrite, git_user),
+                adjustspec["ref"],
+            )
 
         upstream_commit_id = await git.rev_parse(work_dir)
 
