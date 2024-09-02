@@ -138,13 +138,13 @@ frozenlist = ">=1.1.0"
 
 [[package]]
 name = "asyncssh"
-version = "2.16.0"
+version = "2.17.0"
 description = "AsyncSSH: Asynchronous SSHv2 client and server library"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "asyncssh-2.16.0-py3-none-any.whl", hash = "sha256:404eaf13ac3a3a93bf5e98b360327bca4d46479e23ff1ff858d63d2ebb3358fd"},
-    {file = "asyncssh-2.16.0.tar.gz", hash = "sha256:4c4e7b0cffac4c0382a364f1ad93072e7d58b2206268f40edc3d3d56587db8f7"},
+    {file = "asyncssh-2.17.0-py3-none-any.whl", hash = "sha256:70bfe4081793255b0115f7a72efd92d5bad8562639302531223bb00188db9747"},
+    {file = "asyncssh-2.17.0.tar.gz", hash = "sha256:3b159c105aa388c1e2245c4faf483f540ada8cad99402281119100166e5edb3c"},
 ]
 
 [package.dependencies]
@@ -1781,4 +1781,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "657f99027d5ab3b56b5991b293c39cf88c2bfb25ee95fcbdf770aa1cbdde6406"
+content-hash = "d4641592461492bbb62ce4613382b568f4a5cefd3ccd54e587cad1cdd38ab52c"
