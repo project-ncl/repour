@@ -67,6 +67,12 @@ def create_traceback_id():
 def described_error_to_obj(exception):
     traceback_id = create_traceback_id()
     error = {k: v for k, v in exception.__dict__.items() if not k.startswith("_")}
+
+    # NCL-8814: no need for the log message since it's already going to be sent to Bifrost
+    # Exception value set in: CommandError
+    if "stdout" in error:
+        del error["stdout"]
+
     error["error_type"] = exception.__class__.__name__
     error["error_traceback"] = traceback_id
     return (traceback_id, error)
