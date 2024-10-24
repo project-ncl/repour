@@ -47,11 +47,11 @@ async def internal_scm_gitlab(spec, repo_provider):
     # create subgroup
     if (subgroup_name is None) or (subgroup_name == workspace_group.path):
         parent_id = namespace_id
-        complete_path = workspace_group.name + "/" + project_name
+        complete_path = workspace_group.path + "/" + project_name
     else:
         subgroup = scm_gitlab.get_or_create_subgroup(gl, workspace_group, subgroup_name)
         parent_id = subgroup.id
-        complete_path = workspace_group.name + "/" + project_path
+        complete_path = workspace_group.path + "/" + project_path
 
     # get or create project repository
     (result, project) = get_or_create_project(
