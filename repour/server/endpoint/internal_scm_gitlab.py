@@ -8,6 +8,30 @@ from repour.lib.scm import gitlab as scm_gitlab
 logger = logging.getLogger(__name__)
 
 
+def sanitize_gitlab_name(name):
+    """
+    gitlab doesn't like the start or end of a project or subgroup to be something other than
+    alpha numeric. If this happens, let's just replace the non-alpha-numeric character with an underscore
+    """
+
+    list_name = list(name)
+    if not list_name[0].isalnum():
+        list_name[0] = "_"
+    if not list_name[-1].isalnum():
+        list_name[-1] = "_"
+
+    return "".join(list_name)
+
+
+def sanitize_gitlab_project_path(project_path):
+    (subgroup_name, project_name) = project_path.split("/", 1)
+
+    sanitized_subgroup_name = sanitize_gitlab_name(subgroup_name)
+    sanitized_project_name = sanitize_gitlab_name(project_name)
+
+    return sanitized_subgroup_name + "/" + sanitized_project_name
+
+
 async def internal_scm_gitlab(spec, repo_provider):
     """
     spec looks like validation.internal_scm_gitlab
@@ -24,7 +48,7 @@ async def internal_scm_gitlab(spec, repo_provider):
     readonly_url = gitlab_config.get("read_only_template")
     readwrite_url = gitlab_config.get("read_write_template")
 
-    project_path = spec.get("project")
+    project_path = sanitize_gitlab_project_path(spec.get("project"))
     if "/" in project_path:
         (subgroup_name, project_name) = project_path.split("/", 1)
         if "/" in project_name:
