@@ -63,5 +63,6 @@
   },
   "git_origin_urls_internal": [],
   "git_backend": "gerrit",
-  "mode": "devel"
+  "mode": "devel",
+  "adjust_delay_seconds": 10
 }
