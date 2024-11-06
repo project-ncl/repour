@@ -277,10 +277,14 @@ async def adjust(adjustspec, repo_provider):
 
         # NCLSUP-1166: add delay before adjust starts to account for a Rex bug
         adjust_delay_seconds = c.get("adjust_delay_seconds", 0)
-        logger.info(
-            "Sleeping for " + str(adjust_delay_seconds) + " before running alignment"
-        )
-        await asyncio.sleep(adjust_delay_seconds)
+
+        if adjust_delay_seconds > 0:
+            logger.info(
+                "Sleeping for "
+                + str(adjust_delay_seconds)
+                + " seconds before running alignment"
+            )
+            await asyncio.sleep(adjust_delay_seconds)
 
         ### Adjust Phase ###
         if build_type == "MVN":
