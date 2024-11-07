@@ -277,6 +277,10 @@ async def adjust(adjustspec, repo_provider):
 
         # NCLSUP-1166: add delay before adjust starts to account for a Rex bug
         adjust_delay_seconds = c.get("adjust_delay_seconds", 0)
+        extra_adjust_parameters = adjustspec.get("adjustParameters", {})
+
+        if "ADJUST_DELAY_SECONDS" in extra_adjust_parameters:
+            adjust_delay_seconds = int(extra_adjust_parameters["ADJUST_DELAY_SECONDS"])
 
         if adjust_delay_seconds > 0:
             logger.info(
