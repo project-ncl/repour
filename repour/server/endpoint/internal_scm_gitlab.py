@@ -16,9 +16,9 @@ def sanitize_gitlab_name(name):
 
     list_name = list(name)
     if not list_name[0].isalnum():
-        list_name[0] = "_"
+        list_name[0] = "pnc_"
     if not list_name[-1].isalnum():
-        list_name[-1] = "_"
+        list_name[-1] = "_pnc"
 
     return "".join(list_name)
 
