@@ -161,7 +161,7 @@ async def remove_old_cancel_indicator_files():
 
 
 def get_task_id_dict():
-    all_tasks = asyncio.Task.all_tasks()
+    all_tasks = asyncio.all_tasks(asyncio.get_running_loop())
     task_id_dict = {}
 
     for task in all_tasks:
