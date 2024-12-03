@@ -1463,13 +1463,13 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments
 
 [[package]]
 name = "python-gitlab"
-version = "5.0.0"
+version = "5.1.0"
 description = "A python wrapper for the GitLab API"
 optional = false
 python-versions = ">=3.9.0"
 files = [
-    {file = "python_gitlab-5.0.0-py3-none-any.whl", hash = "sha256:2af86a1655385c2afe13e33e79555d5394f8c7912ade04bb6e916e3d21a8716f"},
-    {file = "python_gitlab-5.0.0.tar.gz", hash = "sha256:d156b9810d2a5c2916226cecf354956286a9e8133ee707d6584e40f126329956"},
+    {file = "python_gitlab-5.1.0-py3-none-any.whl", hash = "sha256:c30cf547392ce66daaaf020839cfb6c15a91b26e2e7054d1b3f1b92e8dd65e7d"},
+    {file = "python_gitlab-5.1.0.tar.gz", hash = "sha256:d5a10dae8328f32fb9214bd3f9dc199b4930cd496f81c9be42a0f8ff338aeb35"},
 ]
 
 [package.dependencies]
@@ -1936,4 +1936,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ca1310473c211fe3a3cc0aa2f1613ffac880e16194ed5f47a6e5c39b2a97c47e"
+content-hash = "4e2662fb14d868daae70ac4611803b9de446bff63422cdc8e2aaf92a12fa5abb"
