@@ -28,7 +28,7 @@ opentelemetry-instrumentation-logging = "^0.45b0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.24.0"
 opentelemetry-instrumentation-aiohttp-client = "^0.45b0"
 setuptools = "^75.6.0"
-python-gitlab = "^5.1.0"
+python-gitlab = "^5.2.0"
 
 [tool.poetry.dev-dependencies]
 tox = "^4.23"
