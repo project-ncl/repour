@@ -129,13 +129,13 @@ frozenlist = ">=1.1.0"
 
 [[package]]
 name = "asyncssh"
-version = "2.19.0"
+version = "2.20.0"
 description = "AsyncSSH: Asynchronous SSHv2 client and server library"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "asyncssh-2.19.0-py3-none-any.whl", hash = "sha256:bb82ac30ff0cb4393fbaf1114e606ad7a4f13d6c4bdaed423c033ee26b455228"},
-    {file = "asyncssh-2.19.0.tar.gz", hash = "sha256:723dead4d068b558708dc66a4ca7e7a93a813aa9416036eccb9af4c03ae2cf30"},
+    {file = "asyncssh-2.20.0-py3-none-any.whl", hash = "sha256:af6888d937c07a4bf31293335a6166b4d87608cdb5957b49547da6ad87ecf174"},
+    {file = "asyncssh-2.20.0.tar.gz", hash = "sha256:020b6e384b2328ef8683908ad8e73de9ec2b9b62fd964571ea957bba98412983"},
 ]
 
 [package.dependencies]
@@ -1949,4 +1949,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ce8c665ab46dd83662173e8ffaa99a727e6c4f4133c299bec8d260450c2e6578"
+content-hash = "046fc25d1edec2f86d717f2692c74403b0e2bfdcc7aae34b1c87ed62a4009b6f"
