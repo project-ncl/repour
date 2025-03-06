@@ -901,6 +901,63 @@ def is_ref_a_pull_request(ref):
     return False
 
 
+async def setup_git_lfs_if_present(dir):
+    """
+    If the git repository uses git lfs, setup the repository for git lfs
+    """
+    if is_repository_using_lfs(dir):
+        logger.info("This is a git lfs repository")
+        await lfs_install(dir)
+        await lfs_fetch_all(dir)
+
+
+def is_repository_using_lfs(dir):
+    """
+    Test if repository is using git lfs
+    """
+
+    file_gitattributes = dir + "/.gitattributes"
+    # if .gitattributes doesn't exist, it's definitely not using git lfs
+    if not os.path.exists(file_gitattributes):
+        return False
+
+    with open(file_gitattributes, "r") as f:
+        content = f.read()
+
+        # if lfs is in .gitattributes, then it's using git lfs
+        return "lfs" in content
+
+
+async def lfs_install(dir):
+    """
+    Run git lfs install to install git pre-push hooks
+    """
+    try:
+        await expect_ok(
+            cmd=["git", "lfs", "install"],
+            desc="Could not add setup git lfs install with git",
+            cwd=dir,
+            print_cmd=True,
+        )
+    except exception.CommandError as e:
+        raise e
+
+
+async def lfs_fetch_all(dir):
+    """
+    fetch all the git lfs content before pushing
+    """
+    try:
+        await expect_ok(
+            cmd=["git", "lfs", "fetch", "--all"],
+            desc="Could not add git lfs fetch with git",
+            cwd=dir,
+            print_cmd=True,
+        )
+    except exception.CommandError as e:
+        raise e
+
+
 def modify_ref_to_be_fetchable(ref):
     """
     Return a tuple (ref to fetch to branch, branch) for a ref which is a pull request.
