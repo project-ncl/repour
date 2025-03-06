@@ -3,6 +3,7 @@ import asyncio
 import datetime
 import os
 import subprocess
+import tempfile
 import time
 import unittest
 from test import util
@@ -42,3 +43,19 @@ class TestGit(unittest.TestCase):
         modified, branch = git.modify_ref_to_be_fetchable(ref)
 
         self.assertEqual(modified, ref + "/head:" + branch)
+
+    def test_git_lfs_attributes(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(temp_dir + "/.gitattributes", "w") as f:
+                f.write("*.onnx filter=lfs diff=lfs merge=lfs -text\n")
+
+            self.assertTrue(git.is_repository_using_lfs(temp_dir))
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(temp_dir + "/.gitattributes", "w") as f:
+                f.write("happy little git attributes")
+
+            self.assertFalse(git.is_repository_using_lfs(temp_dir))
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.assertFalse(git.is_repository_using_lfs(temp_dir))
