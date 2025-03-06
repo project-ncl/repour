@@ -109,6 +109,7 @@ async def clone_git(clonespec):
         if "ref" in clonespec and clonespec["ref"] and not new_internal_repo:
             await git.clone(clone_dir, clonespec["originRepoUrl"])  # Clone origin
             await git.checkout(clone_dir, clonespec["ref"], force=True)  # Checkout ref
+            await git.setup_git_lfs_if_present(clone_dir)
             await git.add_remote(
                 clone_dir,
                 "target",
@@ -126,6 +127,7 @@ async def clone_git(clonespec):
             )  # Clone origin
             await git.disable_bare_repository(clone_dir)
             await git.reset_hard(clone_dir)
+            await git.setup_git_lfs_if_present(clone_dir)
             await git.add_remote(
                 clone_dir,
                 "target",

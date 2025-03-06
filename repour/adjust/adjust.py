@@ -140,6 +140,8 @@ async def sync_external_repo(adjustspec, repo_provider, work_dir, configuration)
         else:
             await git.checkout(work_dir, adjustspec["ref"], force=True)  # Checkout ref
 
+        await git.setup_git_lfs_if_present(work_dir)
+
         await git.rename_remote(
             work_dir, "origin", "origin_remote"
         )  # Rename origin remote
@@ -263,6 +265,7 @@ async def adjust(adjustspec, repo_provider):
                 asutil.add_username_url(repo_url.readwrite, git_user),
                 adjustspec["ref"],
             )
+            await git.setup_git_lfs_if_present(work_dir)
 
         upstream_commit_id = await git.rev_parse(work_dir)
 
