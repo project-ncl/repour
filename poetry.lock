@@ -1593,14 +1593,14 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests
 
 [[package]]
 name = "python-gitlab"
-version = "6.3.0"
+version = "6.4.0"
 description = "The python wrapper for the GitLab REST and GraphQL APIs."
 optional = false
 python-versions = ">=3.9.0"
 groups = ["main"]
 files = [
-    {file = "python_gitlab-6.3.0-py3-none-any.whl", hash = "sha256:c4570b94f48fd2a612b08e453d2d7859b1a805b7068f680f6f6ce45dc9d38f94"},
-    {file = "python_gitlab-6.3.0.tar.gz", hash = "sha256:3d7764956948949a2a3aff2078e6e93a5efea2db0a29566b5e142091bcc075aa"},
+    {file = "python_gitlab-6.4.0-py3-none-any.whl", hash = "sha256:2f264162b552463885871295ec4754441c4aa936746f333faa362de422aad4c8"},
+    {file = "python_gitlab-6.4.0.tar.gz", hash = "sha256:55ed94fb47932124b7f9df8e72b29352d3d0ee01ecf44f081dd070f4bad8700d"},
 ]
 
 [package.dependencies]
@@ -2084,4 +2084,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "3bcef66ad9d2545bead23461349740bb5eab11642ca1295d2eb147b680f3fb74"
+content-hash = "8454462d434e3b6dddcd00df2fa16134b7d43f628604d3fe195dde077de4bdd2"
