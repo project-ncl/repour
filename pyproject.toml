@@ -9,7 +9,7 @@ license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-aiohttp = "^3.12"
+aiohttp = "^3.13"
 asyncssh = "^2.21.1"
 voluptuous = "^0.15.2"
 python-jose = "^3.5"
