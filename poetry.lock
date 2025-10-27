@@ -735,14 +735,14 @@ files = [
 
 [[package]]
 name = "giturlparse"
-version = "0.12.0"
+version = "0.14.0"
 description = "A Git URL parsing module (supports parsing and rewriting)"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "giturlparse-0.12.0-py2.py3-none-any.whl", hash = "sha256:412b74f2855f1da2fefa89fd8dde62df48476077a72fc19b62039554d27360eb"},
-    {file = "giturlparse-0.12.0.tar.gz", hash = "sha256:c0fff7c21acc435491b1779566e038757a205c1ffdcb47e4f81ea52ad8c3859a"},
+    {file = "giturlparse-0.14.0-py2.py3-none-any.whl", hash = "sha256:04fd9c262ca9a4db86043d2ef32b2b90bfcbcdefc4f6a260fd9402127880931d"},
+    {file = "giturlparse-0.14.0.tar.gz", hash = "sha256:0a13208cb3f60e067ee3d09d28e01f9c936065986004fa2d5cd6db7758e9f6e6"},
 ]
 
 [[package]]
@@ -2133,4 +2133,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "07a3e47498c8f0bb43f5fd8f1cc08a92bbefd2180ee9d18ab7286ece92583c14"
+content-hash = "19299437f7c9bcb7fca1064b08e20a195d6038f8fe437f8745a4367e5d257f11"
