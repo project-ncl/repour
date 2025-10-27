@@ -31,7 +31,7 @@ setuptools = "^80.9.0"
 python-gitlab = "^6.5.0"
 
 [tool.poetry.dev-dependencies]
-tox = "^4.31"
+tox = "^4.32"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"
