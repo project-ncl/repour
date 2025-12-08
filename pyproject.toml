@@ -34,7 +34,7 @@ python-gitlab = "^7.0.0"
 tox = "^4.32"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^9.0.1"
+pytest = "^9.0.2"
 
 [tool.tox]
 legacy_tox_ini = """
